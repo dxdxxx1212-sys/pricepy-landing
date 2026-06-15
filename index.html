@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Прицепы для легковых авто, лодок и техники со скидкой до 40%. Пройдите квиз за 1 минуту и получите подбор моделей под вашу задачу с актуальными ценами.">
+<title>ПрайсПрицеп — прицепы со скидкой до 40% | Подбор за 1 минуту</title>
+<style>
+  /* ====================== ПЕРЕМЕННЫЕ / ТЕМА ====================== */
+  :root{
+    --bg:#f7f9fc;
+    --bg-soft:#eef2f9;
+    --card:#ffffff;
+    --card-2:#f2f5fb;
+    --line:#e4e9f2;
+    --text:#1f2a37;
+    --muted:#69748a;
+    --accent:#fb7e2d;
+    --accent-2:#ffb066;
+    --accent-ink:#3a1c00;
+    --green:#15a06a;
+    --red:#f25075;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 14px 40px rgba(30,41,59,.10);
+    --maxw:1180px;
+    --font:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--font);line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  .container{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  section{position:relative}
+  h1,h2,h3{line-height:1.15;margin:0}
+  .eyebrow{
+    display:inline-block;color:var(--accent-2);font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;font-size:13px;margin-bottom:14px;
+  }
+  .section-title{font-size:clamp(26px,4vw,42px);font-weight:800;letter-spacing:-.02em}
+  .section-sub{color:var(--muted);max-width:680px;margin:14px auto 0;font-size:17px}
+  .center{text-align:center}
+  .accent{color:var(--accent)}
+
+  /* ====================== КНОПКИ ====================== */
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;justify-content:center;
+    border:none;border-radius:999px;padding:15px 28px;font-weight:700;font-size:16px;
+    transition:transform .15s ease,box-shadow .15s ease,background .2s ease;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);box-shadow:0 10px 24px rgba(255,122,24,.35)}
+  .btn-primary:hover{box-shadow:0 16px 32px rgba(255,122,24,.45)}
+  .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent-2)}
+  .btn-lg{padding:18px 34px;font-size:17px}
+  .btn-block{width:100%}
+
+  /* ====================== ШАПКА ====================== */
+  header{
+    position:sticky;top:0;z-index:60;background:rgba(255,255,255,.85);
+    backdrop-filter:saturate(140%) blur(12px);border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:72px;gap:20px}
+  .logo{display:flex;align-items:center;gap:11px;font-weight:800;font-size:21px}
+  .logo .mark{
+    width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);font-size:20px;
+  }
+  .nav-links{display:flex;gap:26px;align-items:center}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:15px;transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .nav-right{display:flex;align-items:center;gap:18px}
+  .nav-phone{font-weight:800;font-size:18px;white-space:nowrap}
+  .nav-phone span{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.05em}
+  .burger{display:none;background:none;border:none;color:var(--text);font-size:26px;padding:6px}
+
+  /* ====================== HERO ====================== */
+  .hero{padding:70px 0 60px;overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
+  .hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-.03em}
+  .hero h1 .hl{
+    background:linear-gradient(120deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p.lead{font-size:19px;color:var(--muted);margin:22px 0 30px;max-width:560px}
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+  .hero-trust{display:flex;gap:26px;margin-top:34px;flex-wrap:wrap}
+  .hero-trust .t{display:flex;flex-direction:column}
+  .hero-trust .t b{font-size:26px;font-weight:900}
+  .hero-trust .t span{font-size:13px;color:var(--muted)}
+  .hero-card{
+    background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px;
+    box-shadow:var(--shadow);position:relative;
+  }
+  .hero-card .badge{
+    position:absolute;top:-14px;right:24px;background:var(--red);color:#fff;
+    font-weight:800;padding:8px 16px;border-radius:999px;font-size:14px;box-shadow:0 8px 20px rgba(255,84,112,.4)
+  }
+  .hero-card h3{font-size:20px;margin-bottom:6px}
+  .hero-card .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .mini-list{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:12px}
+  .mini-list li{display:flex;gap:11px;align-items:flex-start;font-size:15px}
+  .mini-list .ic{color:var(--accent);font-weight:900;flex:none}
+  .hero-illustration{
+    aspect-ratio:16/10;border-radius:14px;margin-bottom:20px;
+    background:
+      radial-gradient(circle at 30% 30%,rgba(251,126,45,.22),transparent 62%),
+      linear-gradient(135deg,#eef2fb,#fdf3ea);
+    display:grid;place-items:center;border:1px solid var(--line);
+  }
+  .hero-illustration .emoji{font-size:70px;filter:drop-shadow(0 8px 16px rgba(30,41,59,.18))}
+
+  /* ====================== БЕЙДЖ-ЛЕНТА ====================== */
+  .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-soft);padding:18px 0}
+  .ticker-row{display:flex;gap:42px;flex-wrap:wrap;justify-content:center;align-items:center;color:var(--muted);font-weight:600}
+  .ticker-row .it{display:flex;align-items:center;gap:9px;font-size:15px}
+  .ticker-row .it .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+
+  /* ====================== БЛОКИ-ПРЕИМУЩЕСТВА ====================== */
+  .features{padding:80px 0}
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px}
+  .feat{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px;
+    transition:transform .2s ease,border-color .2s ease;
+  }
+  .feat:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .feat .ico{
+    width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:26px;margin-bottom:16px;
+    background:linear-gradient(135deg,rgba(255,122,24,.18),rgba(255,166,77,.08));border:1px solid rgba(255,122,24,.25)
+  }
+  .feat h3{font-size:19px;margin-bottom:8px}
+  .feat p{color:var(--muted);margin:0;font-size:15px}
+
+  /* ====================== КАТАЛОГ ====================== */
+  .catalog{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:46px}
+  .product{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s
+  }
+  .product:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+  .product .ph{
+    aspect-ratio:4/3;display:grid;place-items:center;position:relative;
+    background:linear-gradient(135deg,#eef2fb,#fbf3ec)
+  }
+  .product .ph .emoji{font-size:64px}
+  .product .disc{
+    position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-weight:800;
+    font-size:13px;padding:5px 11px;border-radius:8px
+  }
+  .product .hit{
+    position:absolute;top:12px;right:12px;background:var(--accent);color:var(--accent-ink);font-weight:800;
+    font-size:12px;padding:5px 11px;border-radius:8px
+  }
+  .product .body{padding:20px;display:flex;flex-direction:column;flex:1}
+  .product h3{font-size:18px;margin-bottom:6px}
+  .product .meta{color:var(--muted);font-size:13.5px;margin-bottom:16px;min-height:38px}
+  .product .price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+  .product .price{font-size:24px;font-weight:900}
+  .product .old{color:var(--muted);text-decoration:line-through;font-size:15px}
+  .product .body .btn{margin-top:auto}
+  .cat-foot{text-align:center;margin-top:42px}
+
+  /* ====================== КВИЗ ====================== */
+  .quiz-sec{padding:80px 0}
+  .quiz-wrap{
+    max-width:840px;margin:46px auto 0;background:var(--card);border:1px solid var(--line);
+    border-radius:22px;overflow:hidden;box-shadow:var(--shadow)
+  }
+  .quiz-top{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px}
+  .quiz-assistant{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+  .quiz-assistant .ava{
+    width:48px;height:48px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:24px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink)
+  }
+  .quiz-assistant .who b{font-size:15px}
+  .quiz-assistant .who span{display:block;font-size:12.5px;color:var(--muted)}
+  .quiz-step-count{font-size:13px;color:var(--muted);white-space:nowrap;font-weight:700}
+  .progress{height:6px;background:var(--card-2)}
+  .progress .bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .35s ease}
+
+  .quiz-body{padding:34px 32px 32px;min-height:340px}
+  .q-bubble{
+    background:var(--card-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    font-size:14.5px;color:var(--muted);margin-bottom:22px;position:relative
+  }
+  .q-bubble:before{content:"💬";margin-right:8px}
+  .q-title{font-size:23px;font-weight:800;margin-bottom:6px}
+  .q-hint{color:var(--muted);font-size:14px;margin-bottom:22px}
+  .options{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+  .opt{
+    display:flex;align-items:center;gap:13px;background:var(--card-2);border:1.5px solid var(--line);
+    border-radius:12px;padding:15px 16px;cursor:pointer;transition:all .15s;font-size:15px;font-weight:600
+  }
+  .opt:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .opt.selected{border-color:var(--accent);background:rgba(255,122,24,.12)}
+  .opt .em{font-size:24px;flex:none}
+  .opt .check{
+    margin-left:auto;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;
+    display:grid;place-items:center;color:transparent;font-size:13px;font-weight:900;transition:all .15s
+  }
+  .opt.selected .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  .quiz-foot{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:20px 32px;border-top:1px solid var(--line);background:var(--bg-soft)
+  }
+  .quiz-foot .hint{font-size:13px;color:var(--muted)}
+
+  /* поля контактов в финале */
+  .fields{display:grid;gap:14px;max-width:460px;margin:6px auto 0}
+  .field label{display:block;font-size:13.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input{
+    width:100%;background:var(--card-2);border:1.5px solid var(--line);border-radius:11px;
+    padding:14px 15px;color:var(--text);font-size:15.5px;font-family:inherit;transition:border-color .15s
+  }
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .channels{display:flex;gap:10px;flex-wrap:wrap}
+  .channel{
+    flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--card-2);border:1.5px solid var(--line);border-radius:11px;padding:13px;
+    font-weight:700;font-size:14px;cursor:pointer;transition:all .15s
+  }
+  .channel.selected{border-color:var(--accent);background:rgba(255,122,24,.12)}
+  .consent{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin-top:4px}
+  .consent input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+  .consent a{color:var(--accent-2);text-decoration:underline}
+
+  /* экран благодарности */
+  .quiz-done{text-align:center;padding:30px 10px}
+  .quiz-done .big{font-size:60px;margin-bottom:14px}
+  .quiz-done h3{font-size:26px;margin-bottom:10px}
+  .quiz-done p{color:var(--muted);max-width:440px;margin:0 auto 8px}
+  .summary{
+    text-align:left;max-width:440px;margin:24px auto 0;background:var(--card-2);
+    border:1px solid var(--line);border-radius:12px;padding:18px 20px
+  }
+  .summary .row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .summary .row:last-child{border-bottom:none}
+  .summary .row .k{color:var(--muted)}
+  .summary .row .v{font-weight:700;text-align:right}
+
+  .err{color:var(--red);font-size:13px;margin-top:4px;display:none}
+  .err.show{display:block}
+
+  /* ====================== ОТЗЫВЫ ====================== */
+  .reviews{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px}
+  .review{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  .review .stars{color:var(--accent);margin-bottom:12px;letter-spacing:3px}
+  .review p{margin:0 0 18px;font-size:15px}
+  .review .who{display:flex;align-items:center;gap:12px}
+  .review .who .av{
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;
+    background:linear-gradient(135deg,#ffe8d6,#ffd6b8);color:#7a3c0a;font-size:17px
+  }
+  .review .who b{display:block;font-size:15px}
+  .review .who span{font-size:13px;color:var(--muted)}
+
+  /* ====================== ПАРТНЁРЫ ====================== */
+  .partners{padding:64px 0;text-align:center}
+  .partners .p-row{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:34px}
+  .partners .p{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 26px;
+    color:var(--muted);font-weight:800;font-size:18px;letter-spacing:.04em;display:flex;align-items:center;gap:10px
+  }
+
+  /* ====================== FAQ ====================== */
+  .faq{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line)}
+  .faq-list{max-width:820px;margin:44px auto 0;display:grid;gap:14px}
+  .faq-item{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .faq-q{
+    width:100%;text-align:left;background:none;border:none;color:var(--text);
+    padding:20px 22px;font-size:17px;font-weight:700;display:flex;justify-content:space-between;gap:14px;align-items:center
+  }
+  .faq-q .ar{transition:transform .25s;color:var(--accent);font-size:20px;flex:none}
+  .faq-item.open .faq-q .ar{transform:rotate(45deg)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--muted)}
+  .faq-a .inner{padding:0 22px 20px;font-size:15px}
+
+  /* ====================== CTA / ФОРМА ====================== */
+  .cta{padding:80px 0}
+  .cta-box{
+    background:linear-gradient(135deg,#ffffff,#eef3fc);border:1px solid var(--line);border-radius:24px;
+    padding:48px;display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;box-shadow:var(--shadow);
+    position:relative;overflow:hidden
+  }
+  .cta-box:before{
+    content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(251,126,45,.16),transparent 55%);pointer-events:none
+  }
+  .cta-box h2{font-size:clamp(24px,3.5vw,36px);font-weight:900;margin-bottom:12px}
+  .cta-box p{color:var(--muted);margin:0 0 22px;font-size:16px}
+  .cta-list{list-style:none;padding:0;margin:0;display:grid;gap:11px}
+  .cta-list li{display:flex;gap:10px;font-size:15px}
+  .cta-list .ic{color:var(--green);font-weight:900}
+  .lead-form{position:relative;z-index:2;display:grid;gap:13px}
+
+  /* ====================== ФУТЕР ====================== */
+  footer{padding:54px 0 30px;border-top:1px solid var(--line)}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:34px;margin-bottom:34px}
+  .foot-grid h4{font-size:15px;margin-bottom:14px}
+  .foot-grid a,.foot-grid p{color:var(--muted);font-size:14px;margin:0 0 9px}
+  .foot-grid a:hover{color:var(--text)}
+  .foot-bottom{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font-size:13px;line-height:1.7}
+  .foot-bottom a{color:var(--accent-2);text-decoration:underline}
+
+  /* ====================== МОДАЛКА ====================== */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(24,33,48,.45);backdrop-filter:blur(4px);
+    z-index:100;display:none;align-items:center;justify-content:center;padding:20px
+  }
+  .modal-overlay.open{display:flex}
+  .modal{
+    background:var(--card);border:1px solid var(--line);border-radius:20px;max-width:480px;width:100%;
+    padding:34px;position:relative;box-shadow:var(--shadow);max-height:90vh;overflow:auto
+  }
+  .modal .close{
+    position:absolute;top:16px;right:16px;background:var(--card-2);border:1px solid var(--line);
+    color:var(--text);width:36px;height:36px;border-radius:50%;font-size:18px;display:grid;place-items:center
+  }
+  .modal h3{font-size:22px;margin-bottom:8px}
+  .modal p.m-sub{color:var(--muted);margin:0 0 22px;font-size:15px}
+  .legal-text{font-size:13.5px;color:var(--muted);line-height:1.7}
+  .legal-text h4{color:var(--text);margin:18px 0 6px;font-size:15px}
+
+  /* плавающая кнопка */
+  .fab{
+    position:fixed;right:22px;bottom:22px;z-index:55;
+    box-shadow:0 12px 30px rgba(255,122,24,.45);animation:pulse 2.4s infinite
+  }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,122,24,.5)}70%{box-shadow:0 0 0 16px rgba(255,122,24,0)}100%{box-shadow:0 0 0 0 rgba(255,122,24,0)}}
+
+  /* тосты */
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:var(--green);color:#06231a;font-weight:700;padding:14px 22px;border-radius:12px;
+    z-index:120;opacity:0;transition:all .3s;box-shadow:var(--shadow);max-width:90vw;text-align:center
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ====================== АДАПТИВ ====================== */
+  @media(max-width:920px){
+    .hero-grid{grid-template-columns:1fr;gap:36px}
+    .feat-grid,.cat-grid,.rev-grid{grid-template-columns:repeat(2,1fr)}
+    .cta-box{grid-template-columns:1fr;padding:34px}
+    .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:640px){
+    .nav-links{
+      position:absolute;top:72px;left:0;right:0;background:var(--bg-soft);flex-direction:column;
+      gap:0;border-bottom:1px solid var(--line);display:none
+    }
+    .nav-links.open{display:flex}
+    .nav-links a{padding:16px 20px;width:100%;border-bottom:1px solid var(--line)}
+    .burger{display:block}
+    .nav-phone span{display:none}
+    .nav-phone{font-size:15px}
+    .feat-grid,.cat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
+    .options{grid-template-columns:1fr}
+    .quiz-body{padding:26px 20px}
+    .quiz-top,.quiz-foot{padding-left:20px;padding-right:20px}
+    .hero-trust{gap:18px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ ШАПКА ============ -->
+<header>
+  <div class="container nav">
+    <a href="#" class="logo"><span class="mark">🛻</span> Прайс<span class="accent">Прицеп</span></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#features">Почему мы</a>
+      <a href="#catalog">Каталог</a>
+      <a href="#quiz">Подбор</a>
+      <a href="#reviews">Отзывы</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+    <div class="nav-right">
+      <a href="tel:+78001234567" class="nav-phone">8 800 123-45-67<span>звонок бесплатный</span></a>
+      <button class="btn btn-primary" data-scroll="#quiz">Узнать цену</button>
+      <button class="burger" id="burger" aria-label="Меню">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">Прямые поставки • Гарантия • Скидка до 40%</span>
+      <h1>Прицепы для авто, лодок и техники <span class="hl">по ценам ниже рынка</span></h1>
+      <p class="lead">Подбираем модель под вашу задачу и бюджет за 1 минуту. Бортовые, лодочные, самосвальные и для перевозки техники — с документами, гарантией и доставкой по всей России.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg" data-scroll="#quiz">Пройти подбор за 1 мин →</button>
+        <button class="btn btn-ghost btn-lg" data-scroll="#catalog">Смотреть каталог</button>
+      </div>
+      <div class="hero-trust">
+        <div class="t"><b>12 лет</b><span>на рынке прицепов</span></div>
+        <div class="t"><b>9 800+</b><span>довольных клиентов</span></div>
+        <div class="t"><b>40%</b><span>максимальная скидка</span></div>
+      </div>
+    </div>
+    <div class="hero-card">
+      <span class="badge">−40%</span>
+      <div class="hero-illustration"><span class="emoji">🚙🛻</span></div>
+      <h3>Что вы получите после подбора</h3>
+      <p class="sub">Бесплатно и без обязательств</p>
+      <ul class="mini-list">
+        <li><span class="ic">✓</span> 3–5 моделей точно под вашу задачу</li>
+        <li><span class="ic">✓</span> Актуальную цену со скидкой и наличие</li>
+        <li><span class="ic">✓</span> Условия доставки в ваш регион</li>
+        <li><span class="ic">✓</span> Помощь с оформлением и рассрочкой</li>
+      </ul>
+      <button class="btn btn-primary btn-block btn-lg" data-scroll="#quiz">Начать подбор</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ЛЕНТА ПРЕИМУЩЕСТВ ============ -->
+<div class="ticker">
+  <div class="container ticker-row">
+    <div class="it"><span class="dot"></span> Документы и ПТС на каждый прицеп</div>
+    <div class="it"><span class="dot"></span> Гарантия от производителя</div>
+    <div class="it"><span class="dot"></span> Доставка по всей России</div>
+    <div class="it"><span class="dot"></span> Рассрочка 0%</div>
+    <div class="it"><span class="dot"></span> Возврат 14 дней</div>
+  </div>
+</div>
+
+<!-- ============ ПРЕИМУЩЕСТВА ============ -->
+<section class="features" id="features">
+  <div class="container center">
+    <span class="eyebrow">Почему выбирают нас</span>
+    <h2 class="section-title">Покупка прицепа без переплат и рисков</h2>
+    <p class="section-sub">Работаем напрямую с заводами и официальными дистрибьюторами — поэтому даём цену ниже розницы и отвечаем за качество.</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="ico">🏭</div><h3>Прямые поставки</h3><p>Закупаем у заводов без посредников. Экономия доходит до 40% по сравнению с автосалонами.</p></div>
+      <div class="feat"><div class="ico">📄</div><h3>Полный пакет документов</h3><p>ПТС, договор, гарантийный талон. Прицеп сразу можно поставить на учёт в ГИБДД.</p></div>
+      <div class="feat"><div class="ico">🛡️</div><h3>Гарантия до 3 лет</h3><p>Официальная гарантия производителя на раму, узлы и оцинковку. Сервис в вашем городе.</p></div>
+      <div class="feat"><div class="ico">🚚</div><h3>Доставка по РФ</h3><p>Привезём в любой регион транспортной компанией или своим автовозом. Самовывоз со склада.</p></div>
+      <div class="feat"><div class="ico">💳</div><h3>Рассрочка и кредит</h3><p>Рассрочка 0% до 12 месяцев и кредит от банков-партнёров. Решение за 15 минут.</p></div>
+      <div class="feat"><div class="ico">🔧</div><h3>Подбор под задачу</h3><p>Поможем выбрать грузоподъёмность, тип и опции под лодку, квадроцикл, стройку или бизнес.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ КАТАЛОГ ============ -->
+<section class="catalog" id="catalog">
+  <div class="container center">
+    <span class="eyebrow">Хиты продаж</span>
+    <h2 class="section-title">Популярные модели со скидкой</h2>
+    <p class="section-sub">Топовые позиции этого сезона. Цены указаны со скидкой при покупке через подбор. Наличие уточняйте — обновляем ежедневно.</p>
+    <div class="cat-grid" id="catGrid"><!-- товары рендерятся скриптом --></div>
+    <div class="cat-foot">
+      <button class="btn btn-primary btn-lg" data-scroll="#quiz">Подобрать прицеп под мою задачу →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ КВИЗ ============ -->
+<section class="quiz-sec" id="quiz">
+  <div class="container center">
+    <span class="eyebrow">Бесплатный подбор</span>
+    <h2 class="section-title">Ответьте на 7 вопросов</h2>
+    <p class="section-sub">Подберём 3–5 моделей под вашу задачу и бюджет и пришлём цены со скидкой в удобный мессенджер. Это бесплатно и ни к чему не обязывает.</p>
+  </div>
+
+  <div class="container">
+    <div class="quiz-wrap">
+      <div class="quiz-top">
+        <div class="quiz-assistant">
+          <div class="ava">👨‍🔧</div>
+          <div class="who"><b>Виктор, эксперт по подбору</b><span>на связи и поможет с выбором</span></div>
+        </div>
+        <div class="quiz-step-count" id="stepCount">Шаг 1 из 7</div>
+      </div>
+      <div class="progress"><div class="bar" id="progressBar"></div></div>
+      <div class="quiz-body" id="quizBody"><!-- шаги рендерятся скриптом --></div>
+      <div class="quiz-foot" id="quizFoot">
+        <button class="btn btn-ghost" id="btnBack">← Назад</button>
+        <span class="hint" id="footHint">Выберите вариант, чтобы продолжить</span>
+        <button class="btn btn-primary" id="btnNext">Далее →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ОТЗЫВЫ ============ -->
+<section class="reviews" id="reviews">
+  <div class="container center">
+    <span class="eyebrow">Отзывы клиентов</span>
+    <h2 class="section-title">Нам доверяют по всей стране</h2>
+    <p class="section-sub">Более 9 800 покупателей уже сэкономили на покупке прицепа. Несколько недавних историй.</p>
+    <div class="rev-grid">
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Брал бортовой прицеп под перевозку стройматериалов на дачу. Цена реально ниже, чем в салонах города. Привезли за 4 дня, все документы на месте.</p>
+        <div class="who"><div class="av">АК</div><div><b>Алексей К.</b><span>Краснодар</span></div></div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Искала лодочный прицеп под катер. Менеджер помог подобрать по грузоподъёмности, не впаривал лишнего. Оформили рассрочку 0%, очень довольна.</p>
+        <div class="who"><div class="av">МС</div><div><b>Марина С.</b><span>Самара</span></div></div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Заказывал прицеп для квадроцикла с аппарелью. Консультант всё объяснил по тормозам и креплениям. Качество отличное, рекомендую.</p>
+        <div class="who"><div class="av">ДВ</div><div><b>Дмитрий В.</b><span>Екатеринбург</span></div></div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Покупали два прицепа для фермерского хозяйства. Сделали хорошую скидку за опт, привезли своим автовозом. Работаем дальше.</p>
+        <div class="who"><div class="av">ИП</div><div><b>Игорь П.</b><span>Воронеж</span></div></div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Долго выбирал между моделями — прошёл квиз, прислали 4 варианта с ценами. Очень удобно, не пришлось обзванивать кучу магазинов.</p>
+        <div class="who"><div class="av">СН</div><div><b>Сергей Н.</b><span>Новосибирск</span></div></div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>Оцинкованный прицеп с тентом под бизнес-доставку. Цена-качество на высоте. Гарантия 3 года, сервис рядом с домом. Спасибо!</p>
+        <div class="who"><div class="av">ОЛ</div><div><b>Ольга Л.</b><span>Казань</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ПАРТНЁРЫ ============ -->
+<section class="partners">
+  <div class="container">
+    <span class="eyebrow">Нам доверяют</span>
+    <h2 class="section-title">Поставляем для бизнеса и хозяйств</h2>
+    <div class="p-row">
+      <div class="p">🚜 АгроПоле</div>
+      <div class="p">🏗️ СтройРесурс</div>
+      <div class="p">🐟 РыбПром</div>
+      <div class="p">📦 ЛогистикА</div>
+      <div class="p">🌲 ЛесТорг</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq" id="faq">
+  <div class="container center">
+    <span class="eyebrow">Частые вопросы</span>
+    <h2 class="section-title">Отвечаем на главное</h2>
+    <div class="faq-list" id="faqList"><!-- рендерится скриптом --></div>
+  </div>
+</section>
+
+<!-- ============ CTA / ФОРМА ============ -->
+<section class="cta">
+  <div class="container">
+    <div class="cta-box">
+      <div>
+        <h2>Не хотите проходить квиз?</h2>
+        <p>Оставьте контакты — эксперт сам подберёт варианты, рассчитает цену со скидкой и перезвонит в течение 15 минут.</p>
+        <ul class="cta-list">
+          <li><span class="ic">✓</span> Бесплатная консультация</li>
+          <li><span class="ic">✓</span> Подбор под бюджет и задачу</li>
+          <li><span class="ic">✓</span> Расчёт доставки в ваш город</li>
+        </ul>
+      </div>
+      <form class="lead-form" id="leadForm" novalidate>
+        <div class="field">
+          <label>Как вас зовут?</label>
+          <input type="text" name="name" placeholder="Ваше имя" autocomplete="name">
+          <div class="err">Введите имя</div>
+        </div>
+        <div class="field">
+          <label>Телефон для связи</label>
+          <input type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+          <div class="err">Введите корректный телефон</div>
+        </div>
+        <div class="field">
+          <label>Куда написать?</label>
+          <div class="channels" data-channels>
+            <div class="channel selected" data-channel="whatsapp">🟢 WhatsApp</div>
+            <div class="channel" data-channel="telegram">🔵 Telegram</div>
+            <div class="channel" data-channel="phone">📞 Звонок</div>
+          </div>
+        </div>
+        <label class="consent">
+          <input type="checkbox" name="consent" checked>
+          <span>Я согласен на обработку персональных данных и принимаю <a href="#" data-open-privacy>политику конфиденциальности</a>.</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Получить расчёт со скидкой</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ФУТЕР ============ -->
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <a href="#" class="logo" style="font-size:20px;margin-bottom:14px"><span class="mark">🛻</span> Прайс<span class="accent">Прицеп</span></a>
+        <p>Подбор и продажа прицепов для легковых авто, лодок, мототехники и бизнеса. Прямые поставки, гарантия и доставка по всей России.</p>
+        <p style="margin-top:10px">📞 <a href="tel:+78001234567">8 800 123-45-67</a><br>✉️ <a href="mailto:info@example.ru">info@example.ru</a></p>
+      </div>
+      <div>
+        <h4>Разделы</h4>
+        <a href="#features">Почему мы</a><br>
+        <a href="#catalog">Каталог</a><br>
+        <a href="#quiz">Подбор</a><br>
+        <a href="#reviews">Отзывы</a><br>
+        <a href="#faq">Вопросы и ответы</a>
+      </div>
+      <div>
+        <h4>Документы</h4>
+        <a href="#" data-open-privacy>Политика конфиденциальности</a><br>
+        <a href="#" data-open-privacy>Согласие на обработку данных</a><br>
+        <a href="#" data-open-privacy>Публичная оферта</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <p>ООО «ПрайсПрицеп» (пример) • ИНН 0000000000 • ОГРН 0000000000000 • 000000, г. Москва, ул. Примерная, д. 1.</p>
+      <p>Сайт носит информационный характер и не является публичной офертой. Все изображения, цены, реквизиты и тексты — демонстрационные, замените их на свои перед публикацией. © 2026 ПрайсПрицеп.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- плавающая кнопка -->
+<button class="btn btn-primary fab" data-scroll="#quiz">Подобрать прицеп →</button>
+
+<!-- ============ МОДАЛКА ============ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="close" data-close-modal>✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- тост -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ДАННЫЕ: КАТАЛОГ
+   Замените на свои товары/цены/картинки.
+   ========================================================= */
+const PRODUCTS = [
+  {emoji:"🛻", name:"Бортовой 1-осный 750 кг", meta:"Универсальный прицеп для дачи, стройки и грузов", price:"54 900 ₽", old:"79 900 ₽", disc:"−31%", hit:"ХИТ"},
+  {emoji:"⛵", name:"Лодочный под катер 6 м", meta:"Регулируемые ложементы, лебёдка, оцинковка", price:"112 000 ₽", old:"159 000 ₽", disc:"−30%"},
+  {emoji:"🏍️", name:"Для мото/квадроцикла", meta:"С аппарелью и креплениями, низкая погрузка", price:"68 500 ₽", old:"94 000 ₽", disc:"−27%", hit:"ХИТ"},
+  {emoji:"🚜", name:"Самосвальный 2000 кг", meta:"Двухосный, гидроподъём, тормоза — для хозяйств", price:"189 000 ₽", old:"259 000 ₽", disc:"−27%"},
+  {emoji:"📦", name:"Фургон с тентом 1500 кг", meta:"Высокий тент, бизнес-доставка, оцинковка", price:"143 000 ₽", old:"198 000 ₽", disc:"−28%"},
+  {emoji:"🚙", name:"Эконом 500 кг под легковой", meta:"Лёгкий старт: рыбалка, охота, переезды", price:"39 900 ₽", old:"57 000 ₽", disc:"−30%", hit:"ВЫГОДА"},
+];
+
+/* =========================================================
+   ДАННЫЕ: КВИЗ (7 шагов)
+   type: "single" | "multi" | "contact"
+   ========================================================= */
+const QUIZ = [
+  {
+    key:"use", type:"single",
+    bubble:"Здравствуйте! Я помогу подобрать прицеп. Для начала — что планируете возить?",
+    title:"Для чего нужен прицеп?",
+    hint:"Выберите основную задачу",
+    options:[
+      {em:"🚙", label:"Бытовые грузы / дача"},
+      {em:"⛵", label:"Лодка или катер"},
+      {em:"🏍️", label:"Мото / квадроцикл"},
+      {em:"🏗️", label:"Стройматериалы"},
+      {em:"🚜", label:"Для хозяйства / фермы"},
+      {em:"💼", label:"Бизнес / доставка"},
+    ]
+  },
+  {
+    key:"capacity", type:"single",
+    bubble:"Отлично. Теперь прикинем грузоподъёмность — это влияет на тип и цену.",
+    title:"Какая грузоподъёмность нужна?",
+    hint:"Если не уверены — выберите «Не знаю», поможем определить",
+    options:[
+      {em:"🪶", label:"До 500 кг"},
+      {em:"⚖️", label:"500–750 кг"},
+      {em:"📦", label:"750–1500 кг"},
+      {em:"🏋️", label:"Более 1500 кг"},
+      {em:"🤔", label:"Не знаю"},
+    ]
+  },
+  {
+    key:"type", type:"single",
+    bubble:"Понял. Какой тип кузова вам ближе?",
+    title:"Какой тип прицепа предпочтительнее?",
+    hint:"Можно ориентироваться на задачу",
+    options:[
+      {em:"🛻", label:"Бортовой"},
+      {em:"⛺", label:"С тентом"},
+      {em:"⛵", label:"Лодочный"},
+      {em:"🏍️", label:"Для техники / с аппарелью"},
+      {em:"🚜", label:"Самосвальный"},
+      {em:"❓", label:"Ещё не определился"},
+    ]
+  },
+  {
+    key:"options", type:"multi",
+    bubble:"Можно выбрать несколько опций — подберём комплектацию точнее.",
+    title:"Какие опции важны?",
+    hint:"Можно выбрать несколько вариантов",
+    options:[
+      {em:"🛑", label:"Тормоза"},
+      {em:"✨", label:"Оцинковка"},
+      {em:"🔩", label:"Рессоры / торсион"},
+      {em:"🪜", label:"Аппарель"},
+      {em:"⛺", label:"Тент"},
+      {em:"🛞", label:"Запасное колесо"},
+    ]
+  },
+  {
+    key:"budget", type:"single",
+    bubble:"Чтобы предложить лучшие варианты — какой бюджет рассматриваете?",
+    title:"На какой бюджет ориентируетесь?",
+    hint:"Подберём оптимальное соотношение цены и качества",
+    options:[
+      {em:"💸", label:"До 50 000 ₽"},
+      {em:"💵", label:"50 000 – 90 000 ₽"},
+      {em:"💰", label:"90 000 – 150 000 ₽"},
+      {em:"🤑", label:"Более 150 000 ₽"},
+      {em:"💳", label:"Нужна рассрочка"},
+    ]
+  },
+  {
+    key:"timing", type:"single",
+    bubble:"Почти готово! Когда планируете покупку?",
+    title:"Когда планируете покупку?",
+    hint:"От этого зависит, какие акции вам доступны",
+    options:[
+      {em:"🔥", label:"Срочно, готов купить"},
+      {em:"📅", label:"В течение недели"},
+      {em:"🗓️", label:"В течение месяца"},
+      {em:"👀", label:"Пока просто смотрю"},
+    ]
+  },
+  {
+    key:"contact", type:"contact",
+    bubble:"Готово! Подбор почти сформирован. Куда прислать модели и цены со скидкой?",
+    title:"Куда отправить результаты подбора?",
+    hint:"Эксперт пришлёт 3–5 моделей с ценами в течение 15 минут",
+  },
+];
+
+/* =========================================================
+   FAQ
+   ========================================================= */
+const FAQ = [
+  {q:"Почему у вас цены ниже, чем в автосалонах?", a:"Мы работаем напрямую с заводами и официальными дистрибьюторами, без лишних посредников. За счёт этого даём цену ниже розницы — экономия доходит до 40%."},
+  {q:"Прицеп идёт с документами? Можно поставить на учёт?", a:"Да. На каждый прицеп выдаём ПТС, договор и гарантийный талон. Сразу после покупки прицеп можно поставить на учёт в ГИБДД."},
+  {q:"Какая гарантия и что с сервисом?", a:"Официальная гарантия производителя — до 3 лет на раму и узлы. Сервисное обслуживание доступно в большинстве регионов России."},
+  {q:"Как происходит доставка?", a:"Доставляем по всей России транспортной компанией или собственным автовозом. Возможен самовывоз со склада. Стоимость рассчитаем под ваш город."},
+  {q:"Есть ли рассрочка или кредит?", a:"Да — рассрочка 0% до 12 месяцев и кредит от банков-партнёров. Предварительное решение занимает около 15 минут."},
+];
+
+/* =========================================================
+   РЕНДЕР: КАТАЛОГ
+   ========================================================= */
+const catGrid = document.getElementById('catGrid');
+catGrid.innerHTML = PRODUCTS.map(p=>`
+  <article class="product">
+    <div class="ph">
+      <span class="disc">${p.disc}</span>
+      ${p.hit?`<span class="hit">${p.hit}</span>`:''}
+      <span class="emoji">${p.emoji}</span>
+    </div>
+    <div class="body">
+      <h3>${p.name}</h3>
+      <div class="meta">${p.meta}</div>
+      <div class="price-row">
+        <span class="price">${p.price}</span>
+        <span class="old">${p.old}</span>
+      </div>
+      <button class="btn btn-ghost btn-block" data-product="${p.name}">Узнать наличие и цену</button>
+    </div>
+  </article>
+`).join('');
+
+/* =========================================================
+   РЕНДЕР: FAQ
+   ========================================================= */
+const faqList = document.getElementById('faqList');
+faqList.innerHTML = FAQ.map(f=>`
+  <div class="faq-item">
+    <button class="faq-q">${f.q}<span class="ar">+</span></button>
+    <div class="faq-a"><div class="inner">${f.a}</div></div>
+  </div>
+`).join('');
+faqList.querySelectorAll('.faq-item').forEach(item=>{
+  item.querySelector('.faq-q').addEventListener('click',()=>{
+    const open = item.classList.contains('open');
+    faqList.querySelectorAll('.faq-item').forEach(i=>{i.classList.remove('open');i.querySelector('.faq-a').style.maxHeight=null});
+    if(!open){item.classList.add('open');const a=item.querySelector('.faq-a');a.style.maxHeight=a.scrollHeight+'px';}
+  });
+});
+
+/* =========================================================
+   КВИЗ: ЛОГИКА
+   ========================================================= */
+const state = { step:0, answers:{}, channel:"whatsapp" };
+const body = document.getElementById('quizBody');
+const bar = document.getElementById('progressBar');
+const stepCount = document.getElementById('stepCount');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+const footHint = document.getElementById('footHint');
+const quizFoot = document.getElementById('quizFoot');
+
+function renderStep(){
+  const q = QUIZ[state.step];
+  stepCount.textContent = `Шаг ${state.step+1} из ${QUIZ.length}`;
+  bar.style.width = ((state.step)/(QUIZ.length)*100)+'%';
+  btnBack.style.visibility = state.step===0 ? 'hidden':'visible';
+
+  let html = `<div class="q-bubble">${q.bubble}</div><h3 class="q-title">${q.title}</h3><p class="q-hint">${q.hint}</p>`;
+
+  if(q.type==='single' || q.type==='multi'){
+    const sel = state.answers[q.key] || (q.type==='multi'?[]:null);
+    html += `<div class="options">`;
+    q.options.forEach((o,i)=>{
+      const isSel = q.type==='multi' ? sel.includes(o.label) : sel===o.label;
+      html += `<div class="opt ${isSel?'selected':''}" data-opt="${i}">
+        <span class="em">${o.em}</span><span>${o.label}</span><span class="check">✓</span></div>`;
+    });
+    html += `</div>`;
+    btnNext.textContent = 'Далее →';
+  }
+
+  if(q.type==='contact'){
+    const a = state.answers;
+    html += `<div class="fields">
+      <div class="field"><label>Как вас зовут?</label><input id="qName" type="text" placeholder="Ваше имя" value="${a.name||''}"><div class="err" id="errName">Введите имя</div></div>
+      <div class="field"><label>Телефон</label><input id="qPhone" type="tel" placeholder="+7 (___) ___-__-__" value="${a.phone||''}"><div class="err" id="errPhone">Введите корректный телефон</div></div>
+      <div class="field"><label>Куда прислать подбор?</label>
+        <div class="channels" data-channels>
+          <div class="channel ${state.channel==='whatsapp'?'selected':''}" data-channel="whatsapp">🟢 WhatsApp</div>
+          <div class="channel ${state.channel==='telegram'?'selected':''}" data-channel="telegram">🔵 Telegram</div>
+          <div class="channel ${state.channel==='phone'?'selected':''}" data-channel="phone">📞 Звонок</div>
+        </div>
+      </div>
+      <label class="consent"><input type="checkbox" id="qConsent" checked><span>Согласен на обработку персональных данных и принимаю <a href="#" data-open-privacy>политику конфиденциальности</a>.</span></label>
+    </div>`;
+    btnNext.textContent = 'Получить подбор →';
+  }
+
+  body.innerHTML = html;
+  bindStepEvents();
+  updateNextState();
+}
+
+function bindStepEvents(){
+  const q = QUIZ[state.step];
+  // варианты
+  body.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const label = q.options[+el.dataset.opt].label;
+      if(q.type==='single'){
+        state.answers[q.key]=label;
+        body.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+        // авто-переход для single
+        setTimeout(()=>next(),220);
+      }else{ // multi
+        let arr = state.answers[q.key] || [];
+        if(arr.includes(label)) arr = arr.filter(x=>x!==label);
+        else arr = [...arr,label];
+        state.answers[q.key]=arr;
+        el.classList.toggle('selected');
+        updateNextState();
+      }
+    });
+  });
+  // каналы
+  body.querySelectorAll('[data-channels] .channel').forEach(c=>{
+    c.addEventListener('click',()=>{
+      body.querySelectorAll('[data-channels] .channel').forEach(x=>x.classList.remove('selected'));
+      c.classList.add('selected');
+      state.channel = c.dataset.channel;
+    });
+  });
+  // поля контакта
+  const name = body.querySelector('#qName');
+  const phone = body.querySelector('#qPhone');
+  if(name) name.addEventListener('input',()=>{state.answers.name=name.value;updateNextState();});
+  if(phone){phone.addEventListener('input',()=>{state.answers.phone=phone.value;updateNextState();});}
+}
+
+function isPhoneValid(v){return (v||'').replace(/\D/g,'').length>=10;}
+
+function updateNextState(){
+  const q = QUIZ[state.step];
+  let ok=false, hint='';
+  if(q.type==='single'){ ok=!!state.answers[q.key]; hint='Выберите вариант, чтобы продолжить'; }
+  else if(q.type==='multi'){ ok=(state.answers[q.key]||[]).length>0; hint='Можно выбрать несколько вариантов'; }
+  else if(q.type==='contact'){
+    ok = !!(state.answers.name && state.answers.name.trim()) && isPhoneValid(state.answers.phone);
+    hint='Заполните имя и телефон';
+  }
+  btnNext.disabled=!ok;
+  btnNext.style.opacity = ok?'1':'.5';
+  btnNext.style.pointerEvents = ok?'auto':'none';
+  footHint.textContent = ok ? 'Готово, можно продолжать' : hint;
+}
+
+function next(){
+  const q = QUIZ[state.step];
+  if(btnNext.disabled) return;
+  if(q.type==='contact'){ submitQuiz(); return; }
+  if(state.step < QUIZ.length-1){ state.step++; renderStep(); scrollQuizIntoView(); }
+}
+function back(){ if(state.step>0){ state.step--; renderStep(); scrollQuizIntoView(); } }
+
+function scrollQuizIntoView(){
+  const top = document.querySelector('.quiz-wrap').getBoundingClientRect().top + window.scrollY - 90;
+  if(window.scrollY > top || window.scrollY < top-400) window.scrollTo({top,behavior:'smooth'});
+}
+
+btnNext.addEventListener('click',next);
+btnBack.addEventListener('click',back);
+
+/* финал квиза */
+function submitQuiz(){
+  // валидация контактов
+  const a = state.answers;
+  let valid=true;
+  const errName=document.getElementById('errName'), errPhone=document.getElementById('errPhone');
+  if(!a.name || !a.name.trim()){errName&&errName.classList.add('show');valid=false;} else errName&&errName.classList.remove('show');
+  if(!isPhoneValid(a.phone)){errPhone&&errPhone.classList.add('show');valid=false;} else errPhone&&errPhone.classList.remove('show');
+  if(!valid) return;
+
+  const payload = {
+    source:'quiz',
+    use:a.use, capacity:a.capacity, type:a.type,
+    options:(a.options||[]).join(', '),
+    budget:a.budget, timing:a.timing,
+    name:a.name, phone:a.phone, channel:state.channel,
+  };
+  sendLead(payload); // <-- здесь данные уходят (см. функцию sendLead ниже)
+
+  // экран благодарности + сводка
+  bar.style.width='100%';
+  stepCount.textContent='Готово!';
+  quizFoot.style.display='none';
+  const labels={use:'Назначение',capacity:'Грузоподъёмность',type:'Тип',options:'Опции',budget:'Бюджет',timing:'Сроки'};
+  const rows = Object.keys(labels).filter(k=>payload[k]).map(k=>
+    `<div class="row"><span class="k">${labels[k]}</span><span class="v">${payload[k]}</span></div>`
+  ).join('');
+  body.innerHTML = `<div class="quiz-done">
+    <div class="big">🎉</div>
+    <h3>Спасибо, ${escapeHtml(a.name)}!</h3>
+    <p>Эксперт уже формирует подбор из 3–5 моделей под вашу задачу и пришлёт цены со скидкой в ${channelName(state.channel)} в течение 15 минут.</p>
+    <div class="summary">
+      <div class="row"><span class="k">Связь</span><span class="v">${channelName(state.channel)} · ${escapeHtml(a.phone)}</span></div>
+      ${rows}
+    </div>
+    <div style="margin-top:24px"><button class="btn btn-ghost" data-scroll="#catalog">Пока посмотреть каталог</button></div>
+  </div>`;
+  bindGlobalScroll();
+}
+
+function channelName(c){return c==='telegram'?'Telegram':c==='phone'?'по телефону':'WhatsApp';}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+/* =========================================================
+   ОТПРАВКА ЗАЯВКИ
+   ⚠️ Здесь подключается ваш бэкенд / CRM / Telegram-бот.
+   Сейчас данные просто выводятся в консоль + показывается тост.
+   Примеры интеграции — в комментариях ниже.
+   ========================================================= */
+function sendLead(data){
+  console.log('НОВАЯ ЗАЯВКА:', data);
+
+  /* --- Вариант 1: отправка на свой сервер ---
+  fetch('/api/lead', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  */
+
+  /* --- Вариант 2: напрямую в Telegram-бот ---
+  const TOKEN='123:ABC';      // токен бота
+  const CHAT_ID='123456789';  // id чата/группы
+  const text = Object.entries(data).map(([k,v])=>`${k}: ${v}`).join('\n');
+  fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({chat_id:CHAT_ID, text:`🆕 Заявка с сайта\n${text}`})
+  });
+  */
+
+  /* --- Вариант 3: Google Forms / внешний сервис форм ---
+  // подставьте свой endpoint и имена полей
+  */
+
+  showToast('✓ Заявка отправлена! Скоро свяжемся.');
+}
+
+/* =========================================================
+   ФОРМА ВНИЗУ (CTA)
+   ========================================================= */
+const leadForm = document.getElementById('leadForm');
+let leadChannel='whatsapp';
+leadForm.querySelectorAll('[data-channels] .channel').forEach(c=>{
+  c.addEventListener('click',()=>{
+    leadForm.querySelectorAll('[data-channels] .channel').forEach(x=>x.classList.remove('selected'));
+    c.classList.add('selected'); leadChannel=c.dataset.channel;
+  });
+});
+leadForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=leadForm.name.value.trim();
+  const phone=leadForm.phone.value.trim();
+  const errs=leadForm.querySelectorAll('.err');
+  let ok=true;
+  if(!name){errs[0].classList.add('show');ok=false;}else errs[0].classList.remove('show');
+  if(!isPhoneValid(phone)){errs[1].classList.add('show');ok=false;}else errs[1].classList.remove('show');
+  if(!leadForm.consent.checked){showToast('Подтвердите согласие на обработку данных');ok=false;}
+  if(!ok) return;
+  sendLead({source:'cta-form', name, phone, channel:leadChannel});
+  leadForm.reset();
+  leadForm.querySelectorAll('[data-channels] .channel').forEach((x,i)=>x.classList.toggle('selected',i===0));
+  leadChannel='whatsapp';
+});
+
+/* =========================================================
+   ТОВАР → ВЕДЁМ В КВИЗ
+   ========================================================= */
+document.addEventListener('click',e=>{
+  const p=e.target.closest('[data-product]');
+  if(p){ scrollTo('#quiz'); }
+});
+
+/* =========================================================
+   МОДАЛКА (политика конфиденциальности)
+   ========================================================= */
+const modal=document.getElementById('modal');
+const modalContent=document.getElementById('modalContent');
+const PRIVACY_HTML = `
+  <h3>Политика конфиденциальности</h3>
+  <p class="m-sub">Демонстрационный текст — замените на актуальную редакцию вашей компании.</p>
+  <div class="legal-text">
+    <p>Настоящая политика описывает порядок обработки персональных данных пользователей сайта.</p>
+    <h4>1. Какие данные собираются</h4>
+    <p>Имя, номер телефона и выбранный способ связи, которые вы указываете в формах и квизе.</p>
+    <h4>2. Цель обработки</h4>
+    <p>Подбор товара, расчёт стоимости и связь с вами по вашему запросу.</p>
+    <h4>3. Хранение и защита</h4>
+    <p>Данные не передаются третьим лицам, кроме случаев, предусмотренных законом, и используются только для обработки вашей заявки.</p>
+    <h4>4. Согласие и отзыв</h4>
+    <p>Отправляя форму, вы даёте согласие на обработку данных. Вы можете отозвать его, связавшись с нами по контактам, указанным на сайте.</p>
+  </div>
+`;
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-open-privacy]')){ e.preventDefault(); modalContent.innerHTML=PRIVACY_HTML; modal.classList.add('open'); }
+  if(e.target.closest('[data-close-modal]') || e.target===modal){ modal.classList.remove('open'); }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') modal.classList.remove('open'); });
+
+/* =========================================================
+   НАВИГАЦИЯ / СКРОЛЛ / БУРГЕР / ТОСТ
+   ========================================================= */
+function scrollTo(sel){
+  const el=document.querySelector(sel); if(!el) return;
+  const top=el.getBoundingClientRect().top+window.scrollY-72;
+  window.scrollTo({top,behavior:'smooth'});
+}
+function bindGlobalScroll(){
+  document.querySelectorAll('[data-scroll]').forEach(b=>{
+    if(b._bound) return; b._bound=true;
+    b.addEventListener('click',()=>scrollTo(b.dataset.scroll));
+  });
+}
+bindGlobalScroll();
+document.querySelectorAll('.nav-links a').forEach(a=>{
+  a.addEventListener('click',()=>document.getElementById('navLinks').classList.remove('open'));
+});
+document.getElementById('burger').addEventListener('click',()=>{
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* старт */
+renderStep();
+</script>
+</body>
+</html>
