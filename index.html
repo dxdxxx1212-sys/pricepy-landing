@@ -1327,6 +1327,7 @@ function bindStepEvents(){
         state.answers[q.key]=label;
         body.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
         el.classList.add('selected');
+        updateNextState();        // включаем кнопку «Далее»
         // авто-переход для single
         setTimeout(()=>next(),220);
       }else{ // multi
@@ -1519,7 +1520,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') modal.classList.re
 /* =========================================================
    НАВИГАЦИЯ / СКРОЛЛ / БУРГЕР / ТОСТ
    ========================================================= */
-function scrollTo(sel){
+function scrollToEl(sel){
   const el=document.querySelector(sel); if(!el) return;
   const top=el.getBoundingClientRect().top+window.scrollY-72;
   window.scrollTo({top,behavior:'smooth'});
@@ -1527,7 +1528,7 @@ function scrollTo(sel){
 function bindGlobalScroll(){
   document.querySelectorAll('[data-scroll]').forEach(b=>{
     if(b._bound) return; b._bound=true;
-    b.addEventListener('click',()=>scrollTo(b.dataset.scroll));
+    b.addEventListener('click',()=>scrollToEl(b.dataset.scroll));
   });
 }
 bindGlobalScroll();
