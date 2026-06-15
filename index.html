@@ -224,6 +224,17 @@
   .pm-desc{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:18px}
   .pm-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .pm-acts .btn{padding:13px;font-size:14px}
+  .pm-section{margin-bottom:18px}
+  .pm-section h4{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 11px}
+  .pm-list{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+  .pm-list li{position:relative;padding-left:25px;font-size:14px;line-height:1.5}
+  .pm-list li:before{content:"✓";position:absolute;left:0;top:0;color:var(--green);font-weight:900}
+  .pm-tech{margin:0;padding:0;list-style:none}
+  .pm-tech li{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .pm-tech li:last-child{border-bottom:none}
+  .pm-tech li span{color:var(--muted)}
+  .pm-tech li b{text-align:right;font-weight:700;white-space:nowrap}
+  .modal.wide{max-width:600px}
 
   /* адаптив каталога */
   @media(max-width:980px){
@@ -755,7 +766,27 @@ const PRICE_MIN=60660, PRICE_MAX=390000;
 
 /* Товары. Названия, цены и характеристики — данные каталога; описания — текст для попапа. */
 const PRODUCTS = [
-  {id:1, emoji:"🛻", name:'Прицеп для мототехники и других грузов МЗСА 817712', brand:"МЗСА", price:66384, old:null, sold:"4 дня назад", kuzov:"2500 × 1560 × 330", gabarit:"3760×2007", gruz:363, massa:750, axes:1, material:"Оцинкованная сталь", desc:"Универсальный одноосный прицеп для перевозки мототехники, садового инвентаря и бытовых грузов. Откидной задний борт, проушины для крепления груза."},
+  {id:1, emoji:"🛻", name:'Прицеп для мототехники и других грузов МЗСА 817712', brand:"МЗСА", price:66384, old:null, sold:"4 дня назад", kuzov:"3009×1511×290", gabarit:"4351×1992×848", gruz:363, massa:750, axes:1, material:"Оцинкованная сталь",
+   intro:"Предназначен для перевозки мотоциклов, квадрициклов и прочей малой техники с максимальным уровнем комфорта и надёжности.",
+   advantages:[
+     "Устойчивый стальной корпус гарантирует долгую службу и сохранность груза.",
+     "Конструкция оснащена механизмом блокировки колёс для предотвращения смещений груза.",
+     "Большие размеры позволяют разместить крупную технику и дополнительный груз.",
+     "Резиновая подложка пола защищает от царапин и продлевает срок службы покрытия.",
+     "Прочные крепления повышают уровень безопасности водителя и пассажиров."
+   ],
+   tech:[
+     ["Полная масса","750 кг"],
+     ["Грузоподъёмность","750 кг"],
+     ["Снаряжённая масса","249 кг"],
+     ["Габаритные размеры","4351×1992×848 мм"],
+     ["Размеры кузова","3009×1511×290 мм"],
+     ["Погрузочная высота","557 мм"],
+     ["Подвеска","рессорная"],
+     ["Кол-во листов рессоры","4 листа"],
+     ["Кол-во осей/колёс","1/2"],
+     ["Нагрузка на одну ось","750 кг"]
+   ]},
   {id:2, emoji:"🛻", name:'Прицеп для перевозки квадроциклов и крупногабаритных грузов МЗСА 817736 нач', brand:"МЗСА", price:117504, old:null, sold:"вчера", kuzov:"2453 × 1231 × 1520", gabarit:"3780 × 1803 × 2297", gruz:426, massa:1300, axes:2, material:"Оцинкованная сталь", desc:"Двухосный прицеп с увеличенной платформой под квадроциклы, снегоходы и крупногабаритный груз. Уверенная устойчивость на трассе за счёт двух осей."},
   {id:3, emoji:"🛻", name:'Прицеп для дачи и мототехники (с высоким бортом) МЗСА 817704', brand:"МЗСА", price:62208, old:null, sold:"4 дня назад", kuzov:"2430 × 1667 × 300", gabarit:"3720 × 1800 × 760", gruz:344, massa:720, axes:1, material:"Оцинкованная сталь", desc:"Лёгкий одноосный прицеп с высокими бортами для дачи, стройматериалов и техники. Компактный и манёвренный, легко буксируется любым авто."},
   {id:4, emoji:"🛻", name:'Прицеп "OFF-ROAD" для мототехники и других грузов МЗСА 817718', brand:"МЗСА", price:125280, old:null, sold:"3 дня назад", kuzov:"2440×1510×500", gabarit:"3845 × 1800 × 990", gruz:490, massa:1000, axes:1, material:"Оцинкованная сталь", desc:"Внедорожная версия с увеличенным клиренсом и усиленной подвеской. Для выездов на природу, рыбалки и охоты по бездорожью."},
@@ -1027,6 +1058,17 @@ function addToCart(id){
 /* --- попап с подробной информацией --- */
 function openProduct(id){
   const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
+  const descText = p.intro || p.desc;
+  const adv = (p.advantages && p.advantages.length)
+    ? `<div class="pm-section"><h4>Преимущества</h4><ul class="pm-list">${p.advantages.map(a=>`<li>${a}</li>`).join('')}</ul></div>` : '';
+  const techRows = (p.tech && p.tech.length)
+    ? p.tech
+    : [
+        ['Бренд',p.brand],['Количество осей',p.axes],
+        ['Размеры кузова, мм',p.kuzov],['Габаритные размеры, мм',p.gabarit],
+        ['Грузоподъёмность, кг',p.gruz],['Полная масса, кг',p.massa],
+        ['Материал кузова',p.material]
+      ];
   modalContent.innerHTML = `
     <div class="pm-head">
       <div class="pm-photo"><span>${p.emoji}</span><span class="sold">${soldLabel(p.sold)}</span></div>
@@ -1036,20 +1078,16 @@ function openProduct(id){
         <div class="pm-price"><span class="p">${fmt(p.price)}</span>${p.old?`<span class="o">${fmt(p.old)}</span>`:''}</div>
       </div>
     </div>
-    <table class="pm-specs">
-      <tr><td>Бренд</td><td>${p.brand}</td></tr>
-      <tr><td>Количество осей</td><td>${p.axes}</td></tr>
-      <tr><td>Размеры кузова, мм</td><td>${p.kuzov}</td></tr>
-      <tr><td>Габаритные размеры, мм</td><td>${p.gabarit}</td></tr>
-      <tr><td>Грузоподъёмность, кг</td><td>${p.gruz}</td></tr>
-      <tr><td>Полная масса, кг</td><td>${p.massa}</td></tr>
-      <tr><td>Материал кузова</td><td>${p.material}</td></tr>
-    </table>
-    <p class="pm-desc">${p.desc}</p>
+    ${descText?`<p class="pm-desc">${descText}</p>`:''}
+    ${adv}
+    <div class="pm-section"><h4>Технические характеристики</h4>
+      <ul class="pm-tech">${techRows.map(t=>`<li><span>${t[0]}</span><b>${t[1]}</b></li>`).join('')}</ul>
+    </div>
     <div class="pm-acts">
       <button class="btn btn-primary" data-cart="${p.id}">Уточнить цену и наличие</button>
       <button class="btn btn-ghost" data-scroll="#quiz" data-close-after>Подобрать похожий</button>
     </div>`;
+  modalContent.closest('.modal').classList.add('wide');
   modal.classList.add('open');
   bindGlobalScroll();
 }
@@ -1330,7 +1368,7 @@ const PRIVACY_HTML = `
   </div>
 `;
 document.addEventListener('click',e=>{
-  if(e.target.closest('[data-open-privacy]')){ e.preventDefault(); modalContent.innerHTML=PRIVACY_HTML; modal.classList.add('open'); }
+  if(e.target.closest('[data-open-privacy]')){ e.preventDefault(); modalContent.innerHTML=PRIVACY_HTML; modalContent.closest('.modal').classList.remove('wide'); modal.classList.add('open'); }
   if(e.target.closest('[data-close-modal]') || e.target===modal){ modal.classList.remove('open'); }
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') modal.classList.remove('open'); });
