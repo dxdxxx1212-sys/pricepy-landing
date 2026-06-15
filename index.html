@@ -140,33 +140,103 @@
 
   /* ====================== КАТАЛОГ ====================== */
   .catalog{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-  .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:46px}
+
+  /* панель: поиск / сортировка / корзина */
+  .cat-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:36px}
+  .cat-search{position:relative;flex:1;min-width:220px}
+  .cat-search input{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:13px 42px 13px 16px;color:var(--text);font-size:15px;font-family:inherit}
+  .cat-search input:focus{outline:none;border-color:var(--accent)}
+  .cat-search .ic{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+  .cat-sort{background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;cursor:pointer}
+  .cat-cart{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:11px 16px;font-weight:700;white-space:nowrap}
+  .cat-cart .cnt{background:var(--accent);color:var(--accent-ink);min-width:22px;height:22px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:800;padding:0 6px}
+
+  /* раскладка: фильтры + товары */
+  .cat-layout{display:grid;grid-template-columns:268px 1fr;gap:28px;margin-top:22px;align-items:start}
+  .filters-toggle{display:none;width:100%;justify-content:center;margin-bottom:14px}
+
+  /* фильтры */
+  .cat-filters{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 20px 20px;position:sticky;top:88px}
+  .fgroup{border-bottom:1px solid var(--line);padding:18px 0}
+  .fgroup:last-child{border-bottom:none}
+  .fgroup h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px}
+  .fopt{display:flex;align-items:center;gap:10px;padding:5px 0;cursor:pointer;font-size:14.5px}
+  .fopt input{width:18px;height:18px;accent-color:var(--accent);flex:none;cursor:pointer}
+  .fopt.hidden{display:none}
+  .fshowall{background:none;border:none;color:var(--accent);font-size:13.5px;font-weight:700;padding:9px 0 0;cursor:pointer}
+  .fshowall span{border-bottom:1px dashed var(--accent)}
+  .price-inputs{display:flex;align-items:center;gap:8px}
+  .price-inputs input{width:100%;background:var(--card-2);border:1.5px solid var(--line);border-radius:9px;padding:10px;color:var(--text);font-size:14px;font-family:inherit;text-align:center}
+  .price-inputs input:focus{outline:none;border-color:var(--accent)}
+  .price-inputs .dash{color:var(--muted);flex:none}
+  .cat-range{width:100%;margin-top:14px;accent-color:var(--accent)}
+  .freset{width:100%;margin-top:6px;background:var(--card-2);border:1.5px solid var(--line);color:var(--text);border-radius:10px;padding:11px;font-weight:700;cursor:pointer}
+  .freset:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* сетка товаров */
+  .cat-count{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .cat-count b{color:var(--text)}
+  .cat-products{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
   .product{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
     display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s
   }
-  .product:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+  .product:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
   .product .ph{
     aspect-ratio:4/3;display:grid;place-items:center;position:relative;
     background:linear-gradient(135deg,#eef2fb,#fbf3ec)
   }
-  .product .ph .emoji{font-size:64px}
+  .product .ph .emoji{font-size:58px;filter:drop-shadow(0 6px 12px rgba(30,41,59,.14))}
+  .product .sold{
+    position:absolute;top:12px;right:12px;width:64px;height:64px;border-radius:50%;
+    background:var(--accent);color:#fff;font-weight:800;font-size:10.5px;line-height:1.18;
+    text-align:center;display:grid;place-items:center;padding:6px;box-shadow:0 6px 16px rgba(251,126,45,.4)
+  }
   .product .disc{
     position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-weight:800;
-    font-size:13px;padding:5px 11px;border-radius:8px
+    font-size:12px;padding:5px 10px;border-radius:8px
   }
-  .product .hit{
-    position:absolute;top:12px;right:12px;background:var(--accent);color:var(--accent-ink);font-weight:800;
-    font-size:12px;padding:5px 11px;border-radius:8px
+  .product .body{padding:18px;display:flex;flex-direction:column;flex:1}
+  .product .brandtag{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--accent);text-transform:uppercase;margin-bottom:7px}
+  .product h3{font-size:15.5px;line-height:1.3;margin-bottom:10px}
+  .product .price-row{display:flex;align-items:baseline;gap:9px;margin:auto 0 14px}
+  .product .price{font-size:20px;font-weight:900}
+  .product .old{color:var(--muted);text-decoration:line-through;font-size:14px}
+  .product .acts{display:grid;gap:9px}
+  .product .acts .btn{padding:12px;font-size:14px}
+  .cat-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
+  .cat-empty .big{font-size:46px;margin-bottom:10px}
+
+  /* модалка товара */
+  .pm-head{display:flex;gap:16px;margin-bottom:16px}
+  .pm-photo{width:124px;height:100px;flex:none;border-radius:12px;background:linear-gradient(135deg,#eef2fb,#fbf3ec);display:grid;place-items:center;font-size:46px;border:1px solid var(--line);position:relative}
+  .pm-photo .sold{position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:9px;line-height:1.1;text-align:center;display:grid;place-items:center;padding:5px}
+  .pm-brandtag{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+  .pm-head h3{font-size:18px;margin-bottom:9px;line-height:1.25}
+  .pm-price{display:flex;align-items:baseline;gap:10px}
+  .pm-price .p{font-size:22px;font-weight:900}
+  .pm-price .o{color:var(--muted);text-decoration:line-through;font-size:15px}
+  .pm-specs{width:100%;border-collapse:collapse;margin:4px 0 16px}
+  .pm-specs td{padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+  .pm-specs tr:last-child td{border-bottom:none}
+  .pm-specs td:first-child{color:var(--muted);width:50%}
+  .pm-specs td:last-child{font-weight:700;text-align:right}
+  .pm-desc{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:18px}
+  .pm-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pm-acts .btn{padding:13px;font-size:14px}
+
+  /* адаптив каталога */
+  @media(max-width:980px){
+    .cat-layout{grid-template-columns:1fr}
+    .cat-filters{position:static;display:none}
+    .cat-filters.open{display:block}
+    .filters-toggle{display:flex}
+    .cat-products{grid-template-columns:repeat(2,1fr)}
   }
-  .product .body{padding:20px;display:flex;flex-direction:column;flex:1}
-  .product h3{font-size:18px;margin-bottom:6px}
-  .product .meta{color:var(--muted);font-size:13.5px;margin-bottom:16px;min-height:38px}
-  .product .price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
-  .product .price{font-size:24px;font-weight:900}
-  .product .old{color:var(--muted);text-decoration:line-through;font-size:15px}
-  .product .body .btn{margin-top:auto}
-  .cat-foot{text-align:center;margin-top:42px}
+  @media(max-width:560px){
+    .cat-products{grid-template-columns:1fr}
+    .pm-acts{grid-template-columns:1fr}
+  }
 
   /* ====================== КВИЗ ====================== */
   .quiz-sec{padding:80px 0}
@@ -348,7 +418,7 @@
   /* ====================== АДАПТИВ ====================== */
   @media(max-width:920px){
     .hero-grid{grid-template-columns:1fr;gap:36px}
-    .feat-grid,.cat-grid,.rev-grid{grid-template-columns:repeat(2,1fr)}
+    .feat-grid,.rev-grid{grid-template-columns:repeat(2,1fr)}
     .cta-box{grid-template-columns:1fr;padding:34px}
     .foot-grid{grid-template-columns:1fr 1fr}
   }
@@ -362,7 +432,7 @@
     .burger{display:block}
     .nav-phone span{display:none}
     .nav-phone{font-size:15px}
-    .feat-grid,.cat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
+    .feat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
     .options{grid-template-columns:1fr}
     .quiz-body{padding:26px 20px}
     .quiz-top,.quiz-foot{padding-left:20px;padding-right:20px}
@@ -454,13 +524,38 @@
 
 <!-- ============ КАТАЛОГ ============ -->
 <section class="catalog" id="catalog">
-  <div class="container center">
-    <span class="eyebrow">Хиты продаж</span>
-    <h2 class="section-title">Популярные модели со скидкой</h2>
-    <p class="section-sub">Топовые позиции этого сезона. Цены указаны со скидкой при покупке через подбор. Наличие уточняйте — обновляем ежедневно.</p>
-    <div class="cat-grid" id="catGrid"><!-- товары рендерятся скриптом --></div>
-    <div class="cat-foot">
-      <button class="btn btn-primary btn-lg" data-scroll="#quiz">Подобрать прицеп под мою задачу →</button>
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Каталог прицепов</span>
+      <h2 class="section-title">Уточните наличие понравившейся модели или подберите персонально</h2>
+      <p class="section-sub">Бортовые, двухосные, для мототехники, лодок и коммерции. Отфильтруйте по бренду, размерам и массе или воспользуйтесь поиском.</p>
+    </div>
+
+    <div class="cat-toolbar">
+      <div class="cat-search">
+        <input type="search" id="catSearchInput" placeholder="Поиск по названию или модели…" autocomplete="off">
+        <span class="ic">🔍</span>
+      </div>
+      <select class="cat-sort" id="catSort" aria-label="Сортировка">
+        <option value="default">Сортировка: по умолчанию</option>
+        <option value="price-asc">Цена: по возрастанию</option>
+        <option value="price-desc">Цена: по убыванию</option>
+        <option value="name">По названию (А–Я)</option>
+      </select>
+      <div class="cat-cart" title="Запрошено цен и наличия">🛒 Корзина <span class="cnt" id="cartCount">0</span></div>
+    </div>
+
+    <button class="btn btn-ghost filters-toggle" id="filtersToggle">⚙️ Показать фильтры</button>
+
+    <div class="cat-layout">
+      <aside class="cat-filters" id="catFilters"><!-- фильтры рендерятся скриптом --></aside>
+      <div>
+        <div class="cat-count" id="catCount"></div>
+        <div class="cat-products" id="catGrid"><!-- товары рендерятся скриптом --></div>
+        <div class="cat-foot center" style="margin-top:38px">
+          <button class="btn btn-primary btn-lg" data-scroll="#quiz">Не нашли подходящий? Подобрать персонально →</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -650,13 +745,32 @@
    ДАННЫЕ: КАТАЛОГ
    Замените на свои товары/цены/картинки.
    ========================================================= */
+/* Значения фильтров (как на референсе) */
+const F_BRANDS=["ALASKA","GTS","Кремень","Крепыш","Липецкие прицепы","МЗСА","ССТ","Титан","Трейлер"];
+const F_KUZOV=["2430 × 1667 × 300","2435 × 1371 × 1490","2435x1371x470","2440×1510×500","2453 × 1231 × 1520","2460 × 1230 × 400","2460 × 1500 × 400","2500 × 1560 × 330","2500мм 1500мм 300мм","2735x1511x290"];
+const F_GABARIT=["3720 × 1800 × 760","3750 × 2070 × 890","3760×2007","3777x1852x1028","3780 × 1803 × 2297","3780мм 2002мм 960мм","3820 × 2000 × 760","3845 × 1800 × 990","4077x1992x848","4200 × 2100 × 810"];
+const F_GRUZ=[344,345,363,400,426,440,483,490,507,518];
+const F_MASSA=[720,745,750,1000,1300,2500,2700,3000,3500];
+const PRICE_MIN=60660, PRICE_MAX=390000;
+
+/* Товары. Названия, цены и характеристики — данные каталога; описания — текст для попапа. */
 const PRODUCTS = [
-  {emoji:"🛻", name:"Бортовой 1-осный 750 кг", meta:"Универсальный прицеп для дачи, стройки и грузов", price:"54 900 ₽", old:"79 900 ₽", disc:"−31%", hit:"ХИТ"},
-  {emoji:"⛵", name:"Лодочный под катер 6 м", meta:"Регулируемые ложементы, лебёдка, оцинковка", price:"112 000 ₽", old:"159 000 ₽", disc:"−30%"},
-  {emoji:"🏍️", name:"Для мото/квадроцикла", meta:"С аппарелью и креплениями, низкая погрузка", price:"68 500 ₽", old:"94 000 ₽", disc:"−27%", hit:"ХИТ"},
-  {emoji:"🚜", name:"Самосвальный 2000 кг", meta:"Двухосный, гидроподъём, тормоза — для хозяйств", price:"189 000 ₽", old:"259 000 ₽", disc:"−27%"},
-  {emoji:"📦", name:"Фургон с тентом 1500 кг", meta:"Высокий тент, бизнес-доставка, оцинковка", price:"143 000 ₽", old:"198 000 ₽", disc:"−28%"},
-  {emoji:"🚙", name:"Эконом 500 кг под легковой", meta:"Лёгкий старт: рыбалка, охота, переезды", price:"39 900 ₽", old:"57 000 ₽", disc:"−30%", hit:"ВЫГОДА"},
+  {id:1, emoji:"🛻", name:'Прицеп для мототехники и других грузов МЗСА 817712', brand:"МЗСА", price:66384, old:null, sold:"4 дня назад", kuzov:"2500 × 1560 × 330", gabarit:"3760×2007", gruz:363, massa:750, axes:1, material:"Оцинкованная сталь", desc:"Универсальный одноосный прицеп для перевозки мототехники, садового инвентаря и бытовых грузов. Откидной задний борт, проушины для крепления груза."},
+  {id:2, emoji:"🛻", name:'Прицеп для перевозки квадроциклов и крупногабаритных грузов МЗСА 817736 нач', brand:"МЗСА", price:117504, old:null, sold:"вчера", kuzov:"2453 × 1231 × 1520", gabarit:"3780 × 1803 × 2297", gruz:426, massa:1300, axes:2, material:"Оцинкованная сталь", desc:"Двухосный прицеп с увеличенной платформой под квадроциклы, снегоходы и крупногабаритный груз. Уверенная устойчивость на трассе за счёт двух осей."},
+  {id:3, emoji:"🛻", name:'Прицеп для дачи и мототехники (с высоким бортом) МЗСА 817704', brand:"МЗСА", price:62208, old:null, sold:"4 дня назад", kuzov:"2430 × 1667 × 300", gabarit:"3720 × 1800 × 760", gruz:344, massa:720, axes:1, material:"Оцинкованная сталь", desc:"Лёгкий одноосный прицеп с высокими бортами для дачи, стройматериалов и техники. Компактный и манёвренный, легко буксируется любым авто."},
+  {id:4, emoji:"🛻", name:'Прицеп "OFF-ROAD" для мототехники и других грузов МЗСА 817718', brand:"МЗСА", price:125280, old:null, sold:"3 дня назад", kuzov:"2440×1510×500", gabarit:"3845 × 1800 × 990", gruz:490, massa:1000, axes:1, material:"Оцинкованная сталь", desc:"Внедорожная версия с увеличенным клиренсом и усиленной подвеской. Для выездов на природу, рыбалки и охоты по бездорожью."},
+  {id:5, emoji:"🚚", name:'Прицеп для стройматериалов и коммерческих перевозок МЗСА 817735 нач', brand:"МЗСА", price:124416, old:null, sold:"2 дня назад", kuzov:"2735x1511x290", gabarit:"4077x1992x848", gruz:507, massa:1300, axes:2, material:"Оцинкованная сталь", desc:"Двухосный прицеп с удлинённой платформой под стройматериалы и коммерческие грузы. Откидные борта для удобной погрузки."},
+  {id:6, emoji:"🚚", name:'Прицеп для мототехники и коммерческих перевозок МЗСА В 3515-1.13', brand:"МЗСА", price:166320, old:null, sold:"2 дня назад", kuzov:"2435 × 1371 × 1490", gabarit:"3750 × 2070 × 890", gruz:440, massa:1300, axes:2, material:"Оцинкованная сталь", desc:"Двухосный прицеп для регулярных коммерческих перевозок и транспортировки техники. Надёжная тормозная система и плавный ход."},
+  {id:7, emoji:"🚚", name:'Прицеп с алюминиевыми бортами МЗСА В 3520-2.25', brand:"МЗСА", price:291312, old:null, sold:"вчера", kuzov:"2460 × 1500 × 400", gabarit:"4200 × 2100 × 810", gruz:518, massa:2500, axes:2, material:"Алюминиевые борта", desc:"Двухосный прицеп с лёгкими алюминиевыми бортами и большой грузоподъёмностью. Меньше собственный вес — больше полезная нагрузка."},
+  {id:8, emoji:"🚚", name:'Прицеп двухосный с алюминиевыми бортами МЗСА 817732', brand:"МЗСА", price:125856, old:null, sold:"3 дня назад", kuzov:"2500 × 1560 × 330", gabarit:"3820 × 2000 × 760", gruz:483, massa:1300, axes:2, material:"Алюминиевые борта", desc:"Двухосная платформа с алюминиевыми бортами для дачи и коммерции. Устойчивость на дороге и долговечность кузова."},
+  {id:9, emoji:"🚚", name:'Прицеп для мототехники и коммерческих перевозок МЗСА В 3520-1.13', brand:"МЗСА", price:188640, old:null, sold:"4 дня назад", kuzov:"2460 × 1230 × 400", gabarit:"3777x1852x1028", gruz:400, massa:1000, axes:2, material:"Оцинкованная сталь", desc:"Двухосный прицеп для перевозки мототехники и коммерческих грузов. Сбалансированная развесовка и плавный ход на трассе."},
+  {id:10, emoji:"🛻", name:'Прицеп для коммерческих перевозок МЗСА 817739', brand:"МЗСА", price:131616, old:null, sold:"4 дня назад", kuzov:"2500мм 1500мм 300мм", gabarit:"3780мм 2002мм 960мм", gruz:345, massa:745, axes:1, material:"Оцинкованная сталь", desc:"Одноосный прицеп для коммерческих задач и регулярной эксплуатации. Простое обслуживание и низкая стоимость владения."},
+  {id:11, emoji:"🚚", name:'Прицеп для коммерческих перевозок МЗСА Н 3621-2.30', brand:"МЗСА", price:320400, old:null, sold:"3 дня назад", kuzov:"2735x1511x290", gabarit:"4200 × 2100 × 810", gruz:518, massa:3500, axes:2, material:"Оцинкованная сталь", desc:"Тяжёлый двухосный прицеп с полной массой до 3500 кг для интенсивной коммерческой эксплуатации и крупных грузов."},
+  {id:12, emoji:"📦", name:'Прицеп МЗСА 817704.022 с крышкой', brand:"МЗСА", price:118650, old:null, sold:"3 дня назад", kuzov:"2430 × 1667 × 300", gabarit:"3720 × 1800 × 760", gruz:344, massa:720, axes:1, material:"Оцинкованная сталь + крышка", desc:"Одноосный прицеп с жёсткой крышкой-кофром: груз защищён от дождя и пыли. Удобно для переездов и перевозки инструмента."},
+  {id:13, emoji:"📦", name:'МЗСА 817732.012 с пластиковой крышкой 149 см', brand:"МЗСА", price:188490, old:null, sold:"4 дня назад", kuzov:"2435x1371x470", gabarit:"3820 × 2000 × 760", gruz:483, massa:1300, axes:2, material:"Сталь + пластиковая крышка", desc:"Двухосный прицеп с высокой пластиковой крышкой (149 см): возит мотоцикл или габаритный груз в закрытом сухом объёме."},
+  {id:14, emoji:"🛻", name:'Прицеп Крепыш 2 821303', brand:"Крепыш", price:66160, old:82700, sold:"4 дня назад", kuzov:"2435 × 1371 × 1490", gabarit:"3750 × 2070 × 890", gruz:363, massa:750, axes:1, material:"Оцинкованная сталь", desc:"Популярный одноосный прицеп «Крепыш» для дачи и бытовых грузов. Сейчас доступен по сниженной цене."},
+  {id:15, emoji:"🚚", name:'Прицеп Трейлер 829820 5,0 КПП ++', brand:"Трейлер", price:390000, old:null, sold:"вчера", kuzov:"2460 × 1500 × 400", gabarit:"4200 × 2100 × 810", gruz:518, massa:3000, axes:2, material:"Сталь, каркас под тент (КПП)", desc:"Длинный двухосный прицеп 5,0 м с каркасом под тент (КПП) для перевозки длинномеров и крупных грузов под закрытым тентом."},
+  {id:16, emoji:"🚚", name:'Прицеп МЗСА 817731.022 Две оси', brand:"МЗСА", price:93600, old:null, sold:"3 дня назад", kuzov:"2453 × 1231 × 1520", gabarit:"3780 × 1803 × 2297", gruz:507, massa:2700, axes:2, material:"Оцинкованная сталь", desc:"Двухосный бортовой прицеп для уверенной перевозки тяжёлых и габаритных грузов с хорошей курсовой устойчивостью."},
 ];
 
 /* =========================================================
@@ -764,27 +878,191 @@ const FAQ = [
 ];
 
 /* =========================================================
-   РЕНДЕР: КАТАЛОГ
+   КАТАЛОГ: ФИЛЬТРЫ, ПОИСК, СОРТИРОВКА, КОРЗИНА, ПОПАП
    ========================================================= */
+const fmt = n => n.toLocaleString('ru-RU') + ' ₽';
+const soldLabel = s => 'Продан ' + s;
+
 const catGrid = document.getElementById('catGrid');
-catGrid.innerHTML = PRODUCTS.map(p=>`
-  <article class="product">
-    <div class="ph">
-      <span class="disc">${p.disc}</span>
-      ${p.hit?`<span class="hit">${p.hit}</span>`:''}
-      <span class="emoji">${p.emoji}</span>
+const catCount = document.getElementById('catCount');
+const catFilters = document.getElementById('catFilters');
+const searchInput = document.getElementById('catSearchInput');
+const sortSelect = document.getElementById('catSort');
+const cartCountEl = document.getElementById('cartCount');
+let cart = 0;
+
+/* --- построение групп фильтров --- */
+function checkboxGroup(key, title, values, collapseAfter){
+  const opts = values.map((v,i)=>{
+    const extra = collapseAfter && i>=collapseAfter;
+    return `<label class="fopt ${extra?'hidden':''}" data-extra="${extra?1:0}">
+      <input type="checkbox" data-fkey="${key}" value="${String(v).replace(/"/g,'&quot;')}"><span>${v}</span></label>`;
+  }).join('');
+  const showAll = (collapseAfter && values.length>collapseAfter)
+    ? `<button class="fshowall" data-showall><span>Показать все (${values.length})</span></button>` : '';
+  return `<div class="fgroup"><h4>${title}</h4>${opts}${showAll}</div>`;
+}
+
+catFilters.innerHTML =
+  checkboxGroup('brand','Бренд',F_BRANDS,0) +
+  checkboxGroup('kuzov','Размеры кузова, мм',F_KUZOV,7) +
+  checkboxGroup('gabarit','Габаритные размеры, мм',F_GABARIT,7) +
+  checkboxGroup('gruz','Грузоподъёмность, кг',F_GRUZ,7) +
+  checkboxGroup('massa','Полная масса, кг',F_MASSA,0) +
+  `<div class="fgroup"><h4>Цена, ₽</h4>
+    <div class="price-inputs">
+      <input type="number" id="priceMin" value="${PRICE_MIN}" min="${PRICE_MIN}" max="${PRICE_MAX}" step="1000">
+      <span class="dash">—</span>
+      <input type="number" id="priceMax" value="${PRICE_MAX}" min="${PRICE_MIN}" max="${PRICE_MAX}" step="1000">
     </div>
-    <div class="body">
-      <h3>${p.name}</h3>
-      <div class="meta">${p.meta}</div>
-      <div class="price-row">
-        <span class="price">${p.price}</span>
-        <span class="old">${p.old}</span>
+    <input type="range" class="cat-range" id="priceRange" min="${PRICE_MIN}" max="${PRICE_MAX}" value="${PRICE_MAX}" step="1000">
+  </div>
+  <button class="freset" id="filtersReset">Сбросить фильтры</button>`;
+
+const priceMin = document.getElementById('priceMin');
+const priceMax = document.getElementById('priceMax');
+const priceRange = document.getElementById('priceRange');
+
+/* «Показать все» в группе */
+catFilters.querySelectorAll('[data-showall]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    btn.closest('.fgroup').querySelectorAll('.fopt[data-extra="1"]').forEach(o=>o.classList.remove('hidden'));
+    btn.remove();
+  });
+});
+
+/* связь ползунка и поля «до» */
+priceRange.addEventListener('input',()=>{ priceMax.value=priceRange.value; apply(); });
+priceMax.addEventListener('input',()=>{
+  const v=Math.min(Math.max(+priceMax.value||PRICE_MAX,PRICE_MIN),PRICE_MAX);
+  priceRange.value=v; apply();
+});
+priceMin.addEventListener('input',apply);
+
+/* реакция на фильтры/поиск/сортировку */
+catFilters.addEventListener('change',e=>{ if(e.target.matches('input[type="checkbox"]')) apply(); });
+searchInput.addEventListener('input',apply);
+sortSelect.addEventListener('change',apply);
+document.getElementById('filtersReset').addEventListener('click',()=>{
+  catFilters.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
+  priceMin.value=PRICE_MIN; priceMax.value=PRICE_MAX; priceRange.value=PRICE_MAX;
+  searchInput.value=''; sortSelect.value='default'; apply();
+});
+
+/* мобильный показ/скрытие фильтров */
+document.getElementById('filtersToggle').addEventListener('click',e=>{
+  const open=catFilters.classList.toggle('open');
+  e.currentTarget.textContent = open ? '⚙️ Скрыть фильтры' : '⚙️ Показать фильтры';
+});
+
+/* --- применение фильтров --- */
+function checkedValues(key){
+  return [...catFilters.querySelectorAll(`input[data-fkey="${key}"]:checked`)].map(c=>c.value);
+}
+function apply(){
+  const bSel=checkedValues('brand');
+  const kSel=checkedValues('kuzov');
+  const gSel=checkedValues('gabarit');
+  const grSel=checkedValues('gruz').map(Number);
+  const mSel=checkedValues('massa').map(Number);
+  const pMin=+priceMin.value||PRICE_MIN;
+  const pMax=+priceMax.value||PRICE_MAX;
+  const q=searchInput.value.trim().toLowerCase();
+
+  let list = PRODUCTS.filter(p=>
+    (!bSel.length  || bSel.includes(p.brand)) &&
+    (!kSel.length  || kSel.includes(p.kuzov)) &&
+    (!gSel.length  || gSel.includes(p.gabarit)) &&
+    (!grSel.length || grSel.includes(p.gruz)) &&
+    (!mSel.length  || mSel.includes(p.massa)) &&
+    p.price>=pMin && p.price<=pMax &&
+    (!q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))
+  );
+
+  const s=sortSelect.value;
+  if(s==='price-asc')  list=[...list].sort((a,b)=>a.price-b.price);
+  else if(s==='price-desc') list=[...list].sort((a,b)=>b.price-a.price);
+  else if(s==='name')  list=[...list].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+  renderProducts(list);
+}
+
+function renderProducts(list){
+  catCount.innerHTML = `Найдено: <b>${list.length}</b> из ${PRODUCTS.length}`;
+  if(!list.length){
+    catGrid.innerHTML = `<div class="cat-empty"><div class="big">🔍</div>По выбранным фильтрам ничего не найдено.<br>Попробуйте сбросить часть условий.</div>`;
+    return;
+  }
+  catGrid.innerHTML = list.map(p=>`
+    <article class="product">
+      <div class="ph">
+        ${p.old?`<span class="disc">−${Math.round((1-p.price/p.old)*100)}%</span>`:''}
+        <span class="sold">${soldLabel(p.sold)}</span>
+        <span class="emoji">${p.emoji}</span>
       </div>
-      <button class="btn btn-ghost btn-block" data-product="${p.name}">Узнать наличие и цену</button>
+      <div class="body">
+        <div class="brandtag">${p.brand}</div>
+        <h3>${escapeHtml(p.name)}</h3>
+        <div class="price-row">
+          <span class="price">${fmt(p.price)}</span>
+          ${p.old?`<span class="old">${fmt(p.old)}</span>`:''}
+        </div>
+        <div class="acts">
+          <button class="btn btn-primary" data-cart="${p.id}">Уточнить цену и наличие</button>
+          <button class="btn btn-ghost" data-detail="${p.id}">Подробнее о товаре</button>
+        </div>
+      </div>
+    </article>`).join('');
+}
+
+/* --- корзина (запрос цены) --- */
+function addToCart(id){
+  const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
+  cart++; cartCountEl.textContent=cart;
+  try{ cartCountEl.animate([{transform:'scale(1.6)'},{transform:'scale(1)'}],{duration:300}); }catch(_){}
+  const short = p.name.length>42 ? p.name.slice(0,42)+'…' : p.name;
+  showToast('✓ «'+short+'» — менеджер уточнит цену и наличие');
+}
+
+/* --- попап с подробной информацией --- */
+function openProduct(id){
+  const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
+  modalContent.innerHTML = `
+    <div class="pm-head">
+      <div class="pm-photo"><span>${p.emoji}</span><span class="sold">${soldLabel(p.sold)}</span></div>
+      <div>
+        <div class="pm-brandtag">${p.brand}</div>
+        <h3>${escapeHtml(p.name)}</h3>
+        <div class="pm-price"><span class="p">${fmt(p.price)}</span>${p.old?`<span class="o">${fmt(p.old)}</span>`:''}</div>
+      </div>
     </div>
-  </article>
-`).join('');
+    <table class="pm-specs">
+      <tr><td>Бренд</td><td>${p.brand}</td></tr>
+      <tr><td>Количество осей</td><td>${p.axes}</td></tr>
+      <tr><td>Размеры кузова, мм</td><td>${p.kuzov}</td></tr>
+      <tr><td>Габаритные размеры, мм</td><td>${p.gabarit}</td></tr>
+      <tr><td>Грузоподъёмность, кг</td><td>${p.gruz}</td></tr>
+      <tr><td>Полная масса, кг</td><td>${p.massa}</td></tr>
+      <tr><td>Материал кузова</td><td>${p.material}</td></tr>
+    </table>
+    <p class="pm-desc">${p.desc}</p>
+    <div class="pm-acts">
+      <button class="btn btn-primary" data-cart="${p.id}">Уточнить цену и наличие</button>
+      <button class="btn btn-ghost" data-scroll="#quiz" data-close-after>Подобрать похожий</button>
+    </div>`;
+  modal.classList.add('open');
+  bindGlobalScroll();
+}
+
+/* делегированные клики каталога */
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-detail]'); if(d){ openProduct(+d.dataset.detail); return; }
+  const c=e.target.closest('[data-cart]');   if(c){ addToCart(+c.dataset.cart); return; }
+  if(e.target.closest('[data-close-after]')){ modal.classList.remove('open'); }
+});
+
+/* старт каталога */
+apply();
 
 /* =========================================================
    РЕНДЕР: FAQ
@@ -1029,14 +1307,6 @@ leadForm.addEventListener('submit',e=>{
   leadForm.reset();
   leadForm.querySelectorAll('[data-channels] .channel').forEach((x,i)=>x.classList.toggle('selected',i===0));
   leadChannel='whatsapp';
-});
-
-/* =========================================================
-   ТОВАР → ВЕДЁМ В КВИЗ
-   ========================================================= */
-document.addEventListener('click',e=>{
-  const p=e.target.closest('[data-product]');
-  if(p){ scrollTo('#quiz'); }
 });
 
 /* =========================================================
