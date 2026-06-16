@@ -167,7 +167,10 @@
   .filters-toggle{display:none;width:100%;justify-content:center;margin-bottom:14px}
 
   /* фильтры */
-  .cat-filters{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 20px 20px;position:sticky;top:88px}
+  .cat-filters{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 20px 20px;position:sticky;top:88px;max-height:calc(100vh - 108px);overflow-y:auto}
+  .cat-filters::-webkit-scrollbar{width:8px}
+  .cat-filters::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+  .cat-filters::-webkit-scrollbar-thumb:hover{background:var(--muted)}
   .fgroup{border-bottom:1px solid var(--line);padding:18px 0}
   .fgroup:last-child{border-bottom:none}
   .fgroup h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px}
@@ -252,7 +255,7 @@
   /* адаптив каталога */
   @media(max-width:980px){
     .cat-layout{grid-template-columns:1fr}
-    .cat-filters{position:static;display:none}
+    .cat-filters{position:static;display:none;max-height:none;overflow:visible}
     .cat-filters.open{display:block}
     .filters-toggle{display:flex}
     .cat-products{grid-template-columns:repeat(2,1fr)}
@@ -1149,14 +1152,22 @@ priceMax.addEventListener('input',()=>{
 });
 priceMin.addEventListener('input',apply);
 
+/* если результаты ушли выше экрана — мягко подскроллить к ним */
+function scrollToResults(){
+  const count=document.getElementById('catCount'); if(!count) return;
+  if(count.getBoundingClientRect().top < 84){
+    window.scrollTo({top: count.getBoundingClientRect().top + window.scrollY - 84, behavior:'smooth'});
+  }
+}
+
 /* реакция на фильтры/поиск/сортировку */
-catFilters.addEventListener('change',e=>{ if(e.target.matches('input[type="checkbox"]')) apply(); });
+catFilters.addEventListener('change',e=>{ if(e.target.matches('input[type="checkbox"]')){ apply(); scrollToResults(); } });
 searchInput.addEventListener('input',apply);
 sortSelect.addEventListener('change',apply);
 document.getElementById('filtersReset').addEventListener('click',()=>{
   catFilters.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);
   priceMin.value=PRICE_MIN; priceMax.value=PRICE_MAX; priceRange.value=PRICE_MAX;
-  searchInput.value=''; sortSelect.value='default'; apply();
+  searchInput.value=''; sortSelect.value='default'; apply(); scrollToResults();
 });
 
 /* мобильный показ/скрытие фильтров */
