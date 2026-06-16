@@ -309,6 +309,23 @@
   }
   .opt.selected .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
+  /* варианты с фото */
+  .q-photos{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .popt{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;background:var(--card-2);transition:all .15s}
+  .popt:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .popt.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(251,126,45,.3)}
+  .popt .pimg{aspect-ratio:16/10;position:relative;display:grid;place-items:center;background:linear-gradient(135deg,#eef2fb,#fbf3ec)}
+  .popt .pimg .pemoji{font-size:40px}
+  .popt .pimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+  .popt .plabel{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;font-weight:700;font-size:14.5px}
+  .popt .plabel .check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;color:transparent;font-size:13px;font-weight:900;transition:all .15s}
+  .popt.selected .plabel .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  /* переключатель способа связи в Telegram */
+  .tg-modes{display:flex;gap:8px;margin-bottom:10px}
+  .tg-mode{flex:1;text-align:center;background:var(--card-2);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-weight:700;font-size:13.5px;cursor:pointer;transition:all .15s}
+  .tg-mode.selected{border-color:var(--accent);background:rgba(251,126,45,.12)}
+
   .quiz-foot{
     display:flex;justify-content:space-between;align-items:center;gap:12px;
     padding:20px 32px;border-top:1px solid var(--line);background:var(--bg-soft)
@@ -1031,37 +1048,23 @@ const QUIZ = [
     options:[
       {em:"🪶", label:"До 500 кг"},
       {em:"⚖️", label:"500–750 кг"},
-      {em:"📦", label:"750–1500 кг"},
-      {em:"🏋️", label:"Более 1500 кг"},
+      {em:"📦", label:"750–1000 кг"},
+      {em:"🏋️", label:"Более 1000 кг"},
       {em:"🤔", label:"Не знаю"},
     ]
   },
   {
-    key:"type", type:"single",
-    bubble:"Понял. Какой тип кузова вам ближе?",
-    title:"Какой тип прицепа предпочтительнее?",
-    hint:"Можно ориентироваться на задачу",
+    key:"type", type:"single", photos:true,
+    bubble:"Обратите внимание не только на груз, но и на удобство. Прицеп с тентом защитит вещи от дождя и пыли, а опрокидывающаяся платформа сэкономит время при выгрузке.",
+    title:"Какой тип прицепа вам предпочтительнее?",
+    hint:"Выберите подходящий вариант — для наглядности с фото",
     options:[
-      {em:"🛻", label:"Бортовой"},
-      {em:"⛺", label:"С тентом"},
-      {em:"⛵", label:"Лодочный"},
-      {em:"🏍️", label:"Для техники / с аппарелью"},
-      {em:"🚜", label:"Самосвальный"},
-      {em:"❓", label:"Ещё не определился"},
-    ]
-  },
-  {
-    key:"options", type:"multi",
-    bubble:"Можно выбрать несколько опций — подберём комплектацию точнее.",
-    title:"Какие опции важны?",
-    hint:"Можно выбрать несколько вариантов",
-    options:[
-      {em:"🛑", label:"Тормоза"},
-      {em:"✨", label:"Оцинковка"},
-      {em:"🔩", label:"Рессоры / торсион"},
-      {em:"🪜", label:"Аппарель"},
-      {em:"⛺", label:"Тент"},
-      {em:"🛞", label:"Запасное колесо"},
+      {label:"Открытый", photo:"images/3.jpg", em:"🛻"},
+      {label:"С тентом", photo:"images/15.jpg", em:"⛺"},
+      {label:"С жёстким кузовом", photo:"images/12.jpg", em:"📦"},
+      {label:"С пластиковой крышкой", photo:"images/13.jpg", em:"🧰"},
+      {label:"С опрокидывающейся платформой", photo:"images/5.jpg", em:"🚜"},
+      {label:"С двумя или более осями", photo:"images/16.jpg", em:"🚚"},
     ]
   },
   {
@@ -1070,10 +1073,10 @@ const QUIZ = [
     title:"На какой бюджет ориентируетесь?",
     hint:"Подберём оптимальное соотношение цены и качества",
     options:[
-      {em:"💸", label:"До 50 000 ₽"},
-      {em:"💵", label:"50 000 – 90 000 ₽"},
-      {em:"💰", label:"90 000 – 150 000 ₽"},
-      {em:"🤑", label:"Более 150 000 ₽"},
+      {em:"💵", label:"До 90 000 ₽"},
+      {em:"💰", label:"90 000 – 130 000 ₽"},
+      {em:"🤑", label:"130 000 – 200 000 ₽"},
+      {em:"💎", label:"Более 200 000 ₽"},
       {em:"💳", label:"Нужна рассрочка"},
     ]
   },
@@ -1349,7 +1352,19 @@ function renderStep(){
 
   let html = `<div class="q-bubble">${q.bubble}</div><h3 class="q-title">${q.title}</h3><p class="q-hint">${q.hint}</p>`;
 
-  if(q.type==='single' || q.type==='multi'){
+  if(q.photos){
+    const sel = state.answers[q.key] || null;
+    html += `<div class="q-photos">`;
+    q.options.forEach((o,i)=>{
+      const isSel = sel===o.label;
+      html += `<div class="popt ${isSel?'selected':''}" data-opt="${i}">
+        <div class="pimg"><span class="pemoji">${o.em||''}</span><img src="types/${i+1}.jpg" alt="${escapeHtml(o.label)}" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='${o.photo}'}else{this.style.display='none'}"></div>
+        <div class="plabel"><span>${o.label}</span><span class="check">✓</span></div>
+      </div>`;
+    });
+    html += `</div>`;
+    btnNext.textContent = 'Далее →';
+  } else if(q.type==='single' || q.type==='multi'){
     const sel = state.answers[q.key] || (q.type==='multi'?[]:null);
     html += `<div class="options">`;
     q.options.forEach((o,i)=>{
@@ -1359,20 +1374,19 @@ function renderStep(){
     });
     html += `</div>`;
     btnNext.textContent = 'Далее →';
-  }
-
-  if(q.type==='contact'){
+  } else if(q.type==='contact'){
     const a = state.answers;
     html += `<div class="fields">
-      <div class="field"><label>Как вас зовут?</label><input id="qName" type="text" placeholder="Ваше имя" value="${a.name||''}"><div class="err" id="errName">Введите имя</div></div>
-      <div class="field"><label>Телефон</label><input id="qPhone" type="tel" placeholder="+7 (___) ___-__-__" value="${a.phone||''}"><div class="err" id="errPhone">Введите корректный телефон</div></div>
-      <div class="field"><label>Куда прислать подбор?</label>
+      <div class="field"><label>Как вас зовут?</label><input id="qName" type="text" placeholder="Ваше имя" value="${a.name?escapeHtml(a.name):''}"><div class="err" id="errName">Введите имя</div></div>
+      <div class="field"><label>Куда прислать подборку?</label>
         <div class="channels" data-channels>
           <div class="channel ${state.channel==='whatsapp'?'selected':''}" data-channel="whatsapp">🟢 WhatsApp</div>
           <div class="channel ${state.channel==='telegram'?'selected':''}" data-channel="telegram">🔵 Telegram</div>
           <div class="channel ${state.channel==='phone'?'selected':''}" data-channel="phone">📞 Звонок</div>
         </div>
       </div>
+      <div id="contactDyn"></div>
+      <div class="err" id="errContact">Заполните контакт для связи</div>
       <label class="consent"><input type="checkbox" id="qConsent" checked><span>Согласен на обработку персональных данных и принимаю <a href="#" data-open-privacy>политику конфиденциальности</a>.</span></label>
     </div>`;
     btnNext.textContent = 'Получить подбор →';
@@ -1380,45 +1394,76 @@ function renderStep(){
 
   body.innerHTML = html;
   bindStepEvents();
+  if(q.type==='contact') renderContactDyn();
   updateNextState();
 }
 
 function bindStepEvents(){
   const q = QUIZ[state.step];
-  // варианты
+  // обычные варианты (без авто-перехода: выбрал → жмёшь «Далее»)
   body.querySelectorAll('.opt').forEach(el=>{
     el.addEventListener('click',()=>{
       const label = q.options[+el.dataset.opt].label;
-      if(q.type==='single'){
+      if(q.type==='multi'){
+        let arr = state.answers[q.key] || [];
+        arr = arr.includes(label) ? arr.filter(x=>x!==label) : [...arr,label];
+        state.answers[q.key]=arr; el.classList.toggle('selected'); updateNextState();
+      }else{
         state.answers[q.key]=label;
         body.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
-        el.classList.add('selected');
-        updateNextState();        // включаем кнопку «Далее»
-        // авто-переход для single
-        setTimeout(()=>next(),220);
-      }else{ // multi
-        let arr = state.answers[q.key] || [];
-        if(arr.includes(label)) arr = arr.filter(x=>x!==label);
-        else arr = [...arr,label];
-        state.answers[q.key]=arr;
-        el.classList.toggle('selected');
-        updateNextState();
+        el.classList.add('selected'); updateNextState();
       }
     });
   });
-  // каналы
+  // варианты с фото
+  body.querySelectorAll('.popt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      state.answers[q.key]=q.options[+el.dataset.opt].label;
+      body.querySelectorAll('.popt').forEach(o=>o.classList.remove('selected'));
+      el.classList.add('selected'); updateNextState();
+    });
+  });
+  // каналы связи
   body.querySelectorAll('[data-channels] .channel').forEach(c=>{
     c.addEventListener('click',()=>{
       body.querySelectorAll('[data-channels] .channel').forEach(x=>x.classList.remove('selected'));
       c.classList.add('selected');
       state.channel = c.dataset.channel;
+      state.answers.contact='';
+      renderContactDyn(); updateNextState();
     });
   });
-  // поля контакта
+  // имя
   const name = body.querySelector('#qName');
-  const phone = body.querySelector('#qPhone');
   if(name) name.addEventListener('input',()=>{state.answers.name=name.value;updateNextState();});
-  if(phone){phone.addEventListener('input',()=>{state.answers.phone=phone.value;updateNextState();});}
+}
+
+/* динамическое поле контакта (зависит от канала; для Telegram — номер или @username) */
+function renderContactDyn(){
+  const dyn=document.getElementById('contactDyn'); if(!dyn) return;
+  const a=state.answers, ch=state.channel;
+  if(ch==='telegram'){
+    const mode=state.tgMode||'phone';
+    dyn.innerHTML=`<div class="field"><label>Как с вами связаться в Telegram?</label>
+      <div class="tg-modes" data-tgmodes>
+        <div class="tg-mode ${mode==='phone'?'selected':''}" data-tg="phone">Номер телефона</div>
+        <div class="tg-mode ${mode==='username'?'selected':''}" data-tg="username">@username / ссылка</div>
+      </div>
+      <input id="qContact" type="${mode==='phone'?'tel':'text'}" placeholder="${mode==='phone'?'+7 (___) ___-__-__':'@username или t.me/...'}" value="${a.contact?escapeHtml(a.contact):''}"></div>`;
+  }else{
+    dyn.innerHTML=`<div class="field"><label>${ch==='phone'?'Телефон для звонка':'Номер WhatsApp'}</label>
+      <input id="qContact" type="tel" placeholder="+7 (___) ___-__-__" value="${a.contact?escapeHtml(a.contact):''}"></div>`;
+  }
+  const c=dyn.querySelector('#qContact');
+  if(c) c.addEventListener('input',()=>{state.answers.contact=c.value;updateNextState();});
+  dyn.querySelectorAll('[data-tgmodes] .tg-mode').forEach(m=>{
+    m.addEventListener('click',()=>{ state.tgMode=m.dataset.tg; state.answers.contact=''; renderContactDyn(); updateNextState(); });
+  });
+}
+function isContactValid(){
+  const v=(state.answers.contact||'').trim();
+  if(state.channel==='telegram' && (state.tgMode||'phone')==='username') return v.length>=3;
+  return isPhoneValid(v);
 }
 
 function isPhoneValid(v){return (v||'').replace(/\D/g,'').length>=10;}
@@ -1429,8 +1474,8 @@ function updateNextState(){
   if(q.type==='single'){ ok=!!state.answers[q.key]; hint='Выберите вариант, чтобы продолжить'; }
   else if(q.type==='multi'){ ok=(state.answers[q.key]||[]).length>0; hint='Можно выбрать несколько вариантов'; }
   else if(q.type==='contact'){
-    ok = !!(state.answers.name && state.answers.name.trim()) && isPhoneValid(state.answers.phone);
-    hint='Заполните имя и телефон';
+    ok = !!(state.answers.name && state.answers.name.trim()) && isContactValid();
+    hint='Заполните имя и контакт для связи';
   }
   btnNext.disabled=!ok;
   btnNext.style.opacity = ok?'1':'.5';
@@ -1459,17 +1504,17 @@ function submitQuiz(){
   // валидация контактов
   const a = state.answers;
   let valid=true;
-  const errName=document.getElementById('errName'), errPhone=document.getElementById('errPhone');
+  const errName=document.getElementById('errName'), errContact=document.getElementById('errContact');
   if(!a.name || !a.name.trim()){errName&&errName.classList.add('show');valid=false;} else errName&&errName.classList.remove('show');
-  if(!isPhoneValid(a.phone)){errPhone&&errPhone.classList.add('show');valid=false;} else errPhone&&errPhone.classList.remove('show');
+  if(!isContactValid()){errContact&&errContact.classList.add('show');valid=false;} else errContact&&errContact.classList.remove('show');
   if(!valid) return;
 
   const payload = {
     source:'quiz',
     use:a.use, capacity:a.capacity, type:a.type,
-    options:(a.options||[]).join(', '),
     budget:a.budget, timing:a.timing,
-    name:a.name, phone:a.phone, channel:state.channel,
+    name:a.name, channel:state.channel, contact:a.contact,
+    tgMode: state.channel==='telegram' ? (state.tgMode||'phone') : '',
   };
   sendLead(payload); // <-- здесь данные уходят (см. функцию sendLead ниже)
 
@@ -1477,7 +1522,7 @@ function submitQuiz(){
   bar.style.width='100%';
   stepCount.textContent='Готово!';
   quizFoot.style.display='none';
-  const labels={use:'Назначение',capacity:'Грузоподъёмность',type:'Тип',options:'Опции',budget:'Бюджет',timing:'Сроки'};
+  const labels={use:'Назначение',capacity:'Грузоподъёмность',type:'Тип',budget:'Бюджет',timing:'Сроки'};
   const rows = Object.keys(labels).filter(k=>payload[k]).map(k=>
     `<div class="row"><span class="k">${labels[k]}</span><span class="v">${payload[k]}</span></div>`
   ).join('');
@@ -1486,7 +1531,7 @@ function submitQuiz(){
     <h3>Спасибо, ${escapeHtml(a.name)}!</h3>
     <p>Эксперт уже формирует подбор из 3–5 моделей под вашу задачу и пришлёт цены со скидкой в ${channelName(state.channel)} в течение 15 минут.</p>
     <div class="summary">
-      <div class="row"><span class="k">Связь</span><span class="v">${channelName(state.channel)} · ${escapeHtml(a.phone)}</span></div>
+      <div class="row"><span class="k">Связь</span><span class="v">${channelName(state.channel)} · ${escapeHtml(a.contact||'')}</span></div>
       ${rows}
     </div>
     <div style="margin-top:24px"><button class="btn btn-ghost" data-scroll="#catalog">Пока посмотреть каталог</button></div>
