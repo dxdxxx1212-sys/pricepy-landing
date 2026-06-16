@@ -372,11 +372,8 @@
 
   /* ====================== ПАРТНЁРЫ ====================== */
   .partners{padding:64px 0;text-align:center}
-  .partners .p-row{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:34px}
-  .partners .p{
-    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 26px;
-    color:var(--muted);font-weight:800;font-size:18px;letter-spacing:.04em;display:flex;align-items:center;gap:10px
-  }
+  .partners-logos{max-width:1000px;margin:42px auto 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px;box-shadow:var(--shadow)}
+  .partners-logos img{width:100%;height:auto;display:block}
 
   /* ====================== FAQ ====================== */
   .faq{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line)}
@@ -703,15 +700,12 @@
 
 <!-- ============ ПАРТНЁРЫ ============ -->
 <section class="partners">
-  <div class="container">
+  <div class="container center">
     <span class="eyebrow">Нам доверяют</span>
-    <h2 class="section-title">Поставляем для бизнеса и хозяйств</h2>
-    <div class="p-row">
-      <div class="p">🚜 АгроПоле</div>
-      <div class="p">🏗️ СтройРесурс</div>
-      <div class="p">🐟 РыбПром</div>
-      <div class="p">📦 ЛогистикА</div>
-      <div class="p">🌲 ЛесТорг</div>
+    <h2 class="section-title">Нам доверяют лидеры крупнейших отраслей России</h2>
+    <p class="section-sub">Для сельского хозяйства, строительства и коммунальных работ — прицепы для надёжной перевозки любых грузов.</p>
+    <div class="partners-logos">
+      <img src="partners.webp" alt="Логотипы компаний, которым мы поставляем прицепы" loading="lazy">
     </div>
   </div>
 </section>
