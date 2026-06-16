@@ -347,12 +347,17 @@
   /* ====================== ОТЗЫВЫ ====================== */
   .reviews{padding:80px 0;background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
   .rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px}
-  .review{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
-  .review .stars{color:var(--accent);margin-bottom:12px;letter-spacing:3px}
-  .review p{margin:0 0 18px;font-size:15px}
+  .review{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
+  .review:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .review-photo{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#eef2fb,#fbf3ec);overflow:hidden}
+  .review-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .rev-tag{position:absolute;left:12px;bottom:12px;background:rgba(8,11,16,.72);color:#fff;font-size:12px;font-weight:700;padding:5px 11px;border-radius:8px;backdrop-filter:blur(4px)}
+  .review-body{padding:20px 22px 22px;display:flex;flex-direction:column;flex:1;text-align:left}
+  .review .stars{color:var(--accent);margin-bottom:10px;letter-spacing:3px}
+  .review p{margin:0 0 18px;font-size:14.5px;flex:1}
   .review .who{display:flex;align-items:center;gap:12px}
   .review .who .av{
-    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;
+    width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;flex:none;
     background:linear-gradient(135deg,#ffe8d6,#ffd6b8);color:#7a3c0a;font-size:17px
   }
   .review .who b{display:block;font-size:15px}
@@ -602,34 +607,70 @@
     <p class="section-sub">Более 9 800 покупателей уже сэкономили на покупке прицепа. Несколько недавних историй.</p>
     <div class="rev-grid">
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Брал бортовой прицеп под перевозку стройматериалов на дачу. Цена реально ниже, чем в салонах города. Привезли за 4 дня, все документы на месте.</p>
-        <div class="who"><div class="av">АК</div><div><b>Алексей К.</b><span>Краснодар</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/1.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/1.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: МЗСА 817712</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Брал прицеп под перевозку мотоцикла и инструмента. Цена заметно ниже, чем в салонах города, привезли за 4 дня со всеми документами. Доволен!</p>
+          <div class="who"><div class="av">ДВ</div><div><b>Дмитрий В.</b><span>Екатеринбург</span></div></div>
+        </div>
       </div>
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Искала лодочный прицеп под катер. Менеджер помог подобрать по грузоподъёмности, не впаривал лишнего. Оформили рассрочку 0%, очень довольна.</p>
-        <div class="who"><div class="av">МС</div><div><b>Марина С.</b><span>Самара</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/2.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/14.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: Крепыш 2</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Взяли «Крепыш» для дачи — возим стройматериалы и урожай. Собрался легко, по деньгам очень выгодно. Спасибо за подбор!</p>
+          <div class="who"><div class="av">АК</div><div><b>Алексей К.</b><span>Краснодар</span></div></div>
+        </div>
       </div>
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Заказывал прицеп для квадроцикла с аппарелью. Консультант всё объяснил по тормозам и креплениям. Качество отличное, рекомендую.</p>
-        <div class="who"><div class="av">ДВ</div><div><b>Дмитрий В.</b><span>Екатеринбург</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/3.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/5.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: МЗСА 817735</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Брали для бригады под стройматериалы. Помогли выбрать по грузоподъёмности, оформили рассрочку 0%. Работаем дальше.</p>
+          <div class="who"><div class="av">ИП</div><div><b>Игорь П.</b><span>Воронеж</span></div></div>
+        </div>
       </div>
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Покупали два прицепа для фермерского хозяйства. Сделали хорошую скидку за опт, привезли своим автовозом. Работаем дальше.</p>
-        <div class="who"><div class="av">ИП</div><div><b>Игорь П.</b><span>Воронеж</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/4.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/8.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: МЗСА 817732</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Двухосный с алюминиевыми бортами под бизнес-доставку. Качество отличное, гарантия 3 года, сервис рядом с домом.</p>
+          <div class="who"><div class="av">ОЛ</div><div><b>Ольга Л.</b><span>Казань</span></div></div>
+        </div>
       </div>
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Долго выбирал между моделями — прошёл квиз, прислали 4 варианта с ценами. Очень удобно, не пришлось обзванивать кучу магазинов.</p>
-        <div class="who"><div class="av">СН</div><div><b>Сергей Н.</b><span>Новосибирск</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/5.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/10.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: МЗСА 817739</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Прошёл квиз — прислали 4 варианта с ценами. Не пришлось обзванивать магазины, выбрал прицеп под коммерческие перевозки за вечер.</p>
+          <div class="who"><div class="av">СН</div><div><b>Сергей Н.</b><span>Новосибирск</span></div></div>
+        </div>
       </div>
       <div class="review">
-        <div class="stars">★★★★★</div>
-        <p>Оцинкованный прицеп с тентом под бизнес-доставку. Цена-качество на высоте. Гарантия 3 года, сервис рядом с домом. Спасибо!</p>
-        <div class="who"><div class="av">ОЛ</div><div><b>Ольга Л.</b><span>Казань</span></div></div>
+        <div class="review-photo">
+          <img src="reviews/6.jpg" alt="Отзыв покупателя" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='images/4.jpg'}else{this.remove()}">
+          <span class="rev-tag">Покупка: МЗСА 817718 OFF-ROAD</span>
+        </div>
+        <div class="review-body">
+          <div class="stars">★★★★★</div>
+          <p>Искали прицеп для выездов на природу и квадроцикла. Менеджер всё объяснил по креплениям, не впаривал лишнего. Очень довольна.</p>
+          <div class="who"><div class="av">МС</div><div><b>Марина С.</b><span>Самара</span></div></div>
+        </div>
       </div>
     </div>
   </div>
