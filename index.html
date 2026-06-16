@@ -117,7 +117,7 @@
   .btn-amber-outline:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 
   /* прозрачная шапка поверх тёмного hero, светлая после скролла */
-  header.at-top{background:transparent;border-bottom-color:transparent;backdrop-filter:none}
+  header.at-top{background:linear-gradient(180deg,rgba(8,11,16,.88),rgba(8,11,16,.42));border-bottom-color:transparent;backdrop-filter:blur(6px)}
   header.at-top .logo,header.at-top .nav-phone{color:#fff}
   header.at-top .nav-phone span{color:rgba(255,255,255,.65)}
   header.at-top .nav-links a{color:rgba(255,255,255,.85)}
@@ -448,8 +448,7 @@
     .nav-links.open{display:flex}
     .nav-links a{padding:16px 20px;width:100%;border-bottom:1px solid var(--line)}
     .burger{display:block}
-    .nav-phone span{display:none}
-    .nav-phone{font-size:15px}
+    .nav-phone{display:none}
     .feat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
     .options{grid-template-columns:1fr}
     .quiz-body{padding:26px 20px}
