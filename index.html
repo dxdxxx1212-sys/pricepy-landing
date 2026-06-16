@@ -85,11 +85,15 @@
   /* тёмный центрированный hero */
   .hero{position:relative;overflow:hidden;background:#0b0e13;text-align:center;padding:150px 0 120px}
   .hero-bg{
-    position:absolute;inset:0;z-index:0;
-    background:
-      radial-gradient(58% 50% at 50% -5%,rgba(251,126,45,.30),transparent 68%),
-      radial-gradient(70% 55% at 50% 118%,rgba(251,126,45,.10),transparent 70%),
-      linear-gradient(165deg,#151a23 0%,#0a0d12 70%);
+    position:absolute;inset:0;z-index:0;background-color:#0b0e13;
+    background-image:
+      linear-gradient(180deg,rgba(8,11,16,.80),rgba(8,11,16,.66)),
+      radial-gradient(60% 45% at 50% 0%,rgba(251,126,45,.20),transparent 70%),
+      url('hero.jpg'),
+      linear-gradient(165deg,#151a23,#0a0d12);
+    background-size:cover,cover,cover,cover;
+    background-position:center,center,center 30%,center;
+    background-repeat:no-repeat;
   }
   .hero-bg:after{
     content:"";position:absolute;inset:0;
