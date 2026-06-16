@@ -1548,29 +1548,16 @@ function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&l
    Сейчас данные просто выводятся в консоль + показывается тост.
    Примеры интеграции — в комментариях ниже.
    ========================================================= */
+/* Заявки уходят в Telegram через Cloudflare Worker (токен скрыт на сервере). */
+const LEAD_ENDPOINT = 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev';
+
 function sendLead(data){
   console.log('НОВАЯ ЗАЯВКА:', data);
-
-  /* --- Вариант 1: отправка на свой сервер ---
-  fetch('/api/lead', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+  fetch(LEAD_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify(data)
-  });
-  */
-
-  /* --- Вариант 2: напрямую в Telegram-бот ---
-  const TOKEN='123:ABC';      // токен бота
-  const CHAT_ID='123456789';  // id чата/группы
-  const text = Object.entries(data).map(([k,v])=>`${k}: ${v}`).join('\n');
-  fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({chat_id:CHAT_ID, text:`🆕 Заявка с сайта\n${text}`})
-  });
-  */
-
-  /* --- Вариант 3: Google Forms / внешний сервис форм ---
-  // подставьте свой endpoint и имена полей
-  */
+  }).catch(err => console.error('Ошибка отправки заявки:', err));
 
   showToast('✓ Заявка отправлена! Скоро свяжемся.');
 }
