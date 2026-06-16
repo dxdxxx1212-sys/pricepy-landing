@@ -28,7 +28,8 @@
   }
 
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;overflow-x:clip}
+  body{overflow-x:clip}
   body{
     margin:0;background:var(--bg);color:var(--text);
     font-family:var(--font);line-height:1.55;-webkit-font-smoothing:antialiased;
@@ -107,7 +108,7 @@
   }
   .hero h1{
     color:#fff;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;
-    font-size:clamp(38px,8vw,84px);line-height:.97;margin:0;text-shadow:0 6px 34px rgba(0,0,0,.5)
+    font-size:clamp(29px,8.2vw,84px);line-height:1;margin:0;text-shadow:0 6px 34px rgba(0,0,0,.5);overflow-wrap:break-word
   }
   .hero h1 .hl{
     background:linear-gradient(100deg,var(--accent),var(--accent-2));
@@ -127,6 +128,9 @@
   header.at-top .nav-links a{color:rgba(255,255,255,.85)}
   header.at-top .nav-links a:hover{color:#fff}
   header.at-top .burger{color:#fff}
+  /* открытое мобильное меню — всегда тёмный текст на светлой подложке */
+  header.at-top .nav-links.open a{color:var(--text)}
+  header.at-top .nav-links.open a:hover{color:var(--accent)}
 
   /* ====================== БЕЙДЖ-ЛЕНТА ====================== */
   .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-soft);padding:18px 0}
@@ -463,6 +467,11 @@
     .nav-links a{padding:16px 20px;width:100%;border-bottom:1px solid var(--line)}
     .burger{display:block}
     .nav-phone{display:none}
+    .nav{gap:10px}
+    .nav-right{gap:8px}
+    .nav-right .btn-primary{padding:11px 15px;font-size:13.5px}
+    .logo{font-size:18px;gap:9px}
+    .logo .mark{width:34px;height:34px;font-size:18px}
     .feat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
     .options{grid-template-columns:1fr}
     .quiz-body{padding:26px 20px}
