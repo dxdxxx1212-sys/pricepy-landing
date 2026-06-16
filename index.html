@@ -198,6 +198,7 @@
     background:linear-gradient(135deg,#eef2fb,#fbf3ec)
   }
   .product .ph .emoji{font-size:58px;filter:drop-shadow(0 6px 12px rgba(30,41,59,.14))}
+  .product .ph .ph-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .product .sold{
     position:absolute;top:12px;right:12px;width:64px;height:64px;border-radius:50%;
     background:var(--accent);color:#fff;font-weight:800;font-size:10.5px;line-height:1.18;
@@ -220,7 +221,8 @@
 
   /* модалка товара */
   .pm-head{display:flex;gap:16px;margin-bottom:16px}
-  .pm-photo{width:124px;height:100px;flex:none;border-radius:12px;background:linear-gradient(135deg,#eef2fb,#fbf3ec);display:grid;place-items:center;font-size:46px;border:1px solid var(--line);position:relative}
+  .pm-photo{width:124px;height:100px;flex:none;border-radius:12px;background:linear-gradient(135deg,#eef2fb,#fbf3ec);display:grid;place-items:center;font-size:46px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .pm-photo .pm-photo-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   .pm-photo .sold{position:absolute;top:-8px;right:-8px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:9px;line-height:1.1;text-align:center;display:grid;place-items:center;padding:5px}
   .pm-brandtag{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
   .pm-head h3{font-size:18px;margin-bottom:9px;line-height:1.25}
@@ -1163,9 +1165,10 @@ function renderProducts(list){
   catGrid.innerHTML = list.map(p=>`
     <article class="product">
       <div class="ph">
+        <span class="emoji">${p.emoji}</span>
+        <img class="ph-img" src="images/${p.id}.jpg" alt="${escapeHtml(p.name)}" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=this.src.replace(/\\.jpg$/,'.png')}else{this.remove()}">
         ${p.old?`<span class="disc">−${Math.round((1-p.price/p.old)*100)}%</span>`:''}
         <span class="sold">${soldLabel(p.sold)}</span>
-        <span class="emoji">${p.emoji}</span>
       </div>
       <div class="body">
         <div class="brandtag">${p.brand}</div>
@@ -1207,7 +1210,7 @@ function openProduct(id){
       ];
   modalContent.innerHTML = `
     <div class="pm-head">
-      <div class="pm-photo"><span>${p.emoji}</span><span class="sold">${soldLabel(p.sold)}</span></div>
+      <div class="pm-photo"><span>${p.emoji}</span><img class="pm-photo-img" src="images/${p.id}.jpg" alt="${escapeHtml(p.name)}" onerror="if(!this.dataset.r){this.dataset.r=1;this.src=this.src.replace(/\\.jpg$/,'.png')}else{this.remove()}"><span class="sold">${soldLabel(p.sold)}</span></div>
       <div>
         <div class="pm-brandtag">${p.brand}</div>
         <h3>${escapeHtml(p.name)}</h3>
