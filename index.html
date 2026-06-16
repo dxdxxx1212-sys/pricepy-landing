@@ -74,6 +74,7 @@
     width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
     background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);font-size:20px;
   }
+  .logo .mark-img{height:38px;width:auto;display:block;flex:none}
   .nav-links{display:flex;gap:26px;align-items:center}
   .nav-links a{color:var(--muted);font-weight:600;font-size:15px;transition:color .2s}
   .nav-links a:hover{color:var(--text)}
@@ -265,7 +266,16 @@
     .cat-products{grid-template-columns:repeat(2,1fr)}
   }
   @media(max-width:560px){
-    .cat-products{grid-template-columns:1fr}
+    .cat-products{grid-template-columns:repeat(2,1fr);gap:12px}
+    .product .body{padding:12px}
+    .product .brandtag{font-size:10px;margin-bottom:5px}
+    .product h3{font-size:13px;margin-bottom:8px}
+    .product .price{font-size:16px}
+    .product .old{font-size:12px}
+    .product .acts{gap:7px}
+    .product .acts .btn{padding:9px 8px;font-size:12px}
+    .product .sold{width:54px;height:54px;font-size:9px;top:8px;right:8px}
+    .product .disc{font-size:11px;padding:4px 8px}
     .pm-acts{grid-template-columns:1fr}
   }
 
@@ -485,8 +495,12 @@
     .nav-right{gap:8px}
     .nav-right .btn-primary{padding:11px 15px;font-size:13.5px}
     .logo{font-size:18px;gap:9px}
-    .logo .mark{width:34px;height:34px;font-size:18px}
-    .feat-grid,.rev-grid,.foot-grid{grid-template-columns:1fr}
+    .logo .mark-img{height:32px}
+    .feat-grid,.foot-grid{grid-template-columns:1fr}
+    /* отзывы — горизонтальная карусель (свайп) */
+    .rev-grid{display:flex;grid-template-columns:none;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px;scroll-padding:0 20px}
+    .rev-grid::-webkit-scrollbar{display:none}
+    .review{flex:0 0 84%;scroll-snap-align:center}
     .options{grid-template-columns:1fr}
     .quiz-body{padding:26px 20px}
     .quiz-top,.quiz-foot{padding-left:20px;padding-right:20px}
@@ -516,7 +530,7 @@
 <!-- ============ ШАПКА ============ -->
 <header>
   <div class="container nav">
-    <a href="#" class="logo"><span class="mark">🛻</span> Прайс<span class="accent">Прицеп</span></a>
+    <a href="#" class="logo"><img class="mark-img" src="logo.png" alt="ПрайсПрицеп"> Прайс<span class="accent">Прицеп</span></a>
     <nav class="nav-links" id="navLinks">
       <a href="#features">Почему мы</a>
       <a href="#catalog">Каталог</a>
@@ -785,7 +799,7 @@
   <div class="container">
     <div class="foot-grid">
       <div>
-        <a href="#" class="logo" style="font-size:20px;margin-bottom:14px"><span class="mark">🛻</span> Прайс<span class="accent">Прицеп</span></a>
+        <a href="#" class="logo" style="font-size:20px;margin-bottom:14px"><img class="mark-img" src="logo.png" alt="ПрайсПрицеп"> Прайс<span class="accent">Прицеп</span></a>
         <p>Подбор и продажа прицепов для легковых авто, лодок, мототехники и бизнеса. Прямые поставки, гарантия и доставка по всей России.</p>
         <p style="margin-top:10px">📞 <a href="tel:+78001234567">8 800 123-45-67</a><br>✉️ <a href="mailto:info@example.ru">info@example.ru</a></p>
       </div>
