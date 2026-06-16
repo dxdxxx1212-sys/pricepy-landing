@@ -82,40 +82,47 @@
   .burger{display:none;background:none;border:none;color:var(--text);font-size:26px;padding:6px}
 
   /* ====================== HERO ====================== */
-  .hero{padding:70px 0 60px;overflow:hidden}
-  .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:50px;align-items:center}
-  .hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-.03em}
+  /* тёмный центрированный hero */
+  .hero{position:relative;overflow:hidden;background:#0b0e13;text-align:center;padding:150px 0 120px}
+  .hero-bg{
+    position:absolute;inset:0;z-index:0;
+    background:
+      radial-gradient(58% 50% at 50% -5%,rgba(251,126,45,.30),transparent 68%),
+      radial-gradient(70% 55% at 50% 118%,rgba(251,126,45,.10),transparent 70%),
+      linear-gradient(165deg,#151a23 0%,#0a0d12 70%);
+  }
+  .hero-bg:after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 85% at 50% 38%,transparent 48%,rgba(0,0,0,.55));
+  }
+  .hero-inner{position:relative;z-index:1;max-width:900px}
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:9px;margin-bottom:30px;
+    border:1.5px solid rgba(251,126,45,.5);color:var(--accent-2);background:rgba(251,126,45,.10);
+    padding:9px 22px;border-radius:999px;font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .hero h1{
+    color:#fff;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;
+    font-size:clamp(38px,8vw,84px);line-height:.97;margin:0;text-shadow:0 6px 34px rgba(0,0,0,.5)
+  }
   .hero h1 .hl{
-    background:linear-gradient(120deg,var(--accent),var(--accent-2));
+    background:linear-gradient(100deg,var(--accent),var(--accent-2));
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .hero p.lead{font-size:19px;color:var(--muted);margin:22px 0 30px;max-width:560px}
-  .hero-cta{display:flex;gap:14px;flex-wrap:wrap}
-  .hero-trust{display:flex;gap:26px;margin-top:34px;flex-wrap:wrap}
-  .hero-trust .t{display:flex;flex-direction:column}
-  .hero-trust .t b{font-size:26px;font-weight:900}
-  .hero-trust .t span{font-size:13px;color:var(--muted)}
-  .hero-card{
-    background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px;
-    box-shadow:var(--shadow);position:relative;
-  }
-  .hero-card .badge{
-    position:absolute;top:-14px;right:24px;background:var(--red);color:#fff;
-    font-weight:800;padding:8px 16px;border-radius:999px;font-size:14px;box-shadow:0 8px 20px rgba(255,84,112,.4)
-  }
-  .hero-card h3{font-size:20px;margin-bottom:6px}
-  .hero-card .sub{color:var(--muted);font-size:14px;margin-bottom:18px}
-  .mini-list{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:12px}
-  .mini-list li{display:flex;gap:11px;align-items:flex-start;font-size:15px}
-  .mini-list .ic{color:var(--accent);font-weight:900;flex:none}
-  .hero-illustration{
-    aspect-ratio:16/10;border-radius:14px;margin-bottom:20px;
-    background:
-      radial-gradient(circle at 30% 30%,rgba(251,126,45,.22),transparent 62%),
-      linear-gradient(135deg,#eef2fb,#fdf3ea);
-    display:grid;place-items:center;border:1px solid var(--line);
-  }
-  .hero-illustration .emoji{font-size:70px;filter:drop-shadow(0 8px 16px rgba(30,41,59,.18))}
+  .hero-lead{color:rgba(255,255,255,.74);font-size:clamp(16px,2.1vw,20px);max-width:680px;margin:28px auto 0;line-height:1.55}
+  .hero-lead b{color:#fff;font-weight:800}
+  .hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+  .hero-cta .btn{box-shadow:0 16px 36px rgba(0,0,0,.4)}
+  .btn-amber-outline{background:rgba(255,255,255,.04);color:var(--accent-2);border:1.5px solid rgba(251,126,45,.55)}
+  .btn-amber-outline:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+  /* прозрачная шапка поверх тёмного hero, светлая после скролла */
+  header.at-top{background:transparent;border-bottom-color:transparent;backdrop-filter:none}
+  header.at-top .logo,header.at-top .nav-phone{color:#fff}
+  header.at-top .nav-phone span{color:rgba(255,255,255,.65)}
+  header.at-top .nav-links a{color:rgba(255,255,255,.85)}
+  header.at-top .nav-links a:hover{color:#fff}
+  header.at-top .burger{color:#fff}
 
   /* ====================== БЕЙДЖ-ЛЕНТА ====================== */
   .ticker{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-soft);padding:18px 0}
@@ -428,7 +435,7 @@
 
   /* ====================== АДАПТИВ ====================== */
   @media(max-width:920px){
-    .hero-grid{grid-template-columns:1fr;gap:36px}
+    .hero{padding:120px 0 90px}
     .feat-grid,.rev-grid{grid-template-columns:repeat(2,1fr)}
     .cta-box{grid-template-columns:1fr;padding:34px}
     .foot-grid{grid-template-columns:1fr 1fr}
@@ -447,7 +454,9 @@
     .options{grid-template-columns:1fr}
     .quiz-body{padding:26px 20px}
     .quiz-top,.quiz-foot{padding-left:20px;padding-right:20px}
-    .hero-trust{gap:18px}
+    .hero{padding:104px 0 76px}
+    .hero-cta{flex-direction:column}
+    .hero-cta .btn{width:100%}
   }
 </style>
 </head>
@@ -474,33 +483,14 @@
 
 <!-- ============ HERO ============ -->
 <section class="hero">
-  <div class="container hero-grid">
-    <div>
-      <span class="eyebrow">Прямые поставки • Гарантия • Скидка до 40%</span>
-      <h1>Прицепы для авто, лодок и техники <span class="hl">по ценам ниже рынка</span></h1>
-      <p class="lead">Подбираем модель под вашу задачу и бюджет за 1 минуту. Бортовые, лодочные, самосвальные и для перевозки техники — с документами, гарантией и доставкой по всей России.</p>
-      <div class="hero-cta">
-        <button class="btn btn-primary btn-lg" data-scroll="#quiz">Пройти подбор за 1 мин →</button>
-        <button class="btn btn-ghost btn-lg" data-scroll="#catalog">Смотреть каталог</button>
-      </div>
-      <div class="hero-trust">
-        <div class="t"><b>12 лет</b><span>на рынке прицепов</span></div>
-        <div class="t"><b>9 800+</b><span>довольных клиентов</span></div>
-        <div class="t"><b>40%</b><span>максимальная скидка</span></div>
-      </div>
-    </div>
-    <div class="hero-card">
-      <span class="badge">−40%</span>
-      <div class="hero-illustration"><span class="emoji">🚙🛻</span></div>
-      <h3>Что вы получите после подбора</h3>
-      <p class="sub">Бесплатно и без обязательств</p>
-      <ul class="mini-list">
-        <li><span class="ic">✓</span> 3–5 моделей точно под вашу задачу</li>
-        <li><span class="ic">✓</span> Актуальную цену со скидкой и наличие</li>
-        <li><span class="ic">✓</span> Условия доставки в ваш регион</li>
-        <li><span class="ic">✓</span> Помощь с оформлением и рассрочкой</li>
-      </ul>
-      <button class="btn btn-primary btn-block btn-lg" data-scroll="#quiz">Начать подбор</button>
+  <div class="hero-bg"></div>
+  <div class="container hero-inner">
+    <span class="hero-badge">★ 2 500+ довольных клиентов</span>
+    <h1>Прицепы<br><span class="hl">до 40% дешевле</span><br>розницы</h1>
+    <p class="hero-lead">Реальная экономия без риска. Уже <b>2 500+ клиентов</b> сэкономили от <b>50 000 ₽</b>. Подберите свой вариант за 1 минуту.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" data-scroll="#quiz">Подбор за 1 минуту →</button>
+      <button class="btn btn-amber-outline btn-lg" data-scroll="#catalog">Смотреть ТОП-30 выгодных предложений</button>
     </div>
   </div>
 </section>
@@ -1538,6 +1528,12 @@ document.querySelectorAll('.nav-links a').forEach(a=>{
 document.getElementById('burger').addEventListener('click',()=>{
   document.getElementById('navLinks').classList.toggle('open');
 });
+
+/* прозрачная шапка над тёмным hero → светлая после скролла */
+const headerEl=document.querySelector('header');
+function updateHeader(){ headerEl.classList.toggle('at-top', window.scrollY < 40); }
+updateHeader();
+window.addEventListener('scroll',updateHeader,{passive:true});
 
 let toastTimer;
 function showToast(msg){
