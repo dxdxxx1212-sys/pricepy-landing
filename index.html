@@ -1385,7 +1385,7 @@ function renderProducts(list){
       </div>
     </article>`).join('');
   if(list.length > catShown){
-    html += `<div class="cat-more"><button class="btn btn-ghost btn-lg" data-loadmore>Показать ещё (${list.length - catShown})</button></div>`;
+    html += `<div class="cat-more"><button class="btn btn-ghost btn-lg" data-loadmore>Показать ещё (+${Math.min(CAT_PAGE, list.length - catShown)})</button></div>`;
   }
   catGrid.innerHTML = html;
 }
