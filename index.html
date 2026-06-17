@@ -164,8 +164,16 @@
   .cat-search input:focus{outline:none;border-color:var(--accent)}
   .cat-search .ic{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
   .cat-sort{background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:13px 16px;color:var(--text);font-size:15px;font-family:inherit;cursor:pointer}
-  .cat-cart{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:11px 16px;font-weight:700;white-space:nowrap}
+  .cat-cart{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:11px;padding:11px 16px;font-weight:700;white-space:nowrap;cursor:pointer;transition:border-color .15s}
+  .cat-cart:hover{border-color:var(--accent)}
   .cat-cart .cnt{background:var(--accent);color:var(--accent-ink);min-width:22px;height:22px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:800;padding:0 6px}
+  /* окно корзины-запроса */
+  .cart-items{display:grid;gap:8px;max-height:220px;overflow:auto;margin-top:6px}
+  .cart-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .cart-name{font-size:13.5px;font-weight:700;line-height:1.3}
+  .cart-price{font-size:13px;color:var(--accent);font-weight:800;margin-top:2px}
+  .cart-del{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;flex:none;width:28px;height:28px;border-radius:50%}
+  .cart-del:hover{background:var(--line);color:var(--red)}
 
   /* раскладка: фильтры + товары */
   .cat-layout{display:grid;grid-template-columns:268px 1fr;gap:28px;margin-top:22px;align-items:start}
@@ -1137,7 +1145,8 @@ const catFilters = document.getElementById('catFilters');
 const searchInput = document.getElementById('catSearchInput');
 const sortSelect = document.getElementById('catSort');
 const cartCountEl = document.getElementById('cartCount');
-let cart = 0;
+let cart = [];
+let cartChannel = 'whatsapp';
 
 /* --- построение групп фильтров --- */
 function checkboxGroup(key, title, values, collapseAfter){
@@ -1272,13 +1281,89 @@ function renderProducts(list){
     </article>`).join('');
 }
 
-/* --- корзина (запрос цены) --- */
+/* --- корзина-запрос (уточнить цену и наличие) --- */
+function updateCartBadge(){ cartCountEl.textContent = cart.length; }
+
 function addToCart(id){
-  const p=PRODUCTS.find(x=>x.id===id); if(!p) return;
-  cart++; cartCountEl.textContent=cart;
+  const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+  if(!cart.some(x=>x.id===id)) cart.push({id:p.id, name:p.name, price:p.price});
+  updateCartBadge();
   try{ cartCountEl.animate([{transform:'scale(1.6)'},{transform:'scale(1)'}],{duration:300}); }catch(_){}
-  const short = p.name.length>42 ? p.name.slice(0,42)+'…' : p.name;
-  showToast('✓ «'+short+'» — менеджер уточнит цену и наличие');
+  openCart();
+}
+
+function openCart(){
+  if(!cart.length){
+    modalContent.innerHTML = `<h3>Корзина пуста</h3>
+      <p class="m-sub">Выберите модели в каталоге — нажмите «Уточнить цену и наличие», и они появятся здесь.</p>
+      <button class="btn btn-primary btn-block" data-close-modal>Понятно</button>`;
+    modalContent.closest('.modal').classList.remove('wide');
+    modal.classList.add('open');
+    return;
+  }
+  const rows = cart.map(it=>`
+    <div class="cart-row">
+      <div><div class="cart-name">${escapeHtml(it.name)}</div><div class="cart-price">${fmt(it.price)}</div></div>
+      <button class="cart-del" data-remove="${it.id}" title="Убрать">✕</button>
+    </div>`).join('');
+  modalContent.innerHTML = `
+    <h3>Запрос цены и наличия</h3>
+    <p class="m-sub">Выбрано моделей: ${cart.length}. Оставьте контакт — пришлём актуальные цены и наличие.</p>
+    <div class="cart-items">${rows}</div>
+    <div class="fields" style="margin-top:16px">
+      <div class="field"><label>Как вас зовут?</label><input id="cartName" type="text" placeholder="Ваше имя"><div class="err" id="cartErrName">Введите имя</div></div>
+      <div class="field"><label>Куда прислать?</label>
+        <div class="channels" id="cartChannels">
+          <div class="channel ${cartChannel==='whatsapp'?'selected':''}" data-ch="whatsapp">🟢 WhatsApp</div>
+          <div class="channel ${cartChannel==='telegram'?'selected':''}" data-ch="telegram">🔵 Telegram</div>
+          <div class="channel ${cartChannel==='phone'?'selected':''}" data-ch="phone">📞 Звонок</div>
+        </div>
+      </div>
+      <div class="field"><label>${cartChannel==='telegram'?'Телефон или @username':'Телефон'}</label><input id="cartContact" type="text" placeholder="${cartChannel==='telegram'?'+7… или @username':'+7 (___) ___-__-__'}"><div class="err" id="cartErrContact">Укажите контакт для связи</div></div>
+      <label class="consent"><input type="checkbox" id="cartConsent" checked><span>Согласен на обработку данных и принимаю <a href="#" data-open-privacy data-doc="privacy">политику конфиденциальности</a>.</span></label>
+    </div>
+    <button class="btn btn-primary btn-block btn-lg" id="cartSubmit" style="margin-top:8px">Получить цены и наличие</button>`;
+  modalContent.closest('.modal').classList.remove('wide');
+  modal.classList.add('open');
+  bindCartEvents();
+}
+
+function bindCartEvents(){
+  modalContent.querySelectorAll('#cartChannels .channel').forEach(c=>{
+    c.addEventListener('click',()=>{ cartChannel=c.dataset.ch; openCart(); });
+  });
+  modalContent.querySelectorAll('[data-remove]').forEach(b=>{
+    b.addEventListener('click',()=>{ cart = cart.filter(x=>x.id !== +b.dataset.remove); updateCartBadge(); openCart(); });
+  });
+  const sb = modalContent.querySelector('#cartSubmit');
+  if(sb) sb.addEventListener('click', submitCart);
+}
+
+function submitCart(){
+  const name    = (modalContent.querySelector('#cartName')   || {}).value || '';
+  const contact = (modalContent.querySelector('#cartContact')|| {}).value || '';
+  const consent = (modalContent.querySelector('#cartConsent')|| {}).checked;
+  const en = modalContent.querySelector('#cartErrName'), ec = modalContent.querySelector('#cartErrContact');
+  let ok = true;
+  if(!name.trim()){ en&&en.classList.add('show'); ok=false; } else en&&en.classList.remove('show');
+  if(contact.trim().length < 3){ ec&&ec.classList.add('show'); ok=false; } else ec&&ec.classList.remove('show');
+  if(!consent){ showToast('Подтвердите согласие на обработку данных'); ok=false; }
+  if(!ok) return;
+
+  sendLead({
+    source:'Корзина (уточнить цену и наличие)',
+    items: cart.map(x=>x.name).join('; '),
+    name, contact, channel: cartChannel
+  });
+
+  const cnt = cart.length;
+  modalContent.innerHTML = `<div style="text-align:center;padding:14px 6px">
+    <div style="font-size:54px;margin-bottom:10px">🎉</div>
+    <h3 style="margin-bottom:8px">Спасибо, ${escapeHtml(name)}!</h3>
+    <p class="m-sub">Менеджер пришлёт цены и наличие по выбранным моделям (${cnt}) в ${channelName(cartChannel)} в течение 15 минут.</p>
+    <button class="btn btn-primary btn-block" data-close-modal style="margin-top:10px">Хорошо</button>
+  </div>`;
+  cart = []; updateCartBadge();
 }
 
 /* --- попап с подробной информацией --- */
@@ -1324,6 +1409,10 @@ document.addEventListener('click',e=>{
   const c=e.target.closest('[data-cart]');   if(c){ addToCart(+c.dataset.cart); return; }
   if(e.target.closest('[data-close-after]')){ modal.classList.remove('open'); }
 });
+
+/* клик по значку «Корзина» открывает запрос */
+const catCartBtn = document.querySelector('.cat-cart');
+if(catCartBtn) catCartBtn.addEventListener('click', openCart);
 
 /* старт каталога */
 apply();
