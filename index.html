@@ -1562,8 +1562,8 @@ function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&l
    Сейчас данные просто выводятся в консоль + показывается тост.
    Примеры интеграции — в комментариях ниже.
    ========================================================= */
-/* Заявки уходят в Telegram через Cloudflare Worker (токен скрыт на сервере). */
-const LEAD_ENDPOINT = 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev';
+/* Заявки уходят на серверный приёмник /api/lead (тот же домен): сохранение копии в РФ + Telegram. */
+const LEAD_ENDPOINT = '/api/lead';
 
 function sendLead(data){
   console.log('НОВАЯ ЗАЯВКА:', data);
