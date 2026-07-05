@@ -52,7 +52,7 @@
   /* ====================== КНОПКИ ====================== */
   .btn{
     display:inline-flex;align-items:center;gap:10px;justify-content:center;
-    border:none;border-radius:999px;padding:17px 30px;font-weight:700;font-size:17.5px;
+    border:none;border-radius:999px;padding:14px 26px;font-weight:700;font-size:16px;
     transition:transform .15s ease,box-shadow .15s ease,background .2s ease;
   }
   .btn:hover{transform:translateY(-1px)}
@@ -60,7 +60,7 @@
   .btn-primary:hover{box-shadow:0 16px 32px rgba(255,122,24,.45)}
   .btn-ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
   .btn-ghost:hover{border-color:var(--accent);color:var(--accent-2)}
-  .btn-lg{padding:20px 40px;font-size:20px}
+  .btn-lg{padding:16px 30px;font-size:17px}
   .btn-block{width:100%}
 
   /* ====================== ШАПКА ====================== */
@@ -1624,7 +1624,7 @@ function bindStepEvents(){
       }else{
         state.answers[q.key]=label;
         body.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
-        el.classList.add('selected'); updateNextState();
+        el.classList.add('selected'); updateNextState(); revealNext();
       }
     });
   });
@@ -1633,7 +1633,7 @@ function bindStepEvents(){
     el.addEventListener('click',()=>{
       state.answers[q.key]=q.options[+el.dataset.opt].label;
       body.querySelectorAll('.popt').forEach(o=>o.classList.remove('selected'));
-      el.classList.add('selected'); updateNextState();
+      el.classList.add('selected'); updateNextState(); revealNext();
     });
   });
   // каналы связи
@@ -1681,6 +1681,14 @@ function isContactValid(){
 
 function isPhoneValid(v){return (v||'').replace(/\D/g,'').length>=10;}
 
+/* после выбора варианта — подтянуть кнопку «Далее» в зону видимости (без ручного скролла) */
+function revealNext(){
+  if(!btnNext || btnNext.disabled) return;
+  const r = btnNext.getBoundingClientRect();
+  if(r.bottom > window.innerHeight - 8){
+    btnNext.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
 function updateNextState(){
   const q = QUIZ[state.step];
   let ok=false, hint='';
