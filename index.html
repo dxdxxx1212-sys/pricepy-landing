@@ -336,9 +336,9 @@
   .popt .pimg{aspect-ratio:16/10;position:relative;display:grid;place-items:center;background:linear-gradient(135deg,#eef2fb,#fbf3ec)}
   .popt .pimg .pemoji{font-size:40px}
   .popt .pimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
-  .popt .plabel{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;font-weight:700;font-size:14.5px}
-  .popt .plabel .check{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;color:transparent;font-size:13px;font-weight:900;transition:all .15s}
-  .popt.selected .plabel .check{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .popt .plabel{padding:12px 14px;font-weight:700;font-size:15px;line-height:1.3}
+  .popt .pcheck{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.92);border:2px solid var(--line);display:grid;place-items:center;color:transparent;font-size:15px;font-weight:900;transition:all .15s;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .popt.selected .pcheck{background:var(--accent);border-color:var(--accent);color:#fff}
 
   /* переключатель способа связи в Telegram */
   .tg-modes{display:flex;gap:8px;margin-bottom:10px}
@@ -1571,8 +1571,8 @@ function renderStep(){
     q.options.forEach((o,i)=>{
       const isSel = sel===o.label;
       html += `<div class="popt ${isSel?'selected':''}" data-opt="${i}">
-        <div class="pimg"><span class="pemoji">${o.em||''}</span><img src="types/${i+1}.jpg" alt="${escapeHtml(o.label)}" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='${o.photo}'}else{this.style.display='none'}"></div>
-        <div class="plabel"><span>${o.label}</span><span class="check">✓</span></div>
+        <div class="pimg"><span class="pemoji">${o.em||''}</span><img src="types/${i+1}.jpg" alt="${escapeHtml(o.label)}" loading="lazy" onerror="if(!this.dataset.r){this.dataset.r=1;this.src='${o.photo}'}else{this.style.display='none'}"><span class="pcheck">✓</span></div>
+        <div class="plabel">${o.label}</div>
       </div>`;
     });
     html += `</div>`;
