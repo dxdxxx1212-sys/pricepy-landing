@@ -791,6 +791,7 @@
             <div class="channel selected" data-channel="whatsapp">🟢 WhatsApp</div>
             <div class="channel" data-channel="telegram">🔵 Telegram</div>
             <div class="channel" data-channel="phone">📞 Звонок</div>
+            <div class="channel" data-channel="max">🟣 МАКС</div>
           </div>
         </div>
         <label class="consent">
@@ -1426,6 +1427,7 @@ function openCart(){
           <div class="channel ${cartChannel==='whatsapp'?'selected':''}" data-ch="whatsapp">🟢 WhatsApp</div>
           <div class="channel ${cartChannel==='telegram'?'selected':''}" data-ch="telegram">🔵 Telegram</div>
           <div class="channel ${cartChannel==='phone'?'selected':''}" data-ch="phone">📞 Звонок</div>
+          <div class="channel ${cartChannel==='max'?'selected':''}" data-ch="max">🟣 МАКС</div>
         </div>
       </div>
       <div class="field"><label>${cartChannel==='telegram'?'Телефон или @username':'Телефон'}</label><input id="cartContact" type="text" placeholder="${cartChannel==='telegram'?'+7… или @username':'+7 (___) ___-__-__'}"><div class="err" id="cartErrContact">Укажите контакт для связи</div></div>
@@ -1596,6 +1598,7 @@ function renderStep(){
           <div class="channel ${state.channel==='whatsapp'?'selected':''}" data-channel="whatsapp">🟢 WhatsApp</div>
           <div class="channel ${state.channel==='telegram'?'selected':''}" data-channel="telegram">🔵 Telegram</div>
           <div class="channel ${state.channel==='phone'?'selected':''}" data-channel="phone">📞 Звонок</div>
+          <div class="channel ${state.channel==='max'?'selected':''}" data-channel="max">🟣 МАКС</div>
         </div>
       </div>
       <div id="contactDyn"></div>
@@ -1664,7 +1667,7 @@ function renderContactDyn(){
       </div>
       <input id="qContact" type="${mode==='phone'?'tel':'text'}" placeholder="${mode==='phone'?'+7 (___) ___-__-__':'@username или t.me/...'}" value="${a.contact?escapeHtml(a.contact):''}"></div>`;
   }else{
-    dyn.innerHTML=`<div class="field"><label>${ch==='phone'?'Телефон для звонка':'Номер WhatsApp'}</label>
+    dyn.innerHTML=`<div class="field"><label>${ch==='max'?'Номер телефона (МАКС)':ch==='phone'?'Телефон для звонка':'Номер WhatsApp'}</label>
       <input id="qContact" type="tel" placeholder="+7 (___) ___-__-__" value="${a.contact?escapeHtml(a.contact):''}"></div>`;
   }
   const c=dyn.querySelector('#qContact');
@@ -1760,7 +1763,7 @@ function submitQuiz(){
   bindGlobalScroll();
 }
 
-function channelName(c){return c==='telegram'?'Telegram':c==='phone'?'по телефону':'WhatsApp';}
+function channelName(c){return c==='telegram'?'Telegram':c==='max'?'МАКС':c==='phone'?'по телефону':'WhatsApp';}
 function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
 
 /* =========================================================
