@@ -781,9 +781,9 @@
           <div class="err">Введите имя</div>
         </div>
         <div class="field">
-          <label>Телефон для связи</label>
-          <input type="tel" name="phone" placeholder="+7 (___) ___-__-__" autocomplete="tel">
-          <div class="err">Введите корректный телефон</div>
+          <label id="leadContactLabel">Телефон для связи</label>
+          <input type="tel" name="phone" id="leadPhone" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+          <div class="err">Укажите телефон или @username</div>
         </div>
         <div class="field">
           <label>Куда написать?</label>
@@ -1791,10 +1791,24 @@ function sendLead(data){
    ========================================================= */
 const leadForm = document.getElementById('leadForm');
 let leadChannel='whatsapp';
+/* для Telegram — можно указать телефон или @username */
+function updateLeadContactField(){
+  const lbl=document.getElementById('leadContactLabel');
+  const inp=document.getElementById('leadPhone');
+  if(!lbl||!inp) return;
+  if(leadChannel==='telegram'){
+    lbl.textContent='Telegram: телефон или @username';
+    inp.type='text'; inp.placeholder='+7… или @username / t.me/…';
+  }else{
+    lbl.textContent='Телефон для связи';
+    inp.type='tel'; inp.placeholder='+7 (___) ___-__-__';
+  }
+}
 leadForm.querySelectorAll('[data-channels] .channel').forEach(c=>{
   c.addEventListener('click',()=>{
     leadForm.querySelectorAll('[data-channels] .channel').forEach(x=>x.classList.remove('selected'));
     c.classList.add('selected'); leadChannel=c.dataset.channel;
+    updateLeadContactField();
   });
 });
 leadForm.addEventListener('submit',e=>{
@@ -1804,13 +1818,15 @@ leadForm.addEventListener('submit',e=>{
   const errs=leadForm.querySelectorAll('.err');
   let ok=true;
   if(!name){errs[0].classList.add('show');ok=false;}else errs[0].classList.remove('show');
-  if(!isPhoneValid(phone)){errs[1].classList.add('show');ok=false;}else errs[1].classList.remove('show');
+  const contactOk = leadChannel==='telegram' ? phone.trim().length>=3 : isPhoneValid(phone);
+  if(!contactOk){errs[1].classList.add('show');ok=false;}else errs[1].classList.remove('show');
   if(!leadForm.consent.checked){showToast('Подтвердите согласие на обработку данных');ok=false;}
   if(!ok) return;
-  sendLead({source:'cta-form', name, phone, channel:leadChannel});
+  sendLead({source:'cta-form', name, contact:phone, channel:leadChannel});
   leadForm.reset();
   leadForm.querySelectorAll('[data-channels] .channel').forEach((x,i)=>x.classList.toggle('selected',i===0));
   leadChannel='whatsapp';
+  updateLeadContactField();
 });
 
 /* =========================================================
