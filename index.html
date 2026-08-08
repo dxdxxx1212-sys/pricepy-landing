@@ -2,6 +2,20 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<!-- Top.Mail.Ru counter (VK / myTarget) -->
+<script type="text/javascript">
+var _tmr = window._tmr || (window._tmr = []);
+_tmr.push({id: "3785703", type: "pageView", start: (new Date()).getTime()});
+(function (d, w, id) {
+  if (d.getElementById(id)) return;
+  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+  ts.src = "https://top-fwz1.mail.ru/js/code.js";
+  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+})(document, window, "tmr-code");
+</script>
+<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3785703;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
+<!-- /Top.Mail.Ru counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Прицепы для легковых авто, лодок и техники со скидкой до 40%. Пройдите квиз за 1 минуту и получите подбор моделей под вашу задачу с актуальными ценами.">
 <title>ПрайсПрицеп — прицепы со скидкой до 40% | Подбор за 1 минуту</title>
@@ -1779,6 +1793,9 @@ function sendLead(data){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(data)
   }).catch(err => console.error('Ошибка отправки заявки:', err));
+
+  // цель-конверсия для пикселя VK (Top.Mail.Ru) — для оптимизации рекламы
+  try { (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: '3785703', goal: 'lead' }); } catch(e){}
 
   showToast('✓ Заявка отправлена! Скоро свяжемся.');
 }
