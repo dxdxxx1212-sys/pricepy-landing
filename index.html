@@ -1795,7 +1795,7 @@ function sendLead(data){
   }).catch(err => console.error('Ошибка отправки заявки:', err));
 
   // цель-конверсия для пикселя VK (Top.Mail.Ru) — для оптимизации рекламы
-  try { (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: '3785703', goal: 'lead' }); } catch(e){}
+  try { (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: 3785703, goal: 'Leed_js' }); } catch(e){}
 
   showToast('✓ Заявка отправлена! Скоро свяжемся.');
 }
