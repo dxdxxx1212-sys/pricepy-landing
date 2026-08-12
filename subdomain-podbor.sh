@@ -5,7 +5,7 @@
 #   curl -fsSL https://dxdxxx1212-sys.github.io/pricepy-landing/subdomain-podbor.sh | bash
 set -euo pipefail
 
-SUB="podbor.xn----ctbklixakchgm2d.xn--p1ai"   # podbor.восток-прицеп.рф
+SUB="xn--90af3acbk.xn----ctbklixakchgm2d.xn--p1ai"   # подбор.восток-прицеп.рф
 WWW="/var/www/pricepy"
 PHP_SOCK="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n1)"
 echo "PHP-FPM сокет: ${PHP_SOCK:-НЕ НАЙДЕН}"
@@ -41,4 +41,4 @@ else
   echo "       (иногда с 2-3 попытки из-за капризной сети РФ↔Let's Encrypt)"
 fi
 
-echo "==> Готово! Открой: https://podbor.восток-прицеп.рф"
+echo "==> Готово! Открой: https://подбор.восток-прицеп.рф"
