@@ -134,6 +134,21 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 .rev .rwho b{display:block;font-size:15px}
 .rev .rwho span{font-size:13px;color:var(--muted)}
 @media(max-width:560px){ .rev{flex-basis:82vw} .rev .rimg{height:200px} }
+.partners-sec{padding:8px 0 30px;text-align:center}
+.brands{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
+.brands span{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 20px;font-weight:800;font-size:17px;color:var(--ink);box-shadow:0 2px 8px rgba(23,34,46,.05)}
+.pop-sec{padding:6px 0 44px}
+.pop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.pph{height:150px;background:#eef3f5 center/cover no-repeat}
+.pcb{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.pkind{font-size:12px;color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.pnm{font-size:15px;font-weight:700;line-height:1.3;flex:1}
+.pbot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.pprice{font-size:18px;font-weight:800;white-space:nowrap}
+.pbtn{border:0;background:var(--accent);color:#fff;font-weight:700;border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;font-family:inherit}
+.pbtn:hover{background:var(--accent-d)}
+@media(max-width:640px){ .pop-grid{grid-template-columns:1fr 1fr;gap:10px} .pph{height:120px} .pnm{font-size:14px} .pprice{font-size:16px} }
 footer{background:#17222e;color:#aeb9c2;padding:28px 0;font-size:13px;margin-top:10px}
 footer a{color:#cfd9e0}
 footer .docs{margin:8px 0}
@@ -204,6 +219,25 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
     <h2 class="rev-title">Отзывы покупателей</h2>
     <p class="rev-sub">Забрали свой прицеп в разных городах России</p>
     <div class="rev-row" id="revRow"></div>
+  </div>
+</section>
+
+<section class="partners-sec">
+  <div class="wrap">
+    <h2 class="rev-title">Продаём прицепы ведущих производителей России</h2>
+    <p class="rev-sub">Прямые поставки — оригинальная продукция с гарантией завода</p>
+    <div class="brands">
+      <span>МЗСА</span><span>Титан</span><span>Трейлер</span><span>ССТ</span><span>Крепыш</span><span>Славич</span><span>ALASKA</span><span>GTS</span><span>Кремень</span><span>LAV</span>
+    </div>
+  </div>
+</section>
+
+<section class="pop-sec">
+  <div class="wrap">
+    <h2 class="rev-title">Популярные модели</h2>
+    <p class="rev-sub">Несколько ходовых вариантов — под вашу задачу подберём точнее</p>
+    <div class="pop-grid" id="popGrid"></div>
+    <button class="btn" data-start style="max-width:440px;margin:20px auto 0">Подобрать под свою задачу →</button>
   </div>
 </section>
 
@@ -322,10 +356,23 @@ const REVIEWS=[
  {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили точно в срок.'},
  {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',text:'Искал недорогой надёжный прицеп. Прошёл подбор, прислали варианты с ценами — выбрал за вечер. Всё честно.'},
 ];
+const POPULAR=[
+ {img:'images/17.jpg',kind:'Бортовой',name:'Прицеп Титан 3015-03',price:60660},
+ {img:'images/18.jpg',kind:'С тентом',name:'Трейлер 829450 3,0×1,5',price:70275},
+ {img:'images/29.jpg',kind:'Бортовой',name:'Крепыш 2.5 Плюс',price:63375},
+ {img:'images/21.jpg',kind:'Двухосный',name:'Славич 255Д двухосный',price:72900},
+ {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',price:92800},
+ {img:'images/24.jpg',kind:'С крышкой',name:'МЗСА 817701.026',price:136140},
+];
+const money=n=>n.toLocaleString('ru-RU')+' ₽';
+function renderPopular(){
+  $('#popGrid').innerHTML=POPULAR.map(p=>'<div class="pcard"><div class="pph" style="background-image:url(\''+p.img+'\')"></div><div class="pcb"><div class="pkind">'+esc(p.kind)+'</div><div class="pnm">'+esc(p.name)+'</div><div class="pbot"><span class="pprice">'+money(p.price)+'</span><button class="pbtn" data-start>Подобрать →</button></div></div></div>').join('');
+}
 function renderReviews(){
   $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="rimg" style="background-image:url(\''+r.img+'\')"></div><div class="rbody"><div class="stars">★★★★★</div><p class="rtext">'+esc(r.text)+'</p><div class="rwho"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
 }
 renderReviews();
+renderPopular();
 render();
 </script>
 </body>
