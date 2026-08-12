@@ -111,6 +111,21 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 .summary .row:last-child{border:0}
 .summary .k{color:var(--muted)}.summary .v{font-weight:700;text-align:right}
 
+.rev-sec{padding:18px 0 42px}
+.rev-title{text-align:center;font-size:26px;margin:0 0 4px}
+.rev-sub{text-align:center;color:var(--muted);margin:0 0 18px;font-size:16px}
+.rev-row{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.rev-row::-webkit-scrollbar{height:6px}.rev-row::-webkit-scrollbar-thumb{background:#cfd9e0;border-radius:6px}
+.rev{flex:0 0 300px;scroll-snap-align:start;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.rev .rimg{height:180px;background:#eef3f5 center/cover no-repeat}
+.rev .rbody{padding:14px}
+.rev .stars{color:var(--accent);font-size:15px;letter-spacing:2px}
+.rev .rtext{font-size:15px;margin:8px 0 12px;color:#2b3742;line-height:1.45}
+.rev .rwho{display:flex;align-items:center;gap:10px}
+.rev .rav{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.rev .rwho b{display:block;font-size:15px}
+.rev .rwho span{font-size:13px;color:var(--muted)}
+@media(max-width:560px){ .rev{flex-basis:82vw} .rev .rimg{height:200px} }
 footer{background:#17222e;color:#aeb9c2;padding:28px 0;font-size:13px;margin-top:10px}
 footer a{color:#cfd9e0}
 footer .docs{margin:8px 0}
@@ -169,6 +184,14 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
       <div class="qhead"><span id="qcount">Шаг 1</span><span id="qname">Восток Прицеп</span></div>
       <div class="qbody" id="qbody"></div>
     </div>
+  </div>
+</section>
+
+<section class="rev-sec">
+  <div class="wrap">
+    <h2 class="rev-title">Отзывы покупателей</h2>
+    <p class="rev-sub">Забрали свой прицеп в разных городах России</p>
+    <div class="rev-row" id="revRow"></div>
   </div>
 </section>
 
@@ -278,6 +301,18 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-closem]')||e.target.id==='modal'){$('#modal').classList.remove('on');}
 });
 
+const REVIEWS=[
+ {img:'reviews/1.jpg',ini:'АМ',name:'Андрей М.',city:'Москва',text:'Взял двухосный под стройматериалы и технику на объекты. Гружёный идёт устойчиво, привезли со всеми документами быстро.'},
+ {img:'reviews/2.jpg',ini:'ВС',name:'Виктор С.',city:'Тверь',text:'Брал под охоту и рыбалку — с тентом груз не мокнет. Помогли подобрать по размеру, всё объяснили. Доволен.'},
+ {img:'reviews/3.jpg',ini:'РД',name:'Роман Д.',city:'Подольск',text:'Прицеп для дачи — вожу дрова, доски, инструмент. Собрался просто, по цене вышло выгодно. Спасибо за подбор.'},
+ {img:'reviews/4.jpg',ini:'НВ',name:'Никита В.',city:'Санкт-Петербург',text:'Оформил зимой, забрал в тот же день. Подобрали под бюджет, ничего лишнего не навязывали. Качеством доволен.'},
+ {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили точно в срок.'},
+ {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',text:'Искал недорогой надёжный прицеп. Прошёл подбор, прислали варианты с ценами — выбрал за вечер. Всё честно.'},
+];
+function renderReviews(){
+  $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="rimg" style="background-image:url(\''+r.img+'\')"></div><div class="rbody"><div class="stars">★★★★★</div><p class="rtext">'+esc(r.text)+'</p><div class="rwho"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
+}
+renderReviews();
 render();
 </script>
 </body>
