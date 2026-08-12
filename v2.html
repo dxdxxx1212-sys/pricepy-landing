@@ -295,7 +295,7 @@ function render(){
     html+='</div>';
     html+='<div class="qfoot"><button class="btn" id="next" '+(st.ans[q.key]?'':'disabled')+'>Далее →</button></div>';
   } else {
-    html+='<div class="chans">'+['Телефон','Telegram','WhatsApp'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
+    html+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
     html+='<div class="field"><label>Ваше имя</label><input id="cName" placeholder="Как к вам обращаться"></div>';
     html+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
     html+='<div class="err" id="cErr">Заполните имя и контакт</div>';
