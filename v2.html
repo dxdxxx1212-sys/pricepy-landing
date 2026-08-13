@@ -5,7 +5,7 @@
 <!-- Top.Mail.Ru counter (VK / myTarget) -->
 <script type="text/javascript">
 var _tmr = window._tmr || (window._tmr = []);
-_tmr.push({id: "3785703", type: "pageView", start: (new Date()).getTime()});
+_tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 (function (d, w, id) {
   if (d.getElementById(id)) return;
   var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
@@ -14,7 +14,7 @@ _tmr.push({id: "3785703", type: "pageView", start: (new Date()).getTime()});
   if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
 })(document, window, "tmr-code");
 </script>
-<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3785703;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
+<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3787094;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
 <!-- /Top.Mail.Ru counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Восток Прицеп — подбор прицепа за 1 минуту | прицепы для дела</title>
@@ -330,14 +330,14 @@ function submit(){
 
 function sendLead(data){
   fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
-  try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3785703,goal:'Leed_js'});}catch(e){}
+  try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
   showToast('✓ Заявка отправлена!');
 }
 let tt;function showToast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3000);}
 
 /* docs */
 const DOCS={
- privacy:'<h3>Политика конфиденциальности</h3><div class="lt"><p>Оператор — ИП Зырин Валерий Владимирович (ИНН 644154970400). Обработка персональных данных ведётся по ФЗ-152.</p><h4>Данные</h4><p>Имя, телефон/контакт, выбранный способ связи и ответы в форме подбора; обезличенные данные о посещении (cookie, IP, аналитика, в т.ч. пиксель VK/Top.Mail.Ru 3785703 для статистики и ретаргетинга).</p><h4>Цели</h4><p>Связь по заявке, подбор и расчёт стоимости, улучшение сайта.</p><h4>Хранение</h4><p>На серверах в РФ, в течение срока обработки. Меры защиты применяются. Отозвать согласие можно по контактам оператора.</p><h4>Контакты</h4><p>info@jefwipwero.online</p></div>',
+ privacy:'<h3>Политика конфиденциальности</h3><div class="lt"><p>Оператор — ИП Зырин Валерий Владимирович (ИНН 644154970400). Обработка персональных данных ведётся по ФЗ-152.</p><h4>Данные</h4><p>Имя, телефон/контакт, выбранный способ связи и ответы в форме подбора; обезличенные данные о посещении (cookie, IP, аналитика, в т.ч. пиксель VK/Top.Mail.Ru 3787094 для статистики и ретаргетинга).</p><h4>Цели</h4><p>Связь по заявке, подбор и расчёт стоимости, улучшение сайта.</p><h4>Хранение</h4><p>На серверах в РФ, в течение срока обработки. Меры защиты применяются. Отозвать согласие можно по контактам оператора.</p><h4>Контакты</h4><p>info@jefwipwero.online</p></div>',
  consent:'<h3>Согласие на обработку персональных данных</h3><div class="lt"><p>Отправляя форму, я даю согласие ИП Зырин Валерий Владимирович (ИНН 644154970400) на обработку моих персональных данных (имя, телефон/контакт, способ связи и ответы) с целью обработки обращения и связи со мной, в соответствии с ФЗ-152. Согласие действует до достижения целей или отзыва.</p></div>',
  offer:'<h3>Публичная оферта</h3><div class="lt"><p>Сайт носит информационный характер. Материалы и цены не являются публичной офертой (ст. 437 ГК РФ) и могут меняться. Оператор (ИП Зырин В.В.) помогает подобрать модель; точная стоимость, наличие и условия согласуются после обращения.</p><p>Контакты: info@jefwipwero.online</p></div>',
 };
