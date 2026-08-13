@@ -5,7 +5,9 @@
 <!-- Top.Mail.Ru counter (VK / myTarget) -->
 <script type="text/javascript">
 var _tmr = window._tmr || (window._tmr = []);
-_tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
+// Пиксель зависит от домена: восток-прицеп.рф → 3787092/Lead2, остальные (jefwipwero.online и пр.) → 3787094/Lead3
+window.VK_PIXEL = /(^|\.)(восток-прицеп\.рф|xn----ctbklixakchgm2d\.xn--p1ai)$/.test(location.hostname) ? {id:"3787092", goal:"Lead2"} : {id:"3787094", goal:"Lead3"};
+_tmr.push({id: window.VK_PIXEL.id, type: "pageView", start: (new Date()).getTime()});
 (function (d, w, id) {
   if (d.getElementById(id)) return;
   var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
@@ -1795,7 +1797,7 @@ function sendLead(data){
   }).catch(err => console.error('Ошибка отправки заявки:', err));
 
   // цель-конверсия для пикселя VK (Top.Mail.Ru) — для оптимизации рекламы
-  try { (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: 3787094, goal: 'Lead3' }); } catch(e){}
+  try { var _vp = window.VK_PIXEL || {id:'3787094', goal:'Lead3'}; (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: _vp.id, goal: _vp.goal }); } catch(e){}
 
   showToast('✓ Заявка отправлена! Скоро свяжемся.');
 }
