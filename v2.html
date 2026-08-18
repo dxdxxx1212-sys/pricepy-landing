@@ -344,6 +344,7 @@ function submit(){
 function sendLead(data){
   fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
   try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
+  try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
   showToast('✓ Заявка отправлена!');
 }
 let tt;function showToast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3000);}
