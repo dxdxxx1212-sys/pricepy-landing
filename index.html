@@ -1561,6 +1561,12 @@ faqList.querySelectorAll('.faq-item').forEach(item=>{
    ========================================================= */
 const state = { step:0, answers:{}, channel:"whatsapp" };
 const body = document.getElementById('quizBody');
+// на мобиле: при фокусе на поле прокручиваем его над клавиатурой (иначе поле уходит под неё)
+body.addEventListener('focusin', function(e){
+  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){
+    setTimeout(function(){ try{ e.target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} }, 300);
+  }
+});
 const bar = document.getElementById('progressBar');
 const stepCount = document.getElementById('stepCount');
 const btnBack = document.getElementById('btnBack');
@@ -1790,6 +1796,7 @@ function sendLead(data){
   console.log('НОВАЯ ЗАЯВКА:', data);
   fetch(LEAD_ENDPOINT, {
     method:'POST',
+    keepalive:true,
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(data)
   }).catch(err => console.error('Ошибка отправки заявки:', err));

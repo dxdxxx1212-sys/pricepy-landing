@@ -328,6 +328,12 @@ $('#qbody').addEventListener('click',e=>{
   if(e.target.id==='next'){st.step++;render();scrollQuiz();return;}
   if(e.target.id==='send'){submit();return;}
 });
+// на мобиле: при фокусе на поле прокручиваем его над клавиатурой (иначе поле уходит под неё)
+$('#qbody').addEventListener('focusin',function(e){
+  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){
+    setTimeout(function(){ try{ e.target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} }, 300);
+  }
+});
 function scrollQuiz(){const y=$('#quiz').getBoundingClientRect().top+scrollY-72;scrollTo({top:y,behavior:'smooth'});}
 
 function submit(){
@@ -343,7 +349,7 @@ function submit(){
 }
 
 function sendLead(data){
-  fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
+  fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
   try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
   try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
   showToast('✓ Заявка отправлена!');
