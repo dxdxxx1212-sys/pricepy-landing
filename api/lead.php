@@ -19,16 +19,30 @@ if (!is_array($data)) { http_response_code(400); echo '{"ok":false}'; exit; }
 // 1) копия на сервере в РФ (локализация персональных данных, 152-ФЗ)
 @file_put_contents(__DIR__ . '/../leads.log', date('c') . ' | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 
-// 2) доставка в Telegram через Worker
-$ch = curl_init($WORKER_URL);
-curl_setopt_array($ch, [
-  CURLOPT_POST           => true,
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-  CURLOPT_POSTFIELDS     => $raw,
-  CURLOPT_TIMEOUT        => 12,
-]);
-curl_exec($ch);
-curl_close($ch);
+// 2) доставка в Telegram через Worker — с повтором и проверкой ответа
+$ok = false; $lastErr = '';
+for ($i = 0; $i < 3; $i++) {
+  $ch = curl_init($WORKER_URL);
+  curl_setopt_array($ch, [
+    CURLOPT_POST           => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+    CURLOPT_POSTFIELDS     => $raw,
+    CURLOPT_TIMEOUT        => 12,
+    CURLOPT_CONNECTTIMEOUT => 8,
+  ]);
+  $resp = curl_exec($ch);
+  $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  $err  = curl_error($ch);
+  curl_close($ch);
+  if ($resp !== false && $code >= 200 && $code < 300) { $ok = true; break; }
+  $lastErr = $err !== '' ? $err : ('HTTP ' . $code);
+  usleep(700000); // 0.7s перед повтором
+}
 
-echo '{"ok":true}';
+// если доставить не удалось — фиксируем в отдельный лог (лид не теряется, видно причину)
+if (!$ok) {
+  @file_put_contents(__DIR__ . '/../leads-errors.log', date('c') . ' | FAILED(' . $lastErr . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
+}
+
+echo $ok ? '{"ok":true}' : '{"ok":false}';
