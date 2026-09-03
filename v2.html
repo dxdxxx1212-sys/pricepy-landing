@@ -350,7 +350,9 @@ function submit(){
 }
 
 function sendLead(data){
-  fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
+  var _b=JSON.stringify(data), _sent=false;
+  try{ if(navigator.sendBeacon) _sent=navigator.sendBeacon('/api/lead', new Blob([_b],{type:'text/plain;charset=UTF-8'})); }catch(e){}
+  if(!_sent)(function r(n){ fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:_b}).then(function(x){ if(!x.ok&&n>0)setTimeout(function(){r(n-1)},1500); }).catch(function(){ if(n>0)setTimeout(function(){r(n-1)},1500); }); })(3);
   try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
   try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
   showToast('✓ Заявка отправлена!');
