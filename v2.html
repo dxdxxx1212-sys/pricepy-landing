@@ -314,7 +314,7 @@ function render(){
     html+='<div class="field"><label>Ваше имя</label><input id="cName" placeholder="Как к вам обращаться"></div>';
     html+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
     html+='<div class="err" id="cErr">Заполните имя и контакт</div>';
-    html+='<label class="consent"><input type="checkbox" id="cAgree" checked><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
+    html+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
     html+='<button class="btn" id="send">Получить подбор →</button>';
   }
   $('#qbody').innerHTML=html;
@@ -337,10 +337,13 @@ $('#qbody').addEventListener('focusin',function(e){
 });
 function scrollQuiz(){const y=$('#quiz').getBoundingClientRect().top+scrollY-72;scrollTo({top:y,behavior:'smooth'});}
 
+let _submitting=false;
 function submit(){
+  if(_submitting)return;                        // защита от двойного тапа
   const name=($('#cName').value||'').trim(), contact=($('#cContact').value||'').trim();
   if(!name||contact.length<4){$('#cErr').classList.add('show');return;}
   if(!$('#cAgree').checked){$('#cErr').textContent='Подтвердите согласие на обработку данных';$('#cErr').classList.add('show');return;}
+  _submitting=true;
   const payload={source:'quiz-v2', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
   sendLead(payload);
   const labels={use:'Назначение',capacity:'Грузоподъёмность',type:'Тип',budget:'Бюджет',timing:'Сроки'};

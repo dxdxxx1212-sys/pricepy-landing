@@ -666,7 +666,7 @@ _tmr.push({id: window.VK_PIXEL.id, type: "pageView", start: (new Date()).getTime
           <div class="ava">👨‍🔧</div>
           <div class="who"><b>Виктор, эксперт по подбору</b><span>на связи и поможет с выбором</span></div>
         </div>
-        <div class="quiz-step-count" id="stepCount">Шаг 1 из 7</div>
+        <div class="quiz-step-count" id="stepCount">Шаг 1 из 6</div>
       </div>
       <div class="progress"><div class="bar" id="progressBar"></div></div>
       <div class="quiz-body" id="quizBody"><!-- шаги рендерятся скриптом --></div>
@@ -1578,7 +1578,7 @@ const quizFoot = document.getElementById('quizFoot');
 function renderStep(){
   const q = QUIZ[state.step];
   stepCount.textContent = `Шаг ${state.step+1} из ${QUIZ.length}`;
-  bar.style.width = ((state.step)/(QUIZ.length)*100)+'%';
+  bar.style.width = (state.step/(QUIZ.length-1)*100)+'%';
   btnBack.style.visibility = state.step===0 ? 'hidden':'visible';
 
   let html = `<div class="q-bubble">${q.bubble}</div><h3 class="q-title">${q.title}</h3><p class="q-hint">${q.hint}</p>`;
@@ -1794,7 +1794,7 @@ function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&l
 const LEAD_ENDPOINT = '/api/lead';
 
 function sendLead(data){
-  console.log('НОВАЯ ЗАЯВКА:', data);
+  if(window.__leadBusy) return; window.__leadBusy=true; setTimeout(function(){window.__leadBusy=false;},4000); // защита от двойной отправки
   var _b = JSON.stringify(data), _sent = false;
   try { if (navigator.sendBeacon) _sent = navigator.sendBeacon(LEAD_ENDPOINT, new Blob([_b], {type:'text/plain;charset=UTF-8'})); } catch(e){}
   if (!_sent) (function r(n){
