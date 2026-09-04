@@ -1,3 +1,6 @@
 .DS_Store
 *.log
 api/config.php
+.claude/
+.preview_server.py
+.claude_launch_tmp
