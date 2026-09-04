@@ -221,7 +221,15 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);background:var(--asphalt);color:var(--signal);padding:14px 22px;border-radius:var(--r-card);font-family:Oswald;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:.35s;z-index:90}
 .toast.on{transform:translateX(-50%) translateY(0)}
 
+/* липкий мобильный CTA */
+.mcta{position:fixed;left:0;right:0;bottom:0;z-index:70;display:none;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(32,35,39,.97);backdrop-filter:blur(6px);border-top:2px solid var(--signal)}
+.mcta .btn{flex:1;margin:0;min-height:50px}
+.mcta .call{flex:0 0 54px;min-width:54px;min-height:50px;background:transparent;border:2px solid rgba(255,255,255,.3);border-radius:var(--r);display:grid;place-items:center;padding:0;cursor:pointer}
+.mcta .call svg{width:22px;height:22px;stroke:var(--signal)}
+
 @media(max-width:900px){
+  .hero h1{font-size:48px}
+  .quiz{max-width:620px;width:100%;margin:0 auto}
   .hero-inner{grid-template-columns:1fr;gap:26px;padding:34px 0 40px}
   .hero-bg{background-image:url('images/hero-tonna-m.jpg'),url('hero.jpg')}
   .hero-bg::after{background:linear-gradient(180deg,rgba(24,26,30,.86),rgba(24,26,30,.94))}
@@ -234,14 +242,35 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 }
 @media(max-width:560px){
   .hd-city{display:none}
-  .hero h1{font-size:42px}
+  .hero h1{font-size:40px}
+  .hero .sub{font-size:16.5px}
   .tonnage{max-width:100%}
+  .tonnage .t{padding:11px 8px}
+  .sec{padding:40px 0}
   .sec h2.big{font-size:29px}
+  .sec .lead{font-size:16px;margin-bottom:22px}
   .opts.photos{grid-template-columns:1fr 1fr}
   .models{grid-template-columns:1fr 1fr;gap:10px}
-  .m .mn{font-size:15px}.m .mp{font-size:20px}
+  .m .mn{font-size:15px}.m .mp{font-size:20px}.m .mb{padding:11px 12px}
   .hd-phone{font-size:16px}
   .steps{grid-template-columns:1fr}.steps .s+.s{border-left:0;border-top:2px solid var(--line)}
+  .rev{flex-basis:82vw;max-width:340px}
+  .rev .ri{height:200px}
+  .deliv .map{height:260px}
+  .qbody{padding:18px}
+  .toast{bottom:calc(78px + env(safe-area-inset-bottom))}
+  .mcta{display:flex}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+}
+@media(max-width:400px){
+  .hd{gap:8px}
+  .brand .nm{font-size:16px}
+  .brand .sl{font-size:9px;letter-spacing:1.5px}
+  .hd-phone{font-size:14px;gap:5px}
+  .hd-phone svg{width:16px;height:16px}
+  .hero h1{font-size:34px}
+  .tonnage .t b{font-size:26px}
+  .tonnage .t span{font-size:11px;letter-spacing:.4px}
 }
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important;animation:none!important}
@@ -369,6 +398,11 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 
 <div class="modal" id="modal"><div class="sheet"><button class="x" data-closem aria-label="Закрыть">✕</button><div id="modalBody"></div></div></div>
 <div class="toast" id="toast"></div>
+
+<div class="mcta">
+  <a class="call" href="tel:+74954873838" aria-label="Позвонить"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h2l2 5-2 1.5a11 11 0 0 0 5 5L16 12l5 2v2a2 2 0 0 1-2 2A15 15 0 0 1 4 5z"/></svg></a>
+  <button class="btn" onclick="document.querySelector('.quiz').scrollIntoView({behavior:'smooth',block:'center'})">Подобрать прицеп</button>
+</div>
 
 <script>
 const QUIZ = [
