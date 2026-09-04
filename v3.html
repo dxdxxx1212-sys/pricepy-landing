@@ -30,21 +30,21 @@ _tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 <!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Восток Прицеп — подберём прицеп под вашу задачу за 1 минуту</title>
-<meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены за 15 минут. Прямые поставки, ЭПТС, доставка по России, гарантия завода.">
+<meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены. Прямые поставки, ЭПТС, доставка по России, гарантия завода. Отвечаем 9:00–21:00, обычно в течение 15 минут.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- ═══ HERO-ФОТО (концепт «ТОННА»). ChatGPT / DALL·E промпт: ═══
-  "Photorealistic galvanized steel single-axle utility cargo trailer loaded with construction
-   materials, parked on an open asphalt road at golden hour, low 3/4 angle, dramatic side light,
-   slight motion blur on background, no people, no text, no logos, no watermark, gritty realistic
-   automotive photography, horizontal 16:9". Готовое фото → images/hero-tonna.jpg
-   (отдельный файл этого ленда; пока не создан — показывается фолбэк hero.jpg). -->
+  "Photorealistic galvanized steel utility cargo trailer loaded with construction materials,
+   parked on an open asphalt road at golden hour, low 3/4 angle, dramatic side light, no people,
+   no text, no logos, no watermark, gritty realistic automotive photography, horizontal 16:9".
+   Готовое фото → images/hero-tonna.jpg (десктоп) + images/hero-tonna-m.jpg (мобайл, ~820px). -->
 
 <style>
 :root{
   --asphalt:#202327; --paper:#fff; --fog:#eceef1; --fog2:#f5f6f8;
-  --signal:#f5b301; --signal-d:#e0a200; --ink:#202327; --muted:#5f6771; --line:#d7dade;
+  --signal:#f5b301; --signal-d:#a87700; --ink:#202327; --muted:#5f6771; --line:#d7dade;
+  --r-hard:0px; --r:4px; --r-card:6px;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
@@ -53,13 +53,15 @@ body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Robo
 img{max-width:100%;display:block}
 h1,h2,h3,.disp{font-family:Oswald,Inter,sans-serif;font-weight:600;letter-spacing:.4px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+button,a,.opt,.chan{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--signal-d);outline-offset:2px}
+.num-t{font-variant-numeric:tabular-nums}
 .btn{border:0;cursor:pointer;font-family:Oswald,sans-serif;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
-  border-radius:4px;background:var(--signal);color:var(--asphalt);padding:16px 26px;font-size:17px;transition:.13s}
-.btn:hover{background:var(--signal-d)}
+  border-radius:var(--r);background:var(--signal);color:var(--asphalt);padding:16px 26px;font-size:17px;transition:.13s;min-height:52px}
+.btn:hover{background:#e0a200}
 .btn:active{transform:translateY(1px)}
 .btn[disabled]{opacity:.4;cursor:not-allowed}
-.btn-dark{background:var(--asphalt);color:#fff}
-.btn-dark:hover{background:#15171a}
+svg.ic{display:block}
 
 /* header */
 header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40}
@@ -70,8 +72,9 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40}
 .brand .nm span{color:var(--signal)}
 .brand .sl{display:block;font-size:10px;color:#9aa2ab;letter-spacing:2px;text-transform:uppercase;margin-top:2px;font-family:Inter}
 .hd-sp{flex:1}
-.hd-reg{border:2px solid var(--signal);border-radius:4px;padding:3px 8px;font-family:Oswald,sans-serif;font-weight:600;color:var(--signal);font-size:14px;letter-spacing:1px}
-.hd-phone{color:#fff;text-decoration:none;font-family:Oswald,sans-serif;font-size:19px;font-weight:600;letter-spacing:.5px}
+.hd-city{color:#c2c8cf;font-size:14px;font-family:Oswald;letter-spacing:.5px}
+.hd-phone{color:#fff;text-decoration:none;font-family:Oswald,sans-serif;font-size:19px;font-weight:600;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.hd-phone svg{width:18px;height:18px;stroke:var(--signal)}
 
 /* hero */
 .hero{position:relative;background:var(--asphalt);color:#fff;overflow:hidden}
@@ -79,100 +82,123 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40}
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(24,26,30,.92) 0 42%,rgba(24,26,30,.35))}
 .hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr 430px;gap:40px;align-items:center;padding:52px 0 56px}
 .hero h1{font-size:64px;line-height:.98;margin:0 0 18px;font-weight:700;text-transform:uppercase}
-.hero h1 em{color:var(--signal);font-style:normal}
-.hero .sub{font-size:19px;color:#d6dae0;max-width:440px;margin:0 0 26px;line-height:1.5}
-.tonnage{display:flex;gap:0;margin-bottom:26px;border:2px solid rgba(255,255,255,.2);border-radius:6px;overflow:hidden;max-width:440px}
+.hero .sub{font-size:19px;color:#d6dae0;max-width:450px;margin:0 0 26px;line-height:1.5}
+.tonnage{display:flex;gap:0;margin-bottom:26px;border:2px solid rgba(255,255,255,.2);border-radius:var(--r-card);overflow:hidden;max-width:450px}
 .tonnage .t{flex:1;padding:12px 14px;text-align:center}
 .tonnage .t+.t{border-left:2px solid rgba(255,255,255,.2)}
 .tonnage .t b{font-family:Oswald,sans-serif;font-size:30px;font-weight:700;color:var(--signal);display:block;line-height:1}
 .tonnage .t span{font-size:12px;color:#aeb5bd;text-transform:uppercase;letter-spacing:1px}
 
 /* quiz card */
-.quiz{background:var(--paper);color:var(--ink);border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)}
-.qtop{background:var(--signal);padding:14px 20px}
+.quiz{background:var(--paper);color:var(--ink);border-radius:var(--r-card);overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.qtop{background:var(--asphalt);padding:15px 20px}
 .qtop .l{display:flex;justify-content:space-between;align-items:baseline;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:1px}
-.qtop .l b{font-size:16px;color:var(--asphalt)}
-.qtop .l span{font-size:13px;color:#6b5200;font-weight:600}
-.qbar-wrap{height:5px;background:rgba(32,35,39,.15);border-radius:3px;margin-top:9px;overflow:hidden}
-.qbar{height:100%;width:0;background:var(--asphalt);transition:width .35s}
+.qtop .l b{font-size:16px;color:#fff}
+.qtop .l span{font-size:13px;color:var(--signal);font-weight:500}
+.qbar-wrap{height:6px;background:rgba(255,255,255,.15);border-radius:4px;margin-top:10px;overflow:hidden}
+.qbar{height:100%;width:0;background:var(--signal);transition:width .35s}
 .qbody{padding:20px}
 .qbody h2{font-size:23px;margin:0 0 3px;text-transform:none;line-height:1.15}
 .qbody .hint{color:var(--muted);font-size:14px;margin:0 0 15px}
 .opts{display:grid;gap:9px}
 .opts.photos{grid-template-columns:1fr 1fr}
-.opt{display:flex;align-items:center;gap:11px;border:2px solid var(--line);border-radius:5px;padding:13px 14px;cursor:pointer;
-  font-size:16px;font-weight:500;transition:.11s;background:#fff;text-align:left;font-family:Inter;width:100%}
+.opt{display:flex;align-items:center;gap:11px;border:2px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;
+  font-size:16px;font-weight:500;transition:.11s;background:#fff;text-align:left;font-family:Inter;width:100%;min-height:52px}
 .opt:hover{border-color:var(--asphalt)}
 .opt.sel{border-color:var(--signal);background:#fffaef}
-.opt .em{font-size:21px}
-.opt .chk{margin-left:auto;width:20px;height:20px;border:2px solid var(--line);border-radius:3px;flex:none;display:grid;place-items:center;color:#fff;font-size:12px}
+.opt .chk{margin-left:auto;width:22px;height:22px;border:2px solid var(--line);border-radius:3px;flex:none;display:grid;place-items:center;color:#fff;font-size:12px}
 .opt.sel .chk{background:var(--signal);border-color:var(--signal);color:var(--asphalt)}
 .popt{flex-direction:column;align-items:stretch;padding:0;gap:0;overflow:hidden}
-.popt .ph{height:88px;background:#e6e9ec center/cover no-repeat;position:relative}
-.popt .pchk{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:3px;background:var(--signal);color:var(--asphalt);display:grid;place-items:center;font-size:13px;font-weight:700;opacity:0}
+.popt .ph{height:92px;background:#e6e9ec center/cover no-repeat;position:relative}
+.popt .pchk{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:3px;background:var(--signal);color:var(--asphalt);display:grid;place-items:center;font-size:14px;font-weight:700;opacity:0}
 .popt.sel .pchk{opacity:1}
-.popt .pl{padding:9px 11px;font-size:14px}
+.popt .pl{padding:10px 12px;font-size:15px}
 .qfoot{margin-top:16px;display:flex;gap:9px}
-.qfoot .back{width:50px;border:2px solid var(--line);background:#fff;border-radius:4px;font-size:20px;cursor:pointer;color:var(--muted);font-family:Oswald}
+.qfoot .back{width:52px;min-height:52px;border:2px solid var(--line);background:#fff;border-radius:var(--r);font-size:20px;cursor:pointer;color:var(--muted);font-family:Oswald}
 .qfoot .btn{flex:1}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
-.field input{width:100%;padding:14px;border:2px solid var(--line);border-radius:5px;font-size:16px;font-family:Inter}
+.field input{width:100%;padding:14px;border:2px solid var(--line);border-radius:var(--r);font-size:16px;font-family:Inter;scroll-margin-top:78px}
 .field input:focus{outline:none;border-color:var(--signal)}
-.chans{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
-.chan{flex:1;min-width:78px;border:2px solid var(--line);border-radius:5px;padding:10px;text-align:center;cursor:pointer;font-weight:600;font-size:14px}
+.chans{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chan{flex:1;min-width:82px;min-height:46px;border:2px solid var(--line);border-radius:var(--r);padding:12px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px}
 .chan.sel{border-color:var(--signal);background:#fffaef}
-.consent{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:2px 0 12px}
-.consent input{width:17px;height:17px;margin-top:1px;accent-color:var(--asphalt)}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:2px 0 12px;padding:6px 0;cursor:pointer}
+.consent input{width:20px;height:20px;margin-top:0;accent-color:var(--asphalt);flex:none}
 .consent a{color:var(--signal-d)}
 .err{color:#cc3b3b;font-size:13px;margin:-4px 0 9px;display:none}
 .err.show{display:block}
 .done{text-align:center;padding:12px 4px}
-.done .big{font-size:48px}
+.done .big{width:64px;height:64px;margin:0 auto 6px;border-radius:50%;background:var(--asphalt);display:grid;place-items:center}
+.done .big svg{width:34px;height:34px;stroke:var(--signal)}
 .done h2{font-size:24px;margin:6px 0}
 .done p{color:var(--muted);font-size:15px;margin:0 auto 12px}
-.summary{border:2px solid var(--line);border-radius:6px;padding:12px 14px;text-align:left}
+.summary{border:2px solid var(--line);border-radius:var(--r-card);padding:12px 14px;text-align:left}
 .summary .row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--fog);font-size:14px}
 .summary .row:last-child{border:0}.summary .k{color:var(--muted)}.summary .v{font-weight:600}
 
 /* guarantees band */
 .gband{background:var(--fog2);border-top:3px solid var(--signal);border-bottom:1px solid var(--line)}
 .gband .row{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
-.gband .g{padding:24px 22px;text-align:left}
+.gband .g{padding:24px 22px}
 .gband .g+.g{border-left:1px solid var(--line)}
-.gband .g .ic{font-size:24px;margin-bottom:8px}
+.gband .g .ic{width:30px;height:30px;stroke:var(--asphalt);margin-bottom:10px}
 .gband .g h3{font-size:18px;margin:0 0 4px;text-transform:none}
 .gband .g p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 
 /* section */
 .sec{padding:52px 0}
-.sec .kick{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:2px;color:var(--signal-d);font-size:14px;margin:0 0 6px}
 .sec h2.big{font-size:38px;margin:0 0 4px;text-transform:uppercase}
 .sec .lead{color:var(--muted);margin:0 0 28px;font-size:17px}
 
+/* how it works — real sequence, numbered is appropriate */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:2px solid var(--asphalt);border-radius:var(--r-card);overflow:hidden}
+.steps .s{padding:24px 22px}
+.steps .s+.s{border-left:2px solid var(--line)}
+.steps .s .n{font-family:Oswald;font-weight:700;font-size:15px;color:var(--asphalt);background:var(--signal);width:34px;height:34px;display:grid;place-items:center;border-radius:var(--r-hard);margin-bottom:12px}
+.steps .s h3{font-size:18px;margin:0 0 5px;text-transform:none}
+.steps .s p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+
 /* models */
 .models{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.m{border:2px solid var(--line);border-radius:6px;overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:.13s}
+.m{border:2px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:.13s}
 .m:hover{border-color:var(--asphalt)}
 .m .mi{aspect-ratio:4/3;background:#e6e9ec center/cover no-repeat;position:relative}
-.m .badge{position:absolute;left:0;top:12px;background:var(--asphalt);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:1px;font-size:11px;padding:5px 11px}
+.m .badge{position:absolute;left:0;top:12px;background:var(--asphalt);color:#fff;font-family:Oswald;text-transform:uppercase;letter-spacing:1px;font-size:11px;padding:5px 11px;border-radius:var(--r-hard)}
 .m .mb{padding:13px 14px;display:flex;flex-direction:column;gap:7px;flex:1}
 .m .mn{font-family:Oswald,sans-serif;font-size:17px;font-weight:600;line-height:1.15}
 .m .ms{font-size:13px;color:var(--muted)}
-.m .mp{font-family:Oswald,sans-serif;font-size:24px;font-weight:700;margin-top:auto}
+.m .mp{font-family:Oswald,sans-serif;font-size:24px;font-weight:700;margin-top:auto;font-variant-numeric:tabular-nums}
 .m .mp small{font-family:Inter;font-size:12px;color:var(--muted);font-weight:400;display:block;text-transform:none;letter-spacing:0}
-.m .btn{border-radius:0;width:100%}
+.m .btn{border-radius:var(--r-hard);width:100%}
+
+/* delivery */
+.deliv{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;align-items:center}
+.deliv .txt p{color:var(--muted);font-size:16px;margin:0 0 12px}
+.deliv .txt .free{color:var(--asphalt);font-weight:600}
+.deliv .map{border:2px solid var(--line);border-radius:var(--r-card);overflow:hidden;height:300px}
+.deliv .map iframe{width:100%;height:100%;border:0;display:block}
+
+/* faq */
+.faq{max-width:820px}
+.qa{border:2px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.qa summary{list-style:none;cursor:pointer;padding:17px 20px;font-weight:600;font-size:17px;display:flex;justify-content:space-between;gap:14px;align-items:center}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary .pl{color:var(--signal-d);font-size:24px;font-weight:400;transition:.2s;flex:none;line-height:1}
+.qa[open] summary .pl{transform:rotate(45deg)}
+.qa .ans{padding:0 20px 18px;color:var(--muted);font-size:15.5px;line-height:1.55}
 
 /* reviews */
 .rev-row{display:flex;gap:16px;overflow-x:auto;padding:4px 2px 14px;scroll-snap-type:x mandatory}
 .rev-row::-webkit-scrollbar{height:6px}.rev-row::-webkit-scrollbar-thumb{background:#c7ccd2;border-radius:6px}
-.rev{flex:0 0 330px;scroll-snap-align:start;border:2px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.rev{flex:0 0 320px;scroll-snap-align:start;border:2px solid var(--line);border-radius:var(--r-card);overflow:hidden;background:#fff}
 .rev .ri{height:190px;background:#e6e9ec center/cover no-repeat}
 .rev .rb{padding:15px 16px}
-.rev .st{color:var(--signal-d);letter-spacing:2px}
-.rev .rt{font-size:14.5px;margin:8px 0 12px;line-height:1.5}
+.rev .st{color:var(--signal);letter-spacing:2px}
+.rev .rt{font-size:14.5px;margin:8px 0 10px;line-height:1.5}
+.rev .rmodel{font-size:12.5px;color:var(--muted);margin-bottom:10px}
 .rev .rw{display:flex;align-items:center;gap:10px}
-.rev .rav{width:38px;height:38px;border-radius:4px;background:var(--asphalt);color:var(--signal);display:grid;place-items:center;font-family:Oswald;font-weight:700}
+.rev .rav{width:38px;height:38px;border-radius:var(--r-hard);background:var(--asphalt);color:var(--signal);display:grid;place-items:center;font-family:Oswald;font-weight:700}
 .rev .rw b{display:block;font-size:14px}.rev .rw span{font-size:12.5px;color:var(--muted)}
 
 footer{background:var(--asphalt);color:#9aa2ab;padding:36px 0 28px;font-size:13.5px}
@@ -180,26 +206,34 @@ footer a{color:#d6dae0}
 footer .ft{display:flex;flex-wrap:wrap;gap:26px;align-items:center;margin-bottom:14px}
 footer .ft .nm{font-family:Oswald;font-size:20px;color:#fff;text-transform:uppercase;letter-spacing:1px}
 footer .ft .nm span{color:var(--signal)}
-footer .docs a{text-decoration:underline;cursor:pointer;margin-right:16px}
-footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin-top:14px;line-height:1.7;color:#7c848d}
+footer .fcontacts{display:flex;flex-wrap:wrap;gap:8px 20px}
+footer .fcontacts a,footer .fcontacts span{display:inline-flex;align-items:center;gap:8px}
+footer .fcontacts svg{width:16px;height:16px;stroke:#9aa2ab;flex:none}
+footer .docs{margin-top:6px}
+footer .docs a{text-decoration:underline;cursor:pointer;display:inline-block;padding:8px 0;margin-right:18px}
+footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin-top:8px;line-height:1.7;color:#7c848d}
 
 .modal{position:fixed;inset:0;z-index:80;background:rgba(15,17,20,.7);display:none;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
 .modal.on{display:flex}
-.sheet{background:#fff;border-radius:8px;max-width:640px;width:100%;padding:24px;position:relative}
-.x{position:absolute;right:14px;top:14px;border:0;background:var(--fog);width:36px;height:36px;border-radius:5px;font-size:18px;cursor:pointer}
+.sheet{background:#fff;border-radius:var(--r-card);max-width:640px;width:100%;padding:24px;position:relative}
+.x{position:absolute;right:14px;top:14px;border:0;background:var(--fog);width:40px;height:40px;border-radius:var(--r);font-size:18px;cursor:pointer}
 .lt{font-size:14px;color:#3a4048;line-height:1.65}.lt h4{margin:14px 0 4px;font-size:15px;color:var(--ink)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);background:var(--asphalt);color:var(--signal);padding:14px 22px;border-radius:6px;font-family:Oswald;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:.35s;z-index:90}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140px);background:var(--asphalt);color:var(--signal);padding:14px 22px;border-radius:var(--r-card);font-family:Oswald;font-weight:600;letter-spacing:1px;text-transform:uppercase;transition:.35s;z-index:90}
 .toast.on{transform:translateX(-50%) translateY(0)}
 
 @media(max-width:900px){
   .hero-inner{grid-template-columns:1fr;gap:26px;padding:34px 0 40px}
+  .hero-bg{background-image:url('images/hero-tonna-m.jpg'),url('hero.jpg')}
   .hero-bg::after{background:linear-gradient(180deg,rgba(24,26,30,.86),rgba(24,26,30,.94))}
   .gband .row{grid-template-columns:1fr 1fr}
   .gband .g:nth-child(3){border-left:0}.gband .g:nth-child(n+3){border-top:1px solid var(--line)}
+  .steps{grid-template-columns:1fr 1fr}
+  .steps .s:nth-child(3){border-left:0}.steps .s:nth-child(n+3){border-top:2px solid var(--line)}
   .models{grid-template-columns:1fr 1fr}
+  .deliv{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .hd-reg{display:none}
+  .hd-city{display:none}
   .hero h1{font-size:42px}
   .tonnage{max-width:100%}
   .sec h2.big{font-size:29px}
@@ -207,6 +241,11 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   .models{grid-template-columns:1fr 1fr;gap:10px}
   .m .mn{font-size:15px}.m .mp{font-size:20px}
   .hd-phone{font-size:16px}
+  .steps{grid-template-columns:1fr}.steps .s+.s{border-left:0;border-top:2px solid var(--line)}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+  html{scroll-behavior:auto}
 }
 </style>
 </head>
@@ -214,10 +253,10 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 
 <header>
   <div class="wrap hd">
-    <a class="brand" href="#"><img src="logo.png" alt="" onerror="this.style.display='none'"><span class="nm">Восток<span>Прицеп</span><small class="sl">Прицепы для дела</small></span></a>
+    <a class="brand" href="#"><img src="logo.png" alt="Восток Прицеп" onerror="this.style.display='none'"><span class="nm">Восток<span>Прицеп</span><small class="sl">Прицепы для дела</small></span></a>
     <div class="hd-sp"></div>
-    <span class="hd-reg">25 · Владивосток</span>
-    <a class="hd-phone" href="tel:+74954873838">+7 495 487-38-38</a>
+    <span class="hd-city">Владивосток</span>
+    <a class="hd-phone" href="tel:+74954873838"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke-width="1.9" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h2l2 5-2 1.5a11 11 0 0 0 5 5L16 12l5 2v2a2 2 0 0 1-2 2A15 15 0 0 1 4 5z"/></svg>+7 495 487-38-38</a>
   </div>
 </header>
 
@@ -225,12 +264,12 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   <div class="hero-bg"></div>
   <div class="wrap hero-inner">
     <div>
-      <h1>Прицеп <em>под ваш груз</em><br>и под ваш бюджет</h1>
-      <p class="sub">Ответьте на 5 вопросов — подберём модель и пришлём цены за 15 минут. Прямые поставки, ЭПТС, доставка по России.</p>
+      <h1>Прицеп под ваш груз и под ваш бюджет</h1>
+      <p class="sub">Ответьте на 5 вопросов — подберём модель и пришлём цены. Прямые поставки, ЭПТС, доставка по России. Отвечаем 9:00–21:00, обычно в течение 15 минут.</p>
       <div class="tonnage">
-        <div class="t"><b>750</b><span>кг без прав E</span></div>
-        <div class="t"><b>2 т</b><span>двухосные</span></div>
-        <div class="t"><b>250+</b><span>моделей</span></div>
+        <div class="t"><b class="num-t">750</b><span>кг без прав E</span></div>
+        <div class="t"><b class="num-t">2 т</b><span>двухосные</span></div>
+        <div class="t"><b class="num-t">250+</b><span>моделей</span></div>
       </div>
     </div>
     <div class="quiz" id="quiz">
@@ -245,27 +284,62 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 
 <section class="gband">
   <div class="wrap"><div class="row">
-    <div class="g"><div class="ic">📄</div><h3>ЭПТС и документы</h3><p>Полный пакет на каждый прицеп — ставите на учёт без хлопот.</p></div>
-    <div class="g"><div class="ic">🏭</div><h3>Прямой поставщик</h3><p>Оригинал от заводов России, без лишних наценок.</p></div>
-    <div class="g"><div class="ic">🛡️</div><h3>Гарантия завода</h3><p>Талон производителя от 12 до 36 месяцев.</p></div>
-    <div class="g"><div class="ic">🚚</div><h3>Доставка по России</h3><p>Или самовывоз со склада во Владивостоке.</p></div>
+    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h5"/></svg><h3>ЭПТС и документы</h3><p>Полный пакет на каждый прицеп — ставите на учёт без хлопот.</p></div>
+    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 21h18"/><path d="M4 21V11l6 3V11l6 3V6l4 2v13"/><path d="M8 21v-3M13 21v-3"/></svg><h3>Прямой поставщик</h3><p>Оригинал от заводов России, без лишних наценок.</p></div>
+    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><h3>Гарантия завода</h3><p>Гарантийный талон производителя от 12 до 36 месяцев.</p></div>
+    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7.5" cy="18" r="1.7"/><circle cx="17" cy="18" r="1.7"/></svg><h3>Доставка по России</h3><p>Или самовывоз со склада во Владивостоке.</p></div>
   </div></div>
 </section>
 
 <section class="sec">
   <div class="wrap">
-    <p class="kick">Ходовые модели</p>
+    <h2 class="big">Как проходит покупка</h2>
+    <p class="lead">Прозрачно и без сюрпризов — от заявки до прицепа с документами.</p>
+    <div class="steps">
+      <div class="s"><div class="n">1</div><h3>Заявка</h3><p>Проходите подбор или оставляете контакт — присылаем 3–5 моделей с ценами.</p></div>
+      <div class="s"><div class="n">2</div><h3>Согласование</h3><p>Выбираете модель и комплектацию, рассчитываем доставку до вашего города.</p></div>
+      <div class="s"><div class="n">3</div><h3>Оформление</h3><p>Оплата удобным способом, готовим ЭПТС и полный пакет документов.</p></div>
+      <div class="s"><div class="n">4</div><h3>Получение</h3><p>Доставка транспортной или самовывоз со склада. Ставите на учёт в ГИБДД.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="background:var(--fog2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
     <h2 class="big">Забирают чаще всего</h2>
     <p class="lead">Точную модель под задачу подберём в тесте выше.</p>
     <div class="models" id="models"></div>
   </div>
 </section>
 
-<section class="sec" style="background:var(--fog2);border-top:1px solid var(--line)">
+<section class="sec">
   <div class="wrap">
-    <p class="kick">Покупатели</p>
+    <h2 class="big">Доставка и самовывоз</h2>
+    <p class="lead">Склад во Владивостоке, отправляем по всей России.</p>
+    <div class="deliv">
+      <div class="txt">
+        <p>Доставка транспортными компаниями по всей России — привезём в ваш город.</p>
+        <p><span class="free">Самовывоз со склада во Владивостоке — бесплатно.</span></p>
+        <p>Стоимость и срок доставки зависят от города и модели — рассчитаем при подборе.</p>
+        <p style="color:var(--asphalt);font-weight:600;margin-top:16px">📍 г. Владивосток, ул. Экипажная, 1 · ежедневно 9:00–21:00</p>
+      </div>
+      <div class="map"><iframe loading="lazy" title="Склад Восток Прицеп на карте" src="https://yandex.ru/map-widget/v1/?mode=search&text=%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%B2%D0%BE%D1%81%D1%82%D0%BE%D0%BA%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%AD%D0%BA%D0%B8%D0%BF%D0%B0%D0%B6%D0%BD%D0%B0%D1%8F%2C%201&z=16"></iframe></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="background:var(--fog2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <h2 class="big">Частые вопросы</h2>
+    <p class="lead">Коротко о том, что чаще всего спрашивают.</p>
+    <div class="faq" id="faq"></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
     <h2 class="big">Забрали свой прицеп</h2>
-    <p class="lead">Из разных городов России</p>
+    <p class="lead">Покупатели из разных городов России</p>
     <div class="rev-row" id="revRow"></div>
   </div>
 </section>
@@ -274,8 +348,11 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   <div class="wrap">
     <div class="ft">
       <span class="nm">Восток<span>Прицеп</span></span>
-      <div>📞 <a href="tel:+74954873838">+7 495 487-38-38</a> &nbsp; ✉️ <a href="mailto:info@xn----ctbklixakchgm2d.xn--p1ai">info@восток-прицеп.рф</a></div>
-      <div>📍 г. Владивосток, ул. Экипажная, 1 · ежедневно 9:00–21:00</div>
+      <div class="fcontacts">
+        <a href="tel:+74954873838"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h2l2 5-2 1.5a11 11 0 0 0 5 5L16 12l5 2v2a2 2 0 0 1-2 2A15 15 0 0 1 4 5z"/></svg>+7 495 487-38-38</a>
+        <a href="mailto:info@xn----ctbklixakchgm2d.xn--p1ai"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>info@восток-прицеп.рф</a>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>г. Владивосток, ул. Экипажная, 1</span>
+      </div>
     </div>
     <div class="docs">
       <a data-doc="privacy">Политика конфиденциальности</a>
@@ -290,22 +367,22 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   </div>
 </footer>
 
-<div class="modal" id="modal"><div class="sheet"><button class="x" data-closem>✕</button><div id="modalBody"></div></div></div>
+<div class="modal" id="modal"><div class="sheet"><button class="x" data-closem aria-label="Закрыть">✕</button><div id="modalBody"></div></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 const QUIZ = [
   {key:"use", type:"single", title:"Что планируете возить?", hint:"Выберите основную задачу",
-    options:[{em:"🚙",label:"Бытовые грузы, дача"},{em:"⛵",label:"Лодка или катер"},{em:"🏍️",label:"Мото, квадроцикл"},{em:"🏗️",label:"Стройматериалы"},{em:"🚜",label:"Хозяйство, ферма"},{em:"💼",label:"Бизнес, доставка"}]},
+    options:["Бытовые грузы, дача","Лодка или катер","Мото, квадроцикл","Стройматериалы","Хозяйство, ферма","Бизнес, доставка"]},
   {key:"capacity", type:"single", title:"Какая грузоподъёмность нужна?", hint:"Не уверены — выберите «Не знаю», поможем",
-    options:[{em:"🪶",label:"До 500 кг"},{em:"⚖️",label:"500–750 кг"},{em:"📦",label:"750–1000 кг"},{em:"🏋️",label:"Более 1000 кг"},{em:"🤔",label:"Не знаю"}]},
+    options:["До 500 кг","500–750 кг","750–1000 кг","Более 1000 кг","Не знаю"]},
   {key:"type", type:"single", photos:true, title:"Какой тип кузова предпочтительнее?", hint:"Можно ориентироваться по фото",
     options:[{label:"Открытый",photo:"images/3.jpg"},{label:"С тентом",photo:"images/15.jpg"},{label:"Жёсткий кузов",photo:"images/12.jpg"},{label:"С крышкой",photo:"images/13.jpg"},{label:"Самосвальный",photo:"images/5.jpg"},{label:"Двухосный",photo:"images/16.jpg"}]},
-  {key:"budget", type:"single", title:"На какой бюджет ориентируетесь?", hint:"Подберём оптимально по цене и качеству",
-    options:[{em:"💵",label:"До 90 000 ₽"},{em:"💰",label:"90 000 – 130 000 ₽"},{em:"🤑",label:"130 000 – 200 000 ₽"},{em:"💎",label:"Более 200 000 ₽"}]},
+  {key:"budget", type:"single", title:"На какой бюджет ориентируетесь?", hint:"Подберём под ваш бюджет",
+    options:["До 90 000 ₽","90 000 – 130 000 ₽","130 000 – 200 000 ₽","Более 200 000 ₽"]},
   {key:"timing", type:"single", title:"Когда планируете покупку?", hint:"",
-    options:[{em:"🔥",label:"Срочно, готов купить"},{em:"📅",label:"В течение недели"},{em:"🗓️",label:"В течение месяца"},{em:"👀",label:"Пока смотрю"}]},
-  {key:"contact", type:"contact", title:"Куда прислать подбор?", hint:"Эксперт пришлёт 3–5 моделей с ценами за 15 минут"},
+    options:["Срочно, готов купить","В течение недели","В течение месяца","Пока смотрю"]},
+  {key:"contact", type:"contact", title:"Куда прислать подбор?", hint:"Пришлём 3–5 моделей с ценами — обычно в течение 15 минут (9:00–21:00)"},
 ];
 const $=s=>document.querySelector(s);
 const esc=s=>(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -320,23 +397,24 @@ function render(){
   if(q.hint) h+='<p class="hint">'+esc(q.hint)+'</p>';
   if(q.type==='single'){
     h+='<div class="opts'+(q.photos?' photos':'')+'">';
-    q.options.forEach((o,i)=>{const sel=st.ans[q.key]===o.label?' sel':'';
-      if(q.photos) h+='<div class="opt popt'+sel+'" data-opt="'+i+'"><div class="ph" style="background-image:url(\''+o.photo+'\')"><span class="pchk">✓</span></div><div class="pl">'+esc(o.label)+'</div></div>';
-      else h+='<button class="opt'+sel+'" data-opt="'+i+'"><span class="em">'+(o.em||'')+'</span>'+esc(o.label)+'<span class="chk">✓</span></button>';});
-    h+='</div><div class="qfoot">'+(st.step>0?'<button class="back" id="back">←</button>':'')+'<button class="btn" id="next" '+(st.ans[q.key]?'':'disabled')+'>Далее</button></div>';
+    q.options.forEach((o,i)=>{const label=q.photos?o.label:o;const sel=st.ans[q.key]===label?' sel':'';
+      if(q.photos) h+='<div class="opt popt'+sel+'" data-opt="'+i+'"><div class="ph" style="background-image:url(\''+o.photo+'\')"><span class="pchk">✓</span></div><div class="pl">'+esc(label)+'</div></div>';
+      else h+='<button class="opt'+sel+'" data-opt="'+i+'">'+esc(label)+'<span class="chk">✓</span></button>';});
+    h+='</div><div class="qfoot">'+(st.step>0?'<button class="back" id="back" aria-label="Назад">←</button>':'')+'<button class="btn" id="next" '+(st.ans[q.key]?'':'disabled')+'>Далее</button></div>';
   } else {
+    const isTg=st.channel==='Telegram';
     h+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
-    h+='<div class="field"><label>Ваше имя</label><input id="cName" placeholder="Как к вам обращаться"></div>';
-    h+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
+    h+='<div class="field"><label>Ваше имя</label><input id="cName" autocomplete="name" placeholder="Как к вам обращаться"></div>';
+    h+='<div class="field"><label>'+(isTg?'Телефон или @username':'Телефон')+'</label><input id="cContact" '+(isTg?'type="text" inputmode="text"':'type="tel" inputmode="tel" autocomplete="tel"')+' enterkeyhint="send" placeholder="'+(isTg?'+7… или @username':'+7 (___) ___-__-__')+'"></div>';
     h+='<div class="err" id="cErr">Заполните имя и контакт</div>';
-    h+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
-    h+='<div class="qfoot"><button class="back" id="back">←</button><button class="btn" id="send">Получить подбор</button></div>';
+    h+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a> и <a data-doc="consent">условия согласия</a>.</span></label>';
+    h+='<div class="qfoot"><button class="back" id="back" aria-label="Назад">←</button><button class="btn" id="send">Получить подбор</button></div>';
   }
   $('#qbody').innerHTML=h;
 }
 $('#qbody').addEventListener('click',e=>{
   const opt=e.target.closest('[data-opt]');
-  if(opt){const q=QUIZ[st.step];st.ans[q.key]=q.options[+opt.dataset.opt].label;render();return;}
+  if(opt){const q=QUIZ[st.step];const o=q.options[+opt.dataset.opt];st.ans[q.key]=q.photos?o.label:o;render();return;}
   const chan=e.target.closest('[data-chan]'); if(chan){st.channel=chan.dataset.chan;render();return;}
   if(e.target.id==='next'){st.step++;render();scrollQuiz();return;}
   if(e.target.id==='back'){if(st.step>0)st.step--;render();scrollQuiz();return;}
@@ -357,7 +435,7 @@ function submit(){
   sendLead(p);
   const L={use:'Назначение',capacity:'Грузоп.',type:'Тип',budget:'Бюджет',timing:'Сроки'};
   const rows=Object.keys(L).filter(k=>p[k]).map(k=>'<div class="row"><span class="k">'+L[k]+'</span><span class="v">'+esc(p[k])+'</span></div>').join('');
-  $('#qbody').innerHTML='<div class="done"><div class="big">✅</div><h2>Готово, '+esc(name)+'!</h2><p>Эксперт пришлёт модели с ценами в '+esc(st.channel)+' в течение 15 минут.</p><div class="summary"><div class="row"><span class="k">Связь</span><span class="v">'+esc(st.channel)+' · '+esc(contact)+'</span></div>'+rows+'</div></div>';
+  $('#qbody').innerHTML='<div class="done"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Готово, '+esc(name)+'!</h2><p>Пришлём модели с ценами в '+esc(st.channel)+' — обычно в течение 15 минут (9:00–21:00).</p><div class="summary"><div class="row"><span class="k">Связь</span><span class="v">'+esc(st.channel)+' · '+esc(contact)+'</span></div>'+rows+'</div></div>';
   $('#qbar').style.width='100%';$('#qcount').textContent='Готово';
 }
 function sendLead(data){
@@ -381,13 +459,25 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-closem]')||e.target.id==='modal'){$('#modal').classList.remove('on');}
 });
 
+const FAQ=[
+ ['Нужны ли права категории E?','Для прицепов с разрешённой максимальной массой до 750 кг достаточно категории B. Для двухосных до 2 т подскажем по конкретной модели — уточним при подборе.'],
+ ['Какие документы дадите на прицеп?','ЭПТС (электронный ПТС), договор и полный пакет для постановки на учёт в ГИБДД. Всё оригинальное, от завода-производителя.'],
+ ['Есть ли гарантия?','Да, гарантийный талон завода — от 12 до 36 месяцев в зависимости от модели. Поможем с запчастями и сервисом после покупки.'],
+ ['Как доставите в мой город?','Транспортными компаниями по всей России. Самовывоз со склада во Владивостоке — бесплатно. Стоимость и срок доставки рассчитаем при подборе.'],
+ ['Можно оформить в рассрочку?','Да, возможна рассрочка или кредит. Условия и доступные варианты подскажет эксперт при обращении.'],
+ ['Можно осмотреть прицеп перед покупкой?','Да, на складе во Владивостоке. Иногородним пришлём фото и видео конкретной модели перед отправкой.'],
+];
+function renderFaq(){
+  $('#faq').innerHTML=FAQ.map(([q,a])=>'<details class="qa"><summary>'+esc(q)+'<span class="pl">+</span></summary><div class="ans">'+esc(a)+'</div></details>').join('');
+}
+
 const REVIEWS=[
- {img:'reviews/1.jpg',ini:'АМ',name:'Андрей М.',city:'Москва',text:'Взял двухосный под стройматериалы и технику на объекты. Гружёный идёт устойчиво, привезли со всеми документами быстро.'},
- {img:'reviews/2.jpg',ini:'ВС',name:'Виктор С.',city:'Тверь',text:'Брал под охоту и рыбалку — с тентом груз не мокнет. Помогли подобрать по размеру, всё объяснили.'},
- {img:'reviews/3.jpg',ini:'РД',name:'Роман Д.',city:'Подольск',text:'Прицеп для дачи — вожу дрова, доски, инструмент. По цене вышло выгодно. Спасибо за подбор.'},
- {img:'reviews/4.jpg',ini:'НВ',name:'Никита В.',city:'Санкт-Петербург',text:'Оформил зимой, забрал в тот же день. Подобрали под бюджет, ничего лишнего не навязывали.'},
- {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили в срок.'},
- {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',text:'Искал недорогой надёжный прицеп. Прислали варианты с ценами — выбрал за вечер.'},
+ {img:'reviews/1.jpg',ini:'АМ',name:'Андрей М.',city:'Москва',model:'Славич 255Д · март 2026',text:'Взял двухосный под стройматериалы и технику на объекты. Гружёный идёт устойчиво, привезли со всеми документами быстро.'},
+ {img:'reviews/2.jpg',ini:'ВС',name:'Виктор С.',city:'Тверь',model:'Трейлер 829450 · февраль 2026',text:'Брал под охоту и рыбалку — с тентом груз не мокнет. Помогли подобрать по размеру, всё объяснили.'},
+ {img:'reviews/3.jpg',ini:'РД',name:'Роман Д.',city:'Подольск',model:'Крепыш 2.5 Плюс · январь 2026',text:'Прицеп для дачи — вожу дрова, доски, инструмент. По цене вышло выгодно. Спасибо за подбор.'},
+ {img:'reviews/4.jpg',ini:'НВ',name:'Никита В.',city:'Санкт-Петербург',model:'Титан 3015-03 · декабрь 2025',text:'Оформил зимой, забрал в тот же день. Подобрали под бюджет, ничего лишнего не навязывали.'},
+ {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',model:'ALASKA Скала 3.5 · ноябрь 2025',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили в срок.'},
+ {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',model:'МЗСА 817701 · октябрь 2025',text:'Искал недорогой надёжный прицеп. Прислали варианты с ценами — выбрал за вечер.'},
 ];
 const MODELS=[
  {img:'images/17.jpg',kind:'Бортовой',name:'Титан 3015-03',spec:'1 ось · до 750 кг',price:60660},
@@ -399,9 +489,9 @@ function renderModels(){
   $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" style="background-image:url(\''+m.img+'\')"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
 }
 function renderReviews(){
-  $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" style="background-image:url(\''+r.img+'\')"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
+  $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" style="background-image:url(\''+r.img+'\')"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
 }
-renderModels();renderReviews();render();
+renderModels();renderReviews();renderFaq();render();
 </script>
 </body>
 </html>
