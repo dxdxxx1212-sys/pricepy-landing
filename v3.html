@@ -486,12 +486,19 @@ const MODELS=[
  {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',spec:'1 ось · 3,5 м',price:92800},
 ];
 function renderModels(){
-  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" style="background-image:url(\''+m.img+'\')"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
+  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
 }
 function renderReviews(){
-  $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" style="background-image:url(\''+r.img+'\')"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
+  $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" data-bg="'+r.img+'"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
 }
-renderModels();renderReviews();renderFaq();render();
+// ленивая подгрузка фоновых фото (модели/отзывы) — грузятся при доскролле, не забивают канал на старте
+function lazyBg(){
+  var els=document.querySelectorAll('[data-bg]');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.style.backgroundImage="url('"+e.dataset.bg+"')";});return;}
+  var io=new IntersectionObserver(function(entries){entries.forEach(function(x){if(x.isIntersecting){x.target.style.backgroundImage="url('"+x.target.dataset.bg+"')";io.unobserve(x.target);}});},{rootMargin:'300px'});
+  els.forEach(function(e){io.observe(e);});
+}
+renderModels();renderReviews();renderFaq();render();lazyBg();
 </script>
 </body>
 </html>
