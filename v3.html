@@ -30,7 +30,7 @@ _tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 <!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Восток Прицеп — подберём прицеп под вашу задачу за 1 минуту</title>
-<meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены. Прямые поставки, ЭПТС, доставка по России, гарантия завода. Отвечаем 9:00–21:00, обычно в течение 15 минут.">
+<meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены. Прямые поставки, ЭПТС, доставка по России, гарантия завода. Отвечаем 9:00–21:00, в течение 15 минут.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -265,7 +265,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   <div class="wrap hero-inner">
     <div>
       <h1>Прицеп под ваш груз и под ваш бюджет</h1>
-      <p class="sub">Ответьте на 5 вопросов — подберём модель и пришлём цены. Прямые поставки, ЭПТС, доставка по России. Отвечаем 9:00–21:00, обычно в течение 15 минут.</p>
+      <p class="sub">Ответьте на 5 вопросов — подберём модель и пришлём цены. Прямые поставки, ЭПТС, доставка по России. Отвечаем 9:00–21:00, в течение 15 минут.</p>
       <div class="tonnage">
         <div class="t"><b class="num-t">750</b><span>кг без прав E</span></div>
         <div class="t"><b class="num-t">2 т</b><span>двухосные</span></div>
@@ -382,7 +382,7 @@ const QUIZ = [
     options:["До 90 000 ₽","90 000 – 130 000 ₽","130 000 – 200 000 ₽","Более 200 000 ₽"]},
   {key:"timing", type:"single", title:"Когда планируете покупку?", hint:"",
     options:["Срочно, готов купить","В течение недели","В течение месяца","Пока смотрю"]},
-  {key:"contact", type:"contact", title:"Куда прислать подбор?", hint:"Пришлём 3–5 моделей с ценами — обычно в течение 15 минут (9:00–21:00)"},
+  {key:"contact", type:"contact", title:"Куда прислать подбор?", hint:"Пришлём 3–5 моделей с ценами — в течение 15 минут (9:00–21:00)"},
 ];
 const $=s=>document.querySelector(s);
 const esc=s=>(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
@@ -435,7 +435,7 @@ function submit(){
   sendLead(p);
   const L={use:'Назначение',capacity:'Грузоп.',type:'Тип',budget:'Бюджет',timing:'Сроки'};
   const rows=Object.keys(L).filter(k=>p[k]).map(k=>'<div class="row"><span class="k">'+L[k]+'</span><span class="v">'+esc(p[k])+'</span></div>').join('');
-  $('#qbody').innerHTML='<div class="done"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Готово, '+esc(name)+'!</h2><p>Пришлём модели с ценами в '+esc(st.channel)+' — обычно в течение 15 минут (9:00–21:00).</p><div class="summary"><div class="row"><span class="k">Связь</span><span class="v">'+esc(st.channel)+' · '+esc(contact)+'</span></div>'+rows+'</div></div>';
+  $('#qbody').innerHTML='<div class="done"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Готово, '+esc(name)+'!</h2><p>Пришлём модели с ценами в '+esc(st.channel)+' — в течение 15 минут (9:00–21:00).</p><div class="summary"><div class="row"><span class="k">Связь</span><span class="v">'+esc(st.channel)+' · '+esc(contact)+'</span></div>'+rows+'</div></div>';
   $('#qbar').style.width='100%';$('#qcount').textContent='Готово';
 }
 function sendLead(data){
@@ -472,12 +472,12 @@ function renderFaq(){
 }
 
 const REVIEWS=[
- {img:'reviews/1.jpg',ini:'АМ',name:'Андрей М.',city:'Москва',model:'Славич 255Д · март 2026',text:'Взял двухосный под стройматериалы и технику на объекты. Гружёный идёт устойчиво, привезли со всеми документами быстро.'},
- {img:'reviews/2.jpg',ini:'ВС',name:'Виктор С.',city:'Тверь',model:'Трейлер 829450 · февраль 2026',text:'Брал под охоту и рыбалку — с тентом груз не мокнет. Помогли подобрать по размеру, всё объяснили.'},
- {img:'reviews/3.jpg',ini:'РД',name:'Роман Д.',city:'Подольск',model:'Крепыш 2.5 Плюс · январь 2026',text:'Прицеп для дачи — вожу дрова, доски, инструмент. По цене вышло выгодно. Спасибо за подбор.'},
- {img:'reviews/4.jpg',ini:'НВ',name:'Никита В.',city:'Санкт-Петербург',model:'Титан 3015-03 · декабрь 2025',text:'Оформил зимой, забрал в тот же день. Подобрали под бюджет, ничего лишнего не навязывали.'},
- {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',model:'ALASKA Скала 3.5 · ноябрь 2025',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили в срок.'},
- {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',model:'МЗСА 817701 · октябрь 2025',text:'Искал недорогой надёжный прицеп. Прислали варианты с ценами — выбрал за вечер.'},
+ {img:'reviews/1.jpg',ini:'АМ',name:'Андрей М.',city:'Москва',model:'Славич 255Д · август 2026',text:'Взял двухосный под стройматериалы и технику на объекты. Гружёный идёт устойчиво, привезли со всеми документами быстро.'},
+ {img:'reviews/2.jpg',ini:'ВС',name:'Виктор С.',city:'Тверь',model:'Трейлер 829450 · август 2026',text:'Брал под охоту и рыбалку — с тентом груз не мокнет. Помогли подобрать по размеру, всё объяснили.'},
+ {img:'reviews/3.jpg',ini:'РД',name:'Роман Д.',city:'Подольск',model:'Крепыш 2.5 Плюс · июль 2026',text:'Прицеп для дачи — вожу дрова, доски, инструмент. По цене вышло выгодно. Спасибо за подбор.'},
+ {img:'reviews/4.jpg',ini:'НВ',name:'Никита В.',city:'Санкт-Петербург',model:'Титан 3015-03 · июль 2026',text:'Оформил зимой, забрал в тот же день. Подобрали под бюджет, ничего лишнего не навязывали.'},
+ {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',model:'ALASKA Скала 3.5 · июнь 2026',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили в срок.'},
+ {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',model:'МЗСА 817701 · май 2026',text:'Искал недорогой надёжный прицеп. Прислали варианты с ценами — выбрал за вечер.'},
 ];
 const MODELS=[
  {img:'images/17.jpg',kind:'Бортовой',name:'Титан 3015-03',spec:'1 ось · до 750 кг',price:60660},
