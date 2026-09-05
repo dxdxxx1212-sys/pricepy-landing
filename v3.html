@@ -33,6 +33,8 @@ _tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 <meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены. Прямые поставки, ЭПТС, доставка по России, гарантия завода. Отвечаем 9:00–21:00, в течение 15 минут.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="images/hero-tonna.jpg" media="(min-width:901px)">
+<link rel="preload" as="image" href="images/hero-tonna-m.jpg" media="(max-width:900px)">
 
 <!-- ═══ HERO-ФОТО (концепт «ТОННА»). ChatGPT / DALL·E промпт: ═══
   "Photorealistic galvanized steel utility cargo trailer loaded with construction materials,
@@ -78,7 +80,7 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 
 /* hero */
 .hero{position:relative;background:var(--asphalt);color:#fff;overflow:hidden}
-.hero-bg{position:absolute;inset:0;background-color:#15171a;background-image:url('images/hero-tonna.jpg'),url('hero.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.34}
+.hero-bg{position:absolute;inset:0;background-color:#15171a;background-image:url('images/hero-tonna.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;opacity:.34}
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(24,26,30,.92) 0 42%,rgba(24,26,30,.35))}
 .hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr 430px;gap:40px;align-items:center;padding:52px 0 56px}
 .hero h1{font-size:64px;line-height:.98;margin:0 0 18px;font-weight:700;text-transform:uppercase}
@@ -151,7 +153,7 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 /* section */
 .sec{padding:52px 0}
 .sec h2.big{font-size:38px;margin:0 0 4px;text-transform:uppercase}
-.sec .lead{color:var(--muted);margin:0 0 28px;font-size:17px}
+.sec .lead{color:var(--muted);margin:0 0 28px;font-size:17px;max-width:60ch}
 
 /* how it works — real sequence, numbered is appropriate */
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:2px solid var(--asphalt);border-radius:var(--r-card);overflow:hidden}
@@ -234,7 +236,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   .quiz{max-width:620px;width:100%;margin:0 auto}
   .hero-inner{grid-template-columns:1fr;gap:28px;padding:48px 0 40px;text-align:center}
   .hero .sub,.tonnage{margin-left:auto;margin-right:auto}
-  .hero-bg{background-image:url('images/hero-tonna-m.jpg'),url('hero.jpg')}
+  .hero-bg{background-image:url('images/hero-tonna-m.jpg')}
   .hero-bg::after{background:linear-gradient(180deg,rgba(24,26,30,.86),rgba(24,26,30,.94))}
   .gband .row{grid-template-columns:1fr 1fr}
   .gband .g:nth-child(3){border-left:0}.gband .g:nth-child(n+3){border-top:1px solid var(--line)}
@@ -319,7 +321,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 <section class="gband">
   <div class="wrap"><div class="row">
     <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h5"/></svg><h3>ЭПТС и документы</h3><p>Полный пакет на каждый прицеп — ставите на учёт без хлопот.</p></div>
-    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 21h18"/><path d="M4 21V11l6 3V11l6 3V6l4 2v13"/><path d="M8 21v-3M13 21v-3"/></svg><h3>Прямой поставщик</h3><p>Оригинал от заводов России, без лишних наценок.</p></div>
+    <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 21h18"/><path d="M4 21V11l6 3V11l6 3V6l4 2v13"/><path d="M8 21v-3M13 21v-3"/></svg><h3>Прямой поставщик</h3><p>Оригинал от заводов России, с полным пакетом документов.</p></div>
     <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><h3>Гарантия завода</h3><p>Гарантийный талон производителя от 12 до 36 месяцев.</p></div>
     <div class="g"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7.5" cy="18" r="1.7"/><circle cx="17" cy="18" r="1.7"/></svg><h3>Доставка по России</h3><p>Или самовывоз со склада во Владивостоке.</p></div>
   </div></div>
@@ -343,6 +345,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
     <h2 class="big">Забирают чаще всего</h2>
     <p class="lead">Точную модель под задачу подберём в тесте выше.</p>
     <div class="models" id="models"></div>
+    <p style="color:var(--muted);font-size:13px;margin:16px 0 0">Цены указаны «от» и зависят от комплектации и региона доставки — точную подтвердим при подборе.</p>
   </div>
 </section>
 
@@ -355,7 +358,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
         <p>Доставка транспортными компаниями по всей России — привезём в ваш город.</p>
         <p><span class="free">Самовывоз со склада во Владивостоке — бесплатно.</span></p>
         <p>Стоимость и срок доставки зависят от города и модели — рассчитаем при подборе.</p>
-        <p style="color:var(--asphalt);font-weight:600;margin-top:16px">📍 г. Владивосток, ул. Экипажная, 1 · ежедневно 9:00–21:00</p>
+        <p style="color:var(--asphalt);font-weight:600;margin-top:16px;display:flex;align-items:flex-start;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true" style="flex:none;margin-top:2px"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>г. Владивосток, ул. Экипажная, 1. Работаем ежедневно 9:00–21:00.</span></p>
       </div>
       <div class="map"><iframe loading="lazy" title="Склад Восток Прицеп на карте" src="https://yandex.ru/map-widget/v1/?mode=search&text=%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%B2%D0%BE%D1%81%D1%82%D0%BE%D0%BA%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%AD%D0%BA%D0%B8%D0%BF%D0%B0%D0%B6%D0%BD%D0%B0%D1%8F%2C%201&z=16"></iframe></div>
     </div>
@@ -431,21 +434,21 @@ const st={step:0, ans:{}, channel:'Телефон'};
 function render(){
   const q=QUIZ[st.step];
   $('#qcount').textContent='Шаг '+(st.step+1)+' из '+QUIZ.length;
-  $('#qbar').style.width=(st.step/(QUIZ.length-1)*100)+'%';
+  $('#qbar').style.width=Math.max(9,st.step/(QUIZ.length-1)*100)+'%';
   let h='<h2>'+esc(q.title)+'</h2>';
   if(q.hint) h+='<p class="hint">'+esc(q.hint)+'</p>';
   if(q.type==='single'){
     h+='<div class="opts'+(q.photos?' photos':'')+'">';
     q.options.forEach((o,i)=>{const label=q.photos?o.label:o;const sel=st.ans[q.key]===label?' sel':'';
-      if(q.photos) h+='<div class="opt popt'+sel+'" data-opt="'+i+'"><div class="ph" style="background-image:url(\''+o.photo+'\')"><span class="pchk">✓</span></div><div class="pl">'+esc(label)+'</div></div>';
+      if(q.photos) h+='<div class="opt popt'+sel+'" role="button" tabindex="0" aria-pressed="'+(sel?'true':'false')+'" data-opt="'+i+'"><div class="ph" style="background-image:url(\''+o.photo+'\')"><span class="pchk">✓</span></div><div class="pl">'+esc(label)+'</div></div>';
       else h+='<button class="opt'+sel+'" data-opt="'+i+'">'+esc(label)+'<span class="chk">✓</span></button>';});
     h+='</div><div class="qfoot">'+(st.step>0?'<button class="back" id="back" aria-label="Назад">←</button>':'')+'<button class="btn" id="next" '+(st.ans[q.key]?'':'disabled')+'>Далее</button></div>';
   } else {
     const isTg=st.channel==='Telegram';
-    h+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
+    h+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" role="button" tabindex="0" aria-pressed="'+(st.channel===c?'true':'false')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
     h+='<div class="field"><label>Ваше имя</label><input id="cName" autocomplete="name" placeholder="Как к вам обращаться"></div>';
     h+='<div class="field"><label>'+(isTg?'Телефон или @username':'Телефон')+'</label><input id="cContact" '+(isTg?'type="text" inputmode="text"':'type="tel" inputmode="tel" autocomplete="tel"')+' enterkeyhint="send" placeholder="'+(isTg?'+7… или @username':'+7 (___) ___-__-__')+'"></div>';
-    h+='<div class="err" id="cErr">Заполните имя и контакт</div>';
+    h+='<div class="err" id="cErr" role="alert">Заполните имя и контакт</div>';
     h+='<div class="qfoot"><button class="back" id="back" aria-label="Назад">←</button><button class="btn" id="send">Получить подбор</button></div>';
     h+='<div class="consent-note">Нажимая «Получить подбор», вы соглашаетесь с <a data-doc="privacy">политикой конфиденциальности</a> и <a data-doc="consent">обработкой персональных данных</a>.</div>';
   }
@@ -461,6 +464,7 @@ $('#qbody').addEventListener('click',e=>{
   const d=e.target.closest('[data-doc]'); if(d){openDoc(d.dataset.doc);return;}
 });
 $('#qbody').addEventListener('focusin',e=>{if(e.target.tagName==='INPUT'&&e.target.type!=='checkbox')setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}} ,300);});
+$('#qbody').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-opt],[data-chan]');if(t){e.preventDefault();t.click();}}});
 function scrollQuiz(){if(window.innerWidth<=900){const y=$('#quiz').getBoundingClientRect().top+scrollY-12;scrollTo({top:y,behavior:'smooth'});}}
 
 let _submitting=false;
@@ -524,7 +528,7 @@ const MODELS=[
  {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',spec:'1 ось · 3,5 м',price:92800},
 ];
 function renderModels(){
-  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
+  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">от '+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
 }
 function renderReviews(){
   $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" data-bg="'+r.img+'"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
