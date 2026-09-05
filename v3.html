@@ -230,7 +230,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 @media(max-width:900px){
   .hero h1{font-size:48px}
   .quiz{max-width:620px;width:100%;margin:0 auto}
-  .hero-inner{grid-template-columns:1fr;gap:28px;padding:64px 0 40px;text-align:center}
+  .hero-inner{grid-template-columns:1fr;gap:28px;padding:48px 0 40px;text-align:center}
   .hero .sub,.tonnage{margin-left:auto;margin-right:auto}
   .hero-bg{background-image:url('images/hero-tonna-m.jpg'),url('hero.jpg')}
   .hero-bg::after{background:linear-gradient(180deg,rgba(24,26,30,.86),rgba(24,26,30,.94))}
@@ -246,6 +246,8 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   .wrap{padding:0 22px}
   .hero h1{font-size:clamp(28px,7.8vw,44px);letter-spacing:0}
   .hero .sub{font-size:16.5px;max-width:440px}
+  .hero-inner{padding:0}
+  .hero-inner>div:first-child{min-height:calc(100vh - 64px);min-height:calc(100svh - 64px);display:flex;flex-direction:column;justify-content:center;padding:20px 0}
   .tonnage{max-width:100%}
   .tonnage .t{padding:11px 8px}
   .sec{padding:40px 0}
