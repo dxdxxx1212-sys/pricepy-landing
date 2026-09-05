@@ -177,7 +177,7 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .m .btn{border-radius:var(--r-hard);width:100%}
 
 /* delivery */
-.deliv{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;align-items:center}
+.deliv{display:block;max-width:640px}
 .deliv .txt p{color:var(--muted);font-size:16px;margin:0 0 12px}
 .deliv .txt .free{color:var(--asphalt);font-weight:600}
 .deliv .map{border:2px solid var(--line);border-radius:var(--r-card);overflow:hidden;height:300px}
@@ -251,7 +251,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   .hero h1{font-size:clamp(28px,7.8vw,44px);letter-spacing:0}
   .hero .sub{font-size:16.5px;max-width:440px}
   .hero-inner{padding:0}
-  .hero-inner>div:first-child{min-height:calc(100vh - 64px);min-height:calc(100svh - 64px);display:flex;flex-direction:column;justify-content:center;padding:20px 0}
+  .hero-inner>div:first-child{padding:40px 0 30px}
   .tonnage{max-width:100%}
   .tonnage .t{padding:11px 8px}
   .sec{padding:40px 0}
@@ -342,14 +342,22 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 
 <section class="sec" style="background:var(--fog2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
   <div class="wrap">
-    <h2 class="big">Забирают чаще всего</h2>
-    <p class="lead">Точную модель под задачу подберём в тесте выше.</p>
-    <div class="models" id="models"></div>
-    <p style="color:var(--muted);font-size:13px;margin:16px 0 0">Цены указаны «от» и зависят от комплектации и региона доставки — точную подтвердим при подборе.</p>
+    <h2 class="big">Забрали свой прицеп</h2>
+    <p class="lead">Покупатели из разных городов России</p>
+    <div class="rev-row" id="revRow"></div>
   </div>
 </section>
 
 <section class="sec">
+  <div class="wrap">
+    <h2 class="big">Забирают чаще всего</h2>
+    <p class="lead">Точную модель под задачу подберём в тесте выше.</p>
+    <div class="models" id="models"></div>
+    <p style="color:var(--muted);font-size:13px;margin:16px 0 0">Цена зависит от комплектации и региона — актуальную подтвердим при подборе.</p>
+  </div>
+</section>
+
+<section class="sec" style="background:var(--fog2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
   <div class="wrap">
     <h2 class="big">Доставка и самовывоз</h2>
     <p class="lead">Склад во Владивостоке, отправляем по всей России.</p>
@@ -360,24 +368,15 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
         <p>Стоимость и срок доставки зависят от города и модели — рассчитаем при подборе.</p>
         <p style="color:var(--asphalt);font-weight:600;margin-top:16px;display:flex;align-items:flex-start;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="18" height="18" aria-hidden="true" style="flex:none;margin-top:2px"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>г. Владивосток, ул. Экипажная, 1. Работаем ежедневно 9:00–21:00.</span></p>
       </div>
-      <div class="map"><iframe loading="lazy" title="Склад Восток Прицеп на карте" src="https://yandex.ru/map-widget/v1/?mode=search&text=%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%B2%D0%BE%D1%81%D1%82%D0%BE%D0%BA%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%AD%D0%BA%D0%B8%D0%BF%D0%B0%D0%B6%D0%BD%D0%B0%D1%8F%2C%201&z=16"></iframe></div>
     </div>
-  </div>
-</section>
-
-<section class="sec" style="background:var(--fog2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-  <div class="wrap">
-    <h2 class="big">Частые вопросы</h2>
-    <p class="lead">Коротко о том, что чаще всего спрашивают.</p>
-    <div class="faq" id="faq"></div>
   </div>
 </section>
 
 <section class="sec">
   <div class="wrap">
-    <h2 class="big">Забрали свой прицеп</h2>
-    <p class="lead">Покупатели из разных городов России</p>
-    <div class="rev-row" id="revRow"></div>
+    <h2 class="big">Частые вопросы</h2>
+    <p class="lead">Коротко о том, что чаще всего спрашивают.</p>
+    <div class="faq" id="faq"></div>
   </div>
 </section>
 
@@ -528,7 +527,7 @@ const MODELS=[
  {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',spec:'1 ось · 3,5 м',price:92800},
 ];
 function renderModels(){
-  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">от '+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
+  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
 }
 function renderReviews(){
   $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" data-bg="'+r.img+'"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
