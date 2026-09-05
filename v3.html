@@ -126,6 +126,8 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:2px 0 12px;padding:6px 0;cursor:pointer}
 .consent input{width:20px;height:20px;margin-top:0;accent-color:var(--asphalt);flex:none}
 .consent a{color:var(--signal-d)}
+.consent-note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5}
+.consent-note a{color:var(--signal-d)}
 .err{color:#cc3b3b;font-size:13px;margin:-4px 0 9px;display:none}
 .err.show{display:block}
 .done{text-align:center;padding:12px 4px}
@@ -444,8 +446,8 @@ function render(){
     h+='<div class="field"><label>Ваше имя</label><input id="cName" autocomplete="name" placeholder="Как к вам обращаться"></div>';
     h+='<div class="field"><label>'+(isTg?'Телефон или @username':'Телефон')+'</label><input id="cContact" '+(isTg?'type="text" inputmode="text"':'type="tel" inputmode="tel" autocomplete="tel"')+' enterkeyhint="send" placeholder="'+(isTg?'+7… или @username':'+7 (___) ___-__-__')+'"></div>';
     h+='<div class="err" id="cErr">Заполните имя и контакт</div>';
-    h+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a> и <a data-doc="consent">условия согласия</a>.</span></label>';
     h+='<div class="qfoot"><button class="back" id="back" aria-label="Назад">←</button><button class="btn" id="send">Получить подбор</button></div>';
+    h+='<div class="consent-note">Нажимая «Получить подбор», вы соглашаетесь с <a data-doc="privacy">политикой конфиденциальности</a> и <a data-doc="consent">обработкой персональных данных</a>.</div>';
   }
   $('#qbody').innerHTML=h;
 }
@@ -466,7 +468,6 @@ function submit(){
   if(_submitting)return;
   const name=($('#cName').value||'').trim(), contact=($('#cContact').value||'').trim();
   if(!name||contact.length<4){$('#cErr').textContent='Заполните имя и контакт';$('#cErr').classList.add('show');return;}
-  if(!$('#cAgree').checked){$('#cErr').textContent='Подтвердите согласие на обработку данных';$('#cErr').classList.add('show');return;}
   _submitting=true;
   const p={source:'quiz-v3-тонна', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
   sendLead(p);
