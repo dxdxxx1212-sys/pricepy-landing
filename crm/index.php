@@ -32,7 +32,14 @@ $k_total = (int)$db->query("SELECT COUNT(*) c FROM leads")->fetch()['c'];
 $k_due   = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND substr(next_action_at,1,10)<='".date('Y-m-d')."' AND status NOT IN('won','lost')")->fetch()['c'];
 $sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
 
+// карта дублей по нормализованному телефону: phone_norm => [первый id, сколько всего]
+$dups=[];
+foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE phone_norm<>'' GROUP BY phone_norm HAVING c>1") as $d){
+  $dups[$d['phone_norm']]=['mn'=>(int)$d['mn'],'c'=>(int)$d['c']];
+}
+
 crm_head('Лиды'); ?>
+<?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
 <div class="kpi">
   <div class="k"><b><?=$k_today?></b><span>сегодня</span></div>
   <div class="k"><b><?=$k_week?></b><span>за 7 дней</span></div>
@@ -65,7 +72,7 @@ crm_head('Лиды'); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
   <td class="muted"><?=$r['id']?></td>
   <td class="muted" style="white-space:nowrap"><?=crm_dt($r['created_at'])?></td>
-  <td><b><?=h($r['name']?:'—')?></b><br><span class="muted"><?=h($r['contact'])?></span>
+  <td><b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?><br><span class="muted"><?=h($r['contact'])?></span>
     <?php if($d){ ?> <a href="tel:+<?=$d?>" onclick="event.stopPropagation()">📞</a> <a href="https://wa.me/<?=$d?>" target="_blank" onclick="event.stopPropagation()">wa</a><?php } ?>
   </td>
   <td class="muted" style="max-width:220px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); echo h(implode(' · ',$req)); ?></td>

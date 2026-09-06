@@ -28,6 +28,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
     if($body!==''){ $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]); }
+  } elseif($act==='delete'){
+    if($me['role']!=='owner'){ http_response_code(403); exit('Удалять лиды может только владелец'); }
+    crm_delete_lead($id);
+    header('Location: index.php?deleted=1'); exit; // удалили — уходим в список
   }
   header('Location: view.php?id='.$id.'&ok=1'); exit; // PRG: защита от повторной отправки по F5
 }
@@ -35,6 +39,8 @@ if(isset($_GET['ok'])) $msg='Сохранено';
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
+// другие заявки с этим же номером (повторные обращения)
+$related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,created_at,source,status FROM leads WHERE phone_norm=? AND id<>? ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); }
 $dig=crm_phone_digits($L['contact']);
 $csrf=h(crm_csrf());
 crm_head('Лид #'.$id); ?>
@@ -88,6 +94,13 @@ crm_head('Лид #'.$id); ?>
 
   <!-- сайдбар: данные лида -->
   <div>
+    <?php if($related){ ?>
+    <div class="card" style="border-color:#ff8a5b">
+      <h3 style="margin:0 0 8px;color:#ff8a5b">⚠ Повторное обращение</h3>
+      <div class="muted" style="font-size:13px;margin-bottom:6px">Этот номер уже оставлял заявку (<?=count($related)?>):</div>
+      <?php foreach($related as $rl){ ?><div style="padding:5px 0;border-top:1px solid var(--line);font-size:13px"><a href="view.php?id=<?=$rl['id']?>">#<?=$rl['id']?></a> · <?=crm_dt($rl['created_at'])?> · <span class="badge" style="background:<?=crm_status_color($rl['status'])?>"><?=h($ST[$rl['status']]??$rl['status'])?></span></div><?php } ?>
+    </div>
+    <?php } ?>
     <div class="card">
       <h3 style="margin:0 0 12px">Заявка</h3>
       <dl class="dl">
@@ -114,6 +127,14 @@ crm_head('Лид #'.$id); ?>
       <?php if($L['yclid']){ ?><dt>yclid</dt><dd><?=h($L['yclid'])?></dd><?php } ?>
     </dl></div><?php } ?>
     <div class="card"><span class="muted" style="font-size:12px">ID <?=$L['id']?> · IP <?=h($L['ip']?:'—')?></span></div>
+    <?php if($me['role']==='owner'){ ?>
+    <div class="card">
+      <form method="post" onsubmit="return confirm('Удалить лид #<?=$id?> навсегда? Вместе с комментариями и историей. Отменить нельзя.')">
+        <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="delete">
+        <button class="btn" style="background:#c0392b;color:#fff;width:100%">🗑 Удалить лид</button>
+      </form>
+    </div>
+    <?php } ?>
   </div>
 </div>
 <?php crm_foot();

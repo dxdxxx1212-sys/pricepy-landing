@@ -28,7 +28,18 @@ function crm_db(){
   $db->exec('PRAGMA journal_mode=WAL;');
   $db->exec('PRAGMA busy_timeout=3000;');
   crm_init_schema($db);
+  crm_migrate($db);
   return $db;
+}
+// Лёгкие миграции для баз, созданных до появления колонок (ALTER + бэкофилл).
+function crm_migrate($db){ static $done=false; if($done) return; $done=true;
+  $cols = $db->query("PRAGMA table_info(leads)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)");
+  // заполнить нормализованный телефон там, где ещё пусто (после ALTER или для старых строк)
+  $need = $db->query("SELECT id,contact FROM leads WHERE (phone_norm IS NULL OR phone_norm='') AND contact<>''")->fetchAll();
+  if($need){ $up=$db->prepare("UPDATE leads SET phone_norm=? WHERE id=?");
+    foreach($need as $r){ $up->execute([crm_phone_digits($r['contact']), $r['id']]); } }
 }
 function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
   $db->exec("CREATE TABLE IF NOT EXISTS leads(
@@ -36,7 +47,7 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
     name TEXT, contact TEXT, channel TEXT,
     use_ TEXT, capacity TEXT, type TEXT, budget TEXT, timing TEXT,
     utm_source TEXT, utm_medium TEXT, utm_campaign TEXT, utm_content TEXT, utm_term TEXT,
-    gclid TEXT, yclid TEXT, items TEXT,
+    gclid TEXT, yclid TEXT, items TEXT, phone_norm TEXT,
     ip TEXT, ua TEXT, raw TEXT,
     status TEXT DEFAULT 'new', call_status TEXT DEFAULT '', assignee_id INTEGER,
     next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT)");
@@ -57,16 +68,22 @@ function crm_insert_lead($data, $raw){
   $now = date('c');
   $st = crm_db()->prepare("INSERT INTO leads
     (created_at,source,name,contact,channel,use_,capacity,type,budget,timing,
-     utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,yclid,items,ip,ua,raw,status,updated_at)
-    VALUES(:ca,:src,:nm,:ct,:ch,:us,:cp,:tp,:bg,:tm,:u1,:u2,:u3,:u4,:u5,:gc,:yc,:it,:ip,:ua,:raw,'new',:up)");
+     utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,yclid,items,phone_norm,ip,ua,raw,status,updated_at)
+    VALUES(:ca,:src,:nm,:ct,:ch,:us,:cp,:tp,:bg,:tm,:u1,:u2,:u3,:u4,:u5,:gc,:yc,:it,:pn,:ip,:ua,:raw,'new',:up)");
   $st->execute([
     ':ca'=>$now, ':up'=>$now, ':src'=>$g('source'), ':nm'=>$g('name'), ':ct'=>$g('contact'), ':ch'=>$g('channel'),
     ':us'=>$g('use'), ':cp'=>$g('capacity'), ':tp'=>$g('type'), ':bg'=>$g('budget'), ':tm'=>$g('timing'),
     ':u1'=>$g('utm_source'), ':u2'=>$g('utm_medium'), ':u3'=>$g('utm_campaign'), ':u4'=>$g('utm_content'), ':u5'=>$g('utm_term'),
-    ':gc'=>$g('gclid'), ':yc'=>$g('yclid'), ':it'=>$g('items'),
+    ':gc'=>$g('gclid'), ':yc'=>$g('yclid'), ':it'=>$g('items'), ':pn'=>crm_phone_digits($g('contact')),
     ':ip'=>($_SERVER['REMOTE_ADDR']??''), ':ua'=>mb_substr($_SERVER['HTTP_USER_AGENT']??'',0,300), ':raw'=>$raw,
   ]);
   return crm_db()->lastInsertId();
+}
+// Полное удаление лида вместе с комментариями и историей (только владелец — проверка на странице).
+function crm_delete_lead($id){ $db=crm_db(); $id=(int)$id;
+  $db->prepare("DELETE FROM comments WHERE lead_id=?")->execute([$id]);
+  $db->prepare("DELETE FROM events WHERE lead_id=?")->execute([$id]);
+  $db->prepare("DELETE FROM leads WHERE id=?")->execute([$id]);
 }
 
 // ---- Авторизация (используется только страницами панели) ----
