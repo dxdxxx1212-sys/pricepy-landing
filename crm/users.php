@@ -7,7 +7,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   $act=$_POST['act']??'';
   if($act==='add'){
     $login=trim($_POST['login']??''); $name=trim($_POST['name']??'')?:$login; $pass=$_POST['pass']??''; $role=($_POST['role']??'operator')==='owner'?'owner':'operator';
-    if(mb_strlen($login)<3||mb_strlen($pass)<8){ $err='Логин ≥3 и пароль ≥8 символов'; }
+    if(mb_strlen($login)<3||mb_strlen($pass)<10){ $err='Логин ≥3 и пароль ≥10 символов'; }
     else{ try{ $db->prepare("INSERT INTO users(login,pass_hash,name,role,active,created_at) VALUES(?,?,?,?,1,?)")
       ->execute([$login,password_hash($pass,PASSWORD_DEFAULT),$name,$role,date('c')]); $msg='Пользователь добавлен'; }
       catch(Throwable $e){ $err='Такой логин уже есть'; } }
@@ -43,7 +43,7 @@ crm_head('Операторы'); ?>
       <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="add">
       <div style="margin-bottom:9px"><input name="name" placeholder="Имя" style="width:100%"></div>
       <div style="margin-bottom:9px"><input name="login" placeholder="Логин" style="width:100%" required></div>
-      <div style="margin-bottom:9px"><input name="pass" type="password" placeholder="Пароль (≥8)" style="width:100%" required></div>
+      <div style="margin-bottom:9px"><input name="pass" type="password" placeholder="Пароль (≥10)" style="width:100%" required></div>
       <div style="margin-bottom:12px"><select name="role" style="width:100%"><option value="operator">Оператор</option><option value="owner">Владелец</option></select></div>
       <button class="btn">Добавить</button>
     </form>

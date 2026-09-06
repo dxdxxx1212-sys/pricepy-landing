@@ -98,16 +98,20 @@ crm_head('Лид #'.$id); ?>
         <dt>Тип</dt><dd><?=h($L['type']?:'—')?></dd>
         <dt>Бюджет</dt><dd><?=h($L['budget']?:'—')?></dd>
         <dt>Сроки</dt><dd><?=h($L['timing']?:'—')?></dd>
+        <?php if($L['items']){ ?><dt>Модели</dt><dd><?=h($L['items'])?></dd><?php } ?>
         <dt>Источник</dt><dd><span class="pill"><?=h($L['source']?:'—')?></span></dd>
         <dt>Создан</dt><dd><?=crm_dt($L['created_at'])?></dd>
       </dl>
     </div>
-    <?php if($L['utm_source']||$L['utm_campaign']){ ?>
+    <?php if($L['utm_source']||$L['utm_campaign']||$L['gclid']||$L['yclid']){ ?>
     <div class="card"><h3 style="margin:0 0 12px">Реклама (UTM)</h3><dl class="dl">
       <dt>source</dt><dd><?=h($L['utm_source']?:'—')?></dd>
+      <dt>medium</dt><dd><?=h($L['utm_medium']?:'—')?></dd>
       <dt>campaign</dt><dd><?=h($L['utm_campaign']?:'—')?></dd>
       <dt>content</dt><dd><?=h($L['utm_content']?:'—')?></dd>
       <dt>term</dt><dd><?=h($L['utm_term']?:'—')?></dd>
+      <?php if($L['gclid']){ ?><dt>gclid</dt><dd><?=h($L['gclid'])?></dd><?php } ?>
+      <?php if($L['yclid']){ ?><dt>yclid</dt><dd><?=h($L['yclid'])?></dd><?php } ?>
     </dl></div><?php } ?>
     <div class="card"><span class="muted" style="font-size:12px">ID <?=$L['id']?> · IP <?=h($L['ip']?:'—')?></span></div>
   </div>

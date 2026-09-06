@@ -68,7 +68,7 @@ crm_head('Лиды'); ?>
   <td><b><?=h($r['name']?:'—')?></b><br><span class="muted"><?=h($r['contact'])?></span>
     <?php if($d){ ?> <a href="tel:+<?=$d?>" onclick="event.stopPropagation()">📞</a> <a href="https://wa.me/<?=$d?>" target="_blank" onclick="event.stopPropagation()">wa</a><?php } ?>
   </td>
-  <td class="muted" style="max-width:220px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget']]); echo h(implode(' · ',$req)); ?></td>
+  <td class="muted" style="max-width:220px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); echo h(implode(' · ',$req)); ?></td>
   <td><span class="pill"><?=h($r['source']?:'—')?></span></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
   <td class="muted"><?=h($CS[$r['call_status']]??'')?></td>

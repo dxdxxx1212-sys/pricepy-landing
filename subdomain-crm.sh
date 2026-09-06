@@ -39,6 +39,7 @@ server {
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
 
     location ~ \.php\$ {
+        try_files \$uri =404;                     # не исполнять несуществующие пути (path-info)
         include fastcgi_params;
         fastcgi_pass unix:${PHP_SOCK};
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
@@ -55,6 +56,26 @@ else
   echo "    ⚠️ Серт пока не выпущен — проверь A-запись crm→45.150.39.174 и повтори:"
   echo "       certbot --nginx -d ${SUB} --redirect"
 fi
+
+echo "==> Ежедневный бэкап базы + чистка антибрутфорса (cron.daily, ротация 30 дней)..."
+command -v sqlite3 >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y sqlite3; }
+mkdir -p /var/backups/pricepy-crm
+chmod 750 /var/backups/pricepy-crm
+cat > /etc/cron.daily/pricepy-crm-backup <<'CRON'
+#!/bin/sh
+# Резервная копия SQLite «на живую» (.backup — консистентно при WAL, в отличие от cp).
+DB=/var/lib/pricepy-crm/leads.sqlite
+[ -f "$DB" ] || exit 0
+OUT="/var/backups/pricepy-crm/leads-$(date +%F).sqlite"
+sqlite3 "$DB" ".backup '$OUT'" && gzip -f "$OUT"
+# держим 30 дней
+find /var/backups/pricepy-crm -name 'leads-*.sqlite.gz' -mtime +30 -delete
+# подчищаем старые записи антибрутфорса, чтобы таблица не пухла
+sqlite3 "$DB" "DELETE FROM login_fails WHERE ts < strftime('%s','now')-86400;" 2>/dev/null || true
+CRON
+chmod +x /etc/cron.daily/pricepy-crm-backup
+echo "    ✅ Бэкап настроен. ВАЖНО: это копия на том же сервере — позже настрой выгрузку"
+echo "       в российское объектное хранилище (Selectel/VK/Yandex), чтобы пережить отказ диска."
 
 echo "==> Готово. Создай владельца из командной строки (пароль вводится СКРЫТО):"
 echo "     php ${WWW}/mkowner.php"

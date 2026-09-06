@@ -9,6 +9,11 @@ WWW="/var/www/pricepy"
 PHP_SOCK="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n1)"
 echo "PHP-FPM сокет: ${PHP_SOCK:-НЕ НАЙДЕН}"
 
+echo "==> Папка для логов/базы вне веб-корня (нельзя скачать из браузера)..."
+mkdir -p /var/lib/pricepy-crm
+chown -R www-data:www-data /var/lib/pricepy-crm
+chmod 750 /var/lib/pricepy-crm
+
 echo "==> Конфиг nginx для восток-прицеп.рф..."
 cat > /etc/nginx/sites-available/vostok <<NGINX
 server {
@@ -18,6 +23,10 @@ server {
     root ${WWW};
     index index.html;
 
+    # не отдавать наружу логи заявок (ПДн), базы и скрипты
+    location ~* \.(log|sqlite|sqlite-wal|sqlite-shm|sh|md)\$ { deny all; }
+    location ~ /\. { deny all; }
+
     location / { try_files \$uri \$uri/ =404; }
 
     location = /api/lead {
@@ -25,8 +34,6 @@ server {
         fastcgi_pass unix:${PHP_SOCK};
         fastcgi_param SCRIPT_FILENAME ${WWW}/api/lead.php;
     }
-
-    location ~ /\. { deny all; }
 }
 NGINX
 ln -sf /etc/nginx/sites-available/vostok /etc/nginx/sites-enabled/vostok

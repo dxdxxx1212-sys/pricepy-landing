@@ -1793,8 +1793,22 @@ function escapeHtml(s){return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&l
 /* Заявки уходят на серверный приёмник /api/lead (тот же домен): сохранение копии в РФ + Telegram. */
 const LEAD_ENDPOINT = '/api/lead';
 
+/* Захват рекламных меток (utm_*, gclid, yclid) при первом заходе — чтобы в CRM было видно,
+   какая кампания привела лид. Храним first-touch в localStorage, подмешиваем в каждую заявку. */
+(function(){
+  try{
+    var p = new URLSearchParams(location.search), got = {};
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','yclid'].forEach(function(k){
+      var v = p.get(k); if(v) got[k] = String(v).slice(0,200);
+    });
+    if(Object.keys(got).length && !localStorage.getItem('vp_utm')){ localStorage.setItem('vp_utm', JSON.stringify(got)); }
+  }catch(e){}
+})();
+function leadUTMs(){ try{ return JSON.parse(localStorage.getItem('vp_utm')||'{}') || {}; }catch(e){ return {}; } }
+
 function sendLead(data){
   if(window.__leadBusy) return; window.__leadBusy=true; setTimeout(function(){window.__leadBusy=false;},4000); // защита от двойной отправки
+  try{ data = Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
   var _b = JSON.stringify(data), _sent = false;
   try { if (navigator.sendBeacon) _sent = navigator.sendBeacon(LEAD_ENDPOINT, new Blob([_b], {type:'text/plain;charset=UTF-8'})); } catch(e){}
   if (!_sent) (function r(n){

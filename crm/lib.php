@@ -36,6 +36,7 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
     name TEXT, contact TEXT, channel TEXT,
     use_ TEXT, capacity TEXT, type TEXT, budget TEXT, timing TEXT,
     utm_source TEXT, utm_medium TEXT, utm_campaign TEXT, utm_content TEXT, utm_term TEXT,
+    gclid TEXT, yclid TEXT, items TEXT,
     ip TEXT, ua TEXT, raw TEXT,
     status TEXT DEFAULT 'new', call_status TEXT DEFAULT '', assignee_id INTEGER,
     next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT)");
@@ -53,21 +54,23 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
 // Вставка лида (вызывается из api/lead.php). Возвращает id или бросает исключение.
 function crm_insert_lead($data, $raw){
   $g = function($k) use($data){ return isset($data[$k]) ? mb_substr((string)$data[$k],0,500) : ''; };
+  $now = date('c');
   $st = crm_db()->prepare("INSERT INTO leads
     (created_at,source,name,contact,channel,use_,capacity,type,budget,timing,
-     utm_source,utm_medium,utm_campaign,utm_content,utm_term,ip,ua,raw,status,updated_at)
-    VALUES(:ca,:src,:nm,:ct,:ch,:us,:cp,:tp,:bg,:tm,:u1,:u2,:u3,:u4,:u5,:ip,:ua,:raw,'new',:ca)");
+     utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,yclid,items,ip,ua,raw,status,updated_at)
+    VALUES(:ca,:src,:nm,:ct,:ch,:us,:cp,:tp,:bg,:tm,:u1,:u2,:u3,:u4,:u5,:gc,:yc,:it,:ip,:ua,:raw,'new',:up)");
   $st->execute([
-    ':ca'=>date('c'), ':src'=>$g('source'), ':nm'=>$g('name'), ':ct'=>$g('contact'), ':ch'=>$g('channel'),
+    ':ca'=>$now, ':up'=>$now, ':src'=>$g('source'), ':nm'=>$g('name'), ':ct'=>$g('contact'), ':ch'=>$g('channel'),
     ':us'=>$g('use'), ':cp'=>$g('capacity'), ':tp'=>$g('type'), ':bg'=>$g('budget'), ':tm'=>$g('timing'),
     ':u1'=>$g('utm_source'), ':u2'=>$g('utm_medium'), ':u3'=>$g('utm_campaign'), ':u4'=>$g('utm_content'), ':u5'=>$g('utm_term'),
+    ':gc'=>$g('gclid'), ':yc'=>$g('yclid'), ':it'=>$g('items'),
     ':ip'=>($_SERVER['REMOTE_ADDR']??''), ':ua'=>mb_substr($_SERVER['HTTP_USER_AGENT']??'',0,300), ':raw'=>$raw,
   ]);
   return crm_db()->lastInsertId();
 }
 
 // ---- Авторизация (используется только страницами панели) ----
-function crm_sess(){ if(session_status()!==PHP_SESSION_ACTIVE){ session_set_cookie_params(['httponly'=>true,'samesite'=>'Strict','secure'=>!empty($_SERVER['HTTPS'])]); session_start(); } }
+function crm_sess(){ if(session_status()!==PHP_SESSION_ACTIVE){ session_set_cookie_params(['httponly'=>true,'samesite'=>'Strict','secure'=>true]); session_start(); } }
 function crm_user(){ crm_sess(); if(empty($_SESSION['uid'])) return null; $s=crm_db()->prepare("SELECT * FROM users WHERE id=? AND active=1"); $s->execute([$_SESSION['uid']]); return $s->fetch() ?: null; }
 function crm_require(){ $u=crm_user(); if(!$u){ header('Location: login.php'); exit; } return $u; }
 function crm_require_owner(){ $u=crm_require(); if($u['role']!=='owner'){ http_response_code(403); exit('Только для владельца'); } return $u; }

@@ -18,6 +18,10 @@ server {
     server_name ${SUB};
     root ${WWW};
 
+    # не отдавать наружу логи заявок (ПДн), базы и скрипты
+    location ~* \.(log|sqlite|sqlite-wal|sqlite-shm|sh|md)\$ { deny all; }
+    location ~ /\. { deny all; }
+
     location = / { try_files /v2.html =404; }
     location / { try_files \$uri \$uri/ =404; }
 
@@ -26,8 +30,6 @@ server {
         fastcgi_pass unix:${PHP_SOCK};
         fastcgi_param SCRIPT_FILENAME ${WWW}/api/lead.php;
     }
-
-    location ~ /\. { deny all; }
 }
 NGINX
 ln -sf /etc/nginx/sites-available/podbor /etc/nginx/sites-enabled/podbor
