@@ -25,9 +25,11 @@ if($q!==''){
   else { $where[]='(name LIKE ? OR contact LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; }
 }
 $wsql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
-$st=$db->prepare("SELECT * FROM leads $wsql ORDER BY id DESC LIMIT 300");
-$st->execute($args); $rows=$st->fetchAll();
 $tc=$db->prepare("SELECT COUNT(*) c FROM leads $wsql"); $tc->execute($args); $total=(int)$tc->fetch()['c'];
+$per=100; $pages=max(1,(int)ceil($total/$per)); $page=max(1,min($pages,(int)($_GET['page']??1))); $off=($page-1)*$per;
+$st=$db->prepare("SELECT * FROM leads $wsql ORDER BY id DESC LIMIT $per OFFSET $off");
+$st->execute($args); $rows=$st->fetchAll();
+$maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m']; // для сигнала о новом лиде
 
 // KPI
 $today = date('Y-m-d');
@@ -78,7 +80,7 @@ crm_head('Лиды'); ?>
   <button class="btn btn-sec">Найти</button>
   <?php if($fStatus||$fSource||$fAssignee||$q||$fDue||$fMine||$fUnassigned){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
-  <span class="muted"><?=$total?> шт.<?=$total>300?' (показаны 300)':''?></span>
+  <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto">
@@ -90,7 +92,7 @@ crm_head('Лиды'); ?>
   <td class="muted"><?=$r['id']?></td>
   <td class="muted" style="white-space:nowrap"><?=crm_dt($r['created_at'])?></td>
   <td><b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?><br><span class="muted"><?=h($r['contact'])?></span>
-    <?php if($d){ ?> <a href="tel:+<?=$d?>" onclick="event.stopPropagation()">📞</a> <a href="https://wa.me/<?=$d?>" target="_blank" onclick="event.stopPropagation()">wa</a><?php } ?>
+    <?php if($d){ ?> <a href="tel:+<?=$d?>" onclick="event.stopPropagation()">📞</a> <a href="https://wa.me/<?=$d?>" target="_blank" onclick="event.stopPropagation()">wa</a> <a href="https://t.me/+<?=$d?>" target="_blank" onclick="event.stopPropagation()">tg</a><?php } ?>
   </td>
   <td class="muted" style="max-width:220px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); echo h(implode(' · ',$req)); ?></td>
   <td><span class="pill"><?=h($r['source']?:'—')?></span></td>
@@ -101,4 +103,24 @@ crm_head('Лиды'); ?>
 <?php } if(!$rows){ ?><tr><td colspan="8" class="muted" style="padding:24px;text-align:center">Лидов пока нет. Как только придёт заявка с сайта — появится здесь.</td></tr><?php } ?>
 </tbody></table>
 </div>
+
+<?php if($pages>1){ $qs=$_GET; ?>
+<div class="filters" style="justify-content:center;margin-top:6px">
+  <?php if($page>1){ $qs['page']=$page-1; ?><a class="btn btn-sec" href="index.php?<?=h(http_build_query($qs))?>">← назад</a><?php } ?>
+  <span class="muted">стр. <?=$page?> из <?=$pages?></span>
+  <?php if($page<$pages){ $qs['page']=$page+1; ?><a class="btn btn-sec" href="index.php?<?=h(http_build_query($qs))?>">вперёд →</a><?php } ?>
+</div>
+<?php } ?>
+
+<div id="newlead" onclick="location.reload()" style="display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;background:var(--acc);color:#12181f;font-weight:700;padding:10px 16px;border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer">🔔 <span id="newleadn">0</span> новых — обновить</div>
+<script>
+(function(){ var base=<?=$maxId?>, title=document.title;
+  setInterval(function(){
+    fetch('ping.php',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok) return; var diff=j.max-base;
+      if(diff>0){ document.getElementById('newleadn').textContent=diff; document.getElementById('newlead').style.display='block'; document.title='('+diff+') '+title; }
+    }).catch(function(){});
+  }, 30000);
+})();
+</script>
 <?php crm_foot();

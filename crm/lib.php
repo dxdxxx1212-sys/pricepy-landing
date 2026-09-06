@@ -13,6 +13,10 @@ function crm_statuses(){ return [
 function crm_call_statuses(){ return [
   ''=>'—','answered'=>'Дозвон','noanswer'=>'Не дозвон','callback'=>'Перезвонить',
 ];}
+function crm_reject_reasons(){ return [
+  'Дорого','Передумал / отпал','Нет в наличии нужной модели','Не отвечает / недозвон',
+  'Не целевой (не тот регион/товар)','Купил в другом месте','Только прицениться',
+];}
 function crm_status_color($s){ return [
   'new'=>'#f5b301','work'=>'#3b82f6','reached'=>'#6366f1','qualified'=>'#8b5cf6',
   'deal'=>'#0ea5e9','won'=>'#1f9d55','lost'=>'#9aa2ab',

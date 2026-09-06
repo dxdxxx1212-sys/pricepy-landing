@@ -21,10 +21,17 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       'sale_amount'=>trim($_POST['sale_amount']??''),
       'reject_reason'=>trim($_POST['reject_reason']??''),
     ];
+    // валидация статусов — чтобы отчёты были честными
+    $errv='';
+    if($new['status']==='won' && $new['sale_amount']==='') $errv='Для статуса «Продажа» укажите сумму сделки.';
+    elseif($new['status']==='lost' && $new['reject_reason']==='') $errv='Для статуса «Отказ» укажите причину.';
+    if($errv!==''){ header('Location: view.php?id='.$id.'&err='.rawurlencode($errv)); exit; }
     $db->prepare("UPDATE leads SET status=?,call_status=?,assignee_id=?,next_action_at=?,model=?,sale_amount=?,reject_reason=?,updated_at=? WHERE id=?")
        ->execute([$new['status'],$new['call_status'],$new['assignee_id'],$new['next_action_at'],$new['model'],$new['sale_amount'],$new['reject_reason'],date('c'),$id]);
     if($new['status']!==$L['status']) crm_event($id,$me['id'],'status',($ST[$L['status']]??$L['status']).' → '.($ST[$new['status']]??$new['status']));
     if($new['call_status']!==$L['call_status']) crm_event($id,$me['id'],'call',$CS[$new['call_status']]??$new['call_status']);
+    if((int)$new['assignee_id']!==(int)$L['assignee_id']) crm_event($id,$me['id'],'оператор',$new['assignee_id']?($users[$new['assignee_id']]??'?'):'— снят');
+    if($new['next_action_at']!==$L['next_action_at'] && $new['next_action_at']!=='') crm_event($id,$me['id'],'перезвон',crm_dt($new['next_action_at']));
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
     if($body!==''){ $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]); }
@@ -36,6 +43,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   header('Location: view.php?id='.$id.'&ok=1'); exit; // PRG: защита от повторной отправки по F5
 }
 if(isset($_GET['ok'])) $msg='Сохранено';
+$err = isset($_GET['err']) ? (string)$_GET['err'] : '';
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
@@ -46,6 +54,7 @@ $csrf=h(crm_csrf());
 crm_head('Лид #'.$id); ?>
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
 <?php if($msg){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($msg)?></div><?php } ?>
+<?php if($err){ ?><div style="background:#3a1d1d;color:#ffb4b4;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">⚠ <?=h($err)?> Изменения не сохранены.</div><?php } ?>
 
 <div class="grid2">
   <div>
@@ -55,7 +64,12 @@ crm_head('Лид #'.$id); ?>
         <span class="badge" style="background:<?=crm_status_color($L['status'])?>;font-size:14px"><?=h($ST[$L['status']]??$L['status'])?></span>
         <h2 style="margin:0;font-size:20px"><?=h($L['name']?:'Без имени')?></h2>
         <span class="sp" style="flex:1"></span>
-        <?php if($dig){ ?><a class="btn btn-sec" href="tel:+<?=$dig?>">📞 Позвонить</a> <a class="btn btn-sec" href="https://wa.me/<?=$dig?>" target="_blank">WhatsApp</a><?php } ?>
+        <?php if($dig){ $ch=$L['channel']; ?>
+          <a class="btn btn-sec" href="tel:+<?=$dig?>">📞 Позвонить</a>
+          <a class="btn btn-sec" href="https://wa.me/<?=$dig?>" target="_blank" style="<?=$ch==='whatsapp'?'outline:2px solid #25d366':''?>">WhatsApp</a>
+          <a class="btn btn-sec" href="https://t.me/+<?=$dig?>" target="_blank" style="<?=$ch==='telegram'?'outline:2px solid #29a9eb':''?>">Telegram</a>
+          <?php if($ch==='max'){ ?><span class="pill" title="Клиент выбрал МАКС — пиши в МАКС по номеру">выбрал: МАКС</span><?php } ?>
+        <?php } ?>
       </div>
       <form method="post">
         <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="save">
@@ -67,7 +81,8 @@ crm_head('Лид #'.$id); ?>
           <label>Модель прицепа<br><input name="model" value="<?=h($L['model'])?>" placeholder="если выбрали" style="width:100%"></label>
           <label>Сумма сделки, ₽<br><input name="sale_amount" value="<?=h($L['sale_amount'])?>" placeholder="если продали" style="width:100%"></label>
         </div>
-        <label style="display:block;margin-top:12px">Причина отказа (если «Отказ»)<br><input name="reject_reason" value="<?=h($L['reject_reason'])?>" placeholder="дорого / передумал / нет в наличии…" style="width:100%"></label>
+        <label style="display:block;margin-top:12px">Причина отказа (если «Отказ»)<br><input name="reject_reason" list="reject_reasons" value="<?=h($L['reject_reason'])?>" placeholder="выберите или впишите" style="width:100%"></label>
+        <datalist id="reject_reasons"><?php foreach(crm_reject_reasons() as $rr){ ?><option value="<?=h($rr)?>"><?php } ?></datalist>
         <div style="margin-top:14px"><button class="btn">Сохранить</button></div>
       </form>
     </div>

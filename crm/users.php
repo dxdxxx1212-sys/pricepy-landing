@@ -18,7 +18,12 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $t=$db->prepare("SELECT role,active FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
       $owners=(int)$db->query("SELECT COUNT(*) c FROM users WHERE role='owner' AND active=1")->fetch()['c'];
       if($t && $t['role']==='owner' && $t['active'] && $owners<=1){ $err='Нельзя отключить последнего владельца'; }
-      else{ $db->prepare("UPDATE users SET active=1-active WHERE id=?")->execute([$uid]); $msg='Готово'; }
+      else{
+        $wasActive=(int)($t['active']??0);
+        $db->prepare("UPDATE users SET active=1-active WHERE id=?")->execute([$uid]);
+        if($wasActive){ $db->prepare("UPDATE leads SET assignee_id=NULL WHERE assignee_id=?")->execute([$uid]); $msg='Оператор отключён, его лиды сняты с назначения (в «Нераспределённые»)'; }
+        else{ $msg='Оператор включён'; }
+      }
     }
   }
 }
