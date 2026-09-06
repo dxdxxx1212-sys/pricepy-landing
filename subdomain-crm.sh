@@ -12,6 +12,15 @@ DBDIR="/var/lib/pricepy-crm"
 PHP_SOCK="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n1)"
 echo "PHP-FPM сокет: ${PHP_SOCK:-НЕ НАЙДЕН}"
 
+echo "==> PHP-расширения для CRM (SQLite + mbstring) — без них база и кириллица не работают..."
+if ! php -m 2>/dev/null | grep -qi pdo_sqlite || ! php -m 2>/dev/null | grep -qi mbstring; then
+  apt-get update -qq && apt-get install -y php-sqlite3 php-mbstring
+  # перезапуск PHP-FPM, чтобы веб-панель подхватила расширения
+  for svc in $(systemctl list-units --type=service --no-legend 2>/dev/null | grep -o 'php[0-9.]*-fpm' | sort -u); do
+    systemctl restart "$svc" || true
+  done
+fi
+
 echo "==> Папка для базы (вне веб-корня), права www-data..."
 mkdir -p "$DBDIR"
 chown -R www-data:www-data "$DBDIR"
