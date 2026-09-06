@@ -4,3 +4,6 @@ api/config.php
 .claude/
 .preview_server.py
 .claude_launch_tmp
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

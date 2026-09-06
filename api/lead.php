@@ -45,4 +45,14 @@ if (!$ok) {
   @file_put_contents(__DIR__ . '/../leads-errors.log', date('c') . ' | FAILED(' . $lastErr . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 }
 
+// 3) запись в CRM-базу — ПОСЛЕ доставки в Telegram, чтобы код БД физически не мог
+//    задержать или сорвать доставку. Любой сбой БД логируется и на лид не влияет
+//    (leads.log + Telegram уже отработали выше).
+try {
+  require_once __DIR__ . '/../crm/lib.php';
+  crm_insert_lead($data, $raw);
+} catch (Throwable $e) {
+  @file_put_contents(__DIR__ . '/../leads-errors.log', date('c') . ' | CRM_DB_FAIL(' . $e->getMessage() . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
+}
+
 echo $ok ? '{"ok":true}' : '{"ok":false}';
