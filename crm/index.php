@@ -10,12 +10,20 @@ $fSource = $_GET['source'] ?? '';
 $fAssignee = $_GET['assignee'] ?? '';
 $q = trim($_GET['q'] ?? '');
 $fDue = $_GET['due'] ?? '';
+$fMine = isset($_GET['mine']);
+$fUnassigned = isset($_GET['unassigned']);
 $where=[]; $args=[];
 if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
 if($fAssignee!==''){ $where[]='assignee_id=?'; $args[]=(int)$fAssignee; }
+if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
+if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
 if($fDue==='today'){ $where[]="(next_action_at<>'' AND substr(next_action_at,1,10)<=? AND status NOT IN('won','lost'))"; $args[]=date('Y-m-d'); }
-if($q!==''){ $where[]='(name LIKE ? OR contact LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; }
+if($q!==''){
+  $qd=preg_replace('/\D+/','',$q); // цифры номера — поиск по телефону в любом формате
+  if($qd!==''){ $where[]='(name LIKE ? OR contact LIKE ? OR phone_norm LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; $args[]="%$qd%"; }
+  else { $where[]='(name LIKE ? OR contact LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; }
+}
 $wsql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
 $st=$db->prepare("SELECT * FROM leads $wsql ORDER BY id DESC LIMIT 300");
 $st->execute($args); $rows=$st->fetchAll();
@@ -49,7 +57,16 @@ crm_head('Лиды'); ?>
   <div class="k"><b><?=$k_total?></b><span>всего</span></div>
 </div>
 
+<?php $chipOn='background:var(--acc);color:#12181f;font-weight:700'; ?>
+<div class="filters" style="margin-bottom:8px">
+  <a class="pill" href="index.php" style="<?=(!$fMine&&!$fUnassigned)?$chipOn:''?>">Все лиды</a>
+  <a class="pill" href="?mine=1" style="<?=$fMine?$chipOn:''?>">Мои лиды</a>
+  <a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые</a>
+</div>
+
 <form class="filters" method="get">
+  <?php if($fMine){ ?><input type="hidden" name="mine" value="1"><?php } ?>
+  <?php if($fUnassigned){ ?><input type="hidden" name="unassigned" value="1"><?php } ?>
   <select name="status" onchange="this.form.submit()"><option value="">Все статусы</option>
     <?php foreach($ST as $k=>$v){ ?><option value="<?=$k?>" <?=$fStatus===$k?'selected':''?>><?=h($v)?></option><?php } ?></select>
   <select name="source" onchange="this.form.submit()"><option value="">Все источники</option>
@@ -57,9 +74,9 @@ crm_head('Лиды'); ?>
   <select name="assignee" onchange="this.form.submit()"><option value="">Все операторы</option>
     <?php foreach($users as $id=>$nm){ ?><option value="<?=$id?>" <?=$fAssignee==$id?'selected':''?>><?=h($nm)?></option><?php } ?></select>
   <?php if($fDue==='today'){ ?><input type="hidden" name="due" value="today"><span class="pill" style="background:#ff8a5b;color:#12181f">перезвонить сегодня</span><?php } ?>
-  <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон" style="min-width:200px">
+  <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон (любой формат)" style="min-width:200px">
   <button class="btn btn-sec">Найти</button>
-  <?php if($fStatus||$fSource||$fAssignee||$q||$fDue){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
+  <?php if($fStatus||$fSource||$fAssignee||$q||$fDue||$fMine||$fUnassigned){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
   <span class="muted"><?=$total?> шт.<?=$total>300?' (показаны 300)':''?></span>
 </form>
