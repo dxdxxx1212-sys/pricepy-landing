@@ -58,7 +58,7 @@ crm_head('Лид #'.$id); ?>
 .spill:hover{filter:brightness(1.25)}
 .grouplbl{color:var(--muted);font-size:13px;margin-bottom:9px}
 .gtag{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
-.gtag:not(:first-child){margin-left:6px}
+.rowbreak{flex-basis:100%;height:0}
 .clr{color:var(--muted);font-size:13px;background:none;border:0;cursor:pointer;text-decoration:underline;padding:4px 2px;font-family:inherit}
 .reqline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .reqline i{color:var(--muted);font-style:normal;margin-right:5px}
@@ -90,7 +90,7 @@ if($reqs){ ?>
   <div class="grouplbl">Как связались — нажми:</div>
   <form method="post" class="statusrow" style="margin-bottom:16px">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="contact">
-    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=$cc===$k; $col=crm_contact_color($k); ?>
+    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=$cc===$k; $col=crm_contact_color($k); ?>
       <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v['l'])?></button>
     <?php } if($cc){ ?><button name="contact" value="" class="clr" title="сбросить канал связи">× сбросить</button><?php } ?>
   </form>
