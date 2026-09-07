@@ -11,18 +11,12 @@ WWW="/var/www/pricepy"
 PHP_SOCK="$(ls /run/php/php*-fpm.sock 2>/dev/null | head -n1)"
 echo "PHP-FPM сокет: ${PHP_SOCK:-НЕ НАЙДЕН}"
 
-# --- WebP negotiation + gzip (http-контекст, отдельным файлом в conf.d) ---
-echo "==> conf.d: WebP-negotiation + gzip..."
+# --- WebP negotiation (http-контекст, отдельным файлом в conf.d) ---
+# gzip НЕ трогаем — он уже включён в основном /etc/nginx/nginx.conf (иначе "duplicate").
+echo "==> conf.d: WebP-negotiation..."
 cat > /etc/nginx/conf.d/pricepy-webp.conf <<'WEBP'
 # Если браузер шлёт Accept: image/webp — пробуем отдать <файл>.webp вместо оригинала.
 map $http_accept $webp_suffix { default ""; "~*image/webp" ".webp"; }
-
-# gzip для текстовых ресурсов (jpg/png/webp не жмём — они уже сжаты)
-gzip on;
-gzip_comp_level 6;
-gzip_min_length 1024;
-gzip_vary on;
-gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml;
 WEBP
 
 echo "==> Конфиг nginx для ${SUB} (главная = v2.html)..."
