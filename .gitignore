@@ -7,3 +7,6 @@ api/config.php
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+# внутренние заметки с операционными данными (IP, chat_id, cron) — не публиковать
+PROJECT_NOTES.md
+CRM_PLAN.md

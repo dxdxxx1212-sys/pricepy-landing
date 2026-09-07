@@ -5,17 +5,26 @@
 // Поле contact/phone оборачивается в <code> → в Telegram тап по номеру копирует его.
 export default {
   async fetch(request, env, ctx) {
-    const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
+    const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,X-Lead-Secret'};
     if (request.method === 'OPTIONS') return new Response(null,{headers:cors});
     if (request.method !== 'POST') return new Response('ok',{headers:cors});
+
+    // Приём только от нашего сервера: если в Cloudflare задан секрет LEAD_SECRET —
+    // требуем совпадения заголовка. Пока секрет не задан, воркер работает как раньше
+    // (безопасная раскатка: сначала выкатываем lead.php с заголовком, потом включаем проверку).
+    if (env.LEAD_SECRET && request.headers.get('X-Lead-Secret') !== env.LEAD_SECRET) {
+      return new Response('{"ok":false}',{status:401,headers:{...cors,'Content-Type':'application/json'}});
+    }
 
     let d;
     try { d = await request.json(); } catch(e){ d = {}; }
 
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const copyable = ['contact','phone'];   // эти поля — тап-для-копирования
+    const skip = ['hp'];                      // служебные поля (honeypot) — не показываем
     let lines = '';
     for (const [k,v] of Object.entries(d)) {
+      if (skip.includes(k)) continue;
       lines += `${esc(k)}: ` + (copyable.includes(k) ? `<code>${esc(v)}</code>` : esc(v)) + '\n';
     }
     const body = JSON.stringify({

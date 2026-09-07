@@ -24,10 +24,12 @@ rm -rf "$WWW"
 git clone --depth 1 "$REPO" "$WWW"
 
 echo "==> [3/6] Настройка приёмника заявок..."
+LEAD_SECRET="${LEAD_SECRET:-}"   # общий секрет lead.php ↔ Cloudflare Worker (можно не задавать)
 cat > "$WWW/api/config.php" <<PHP
 <?php
-\$BOT_TOKEN = '${BOT_TOKEN}';
-\$CHAT_ID   = '${CHAT_ID}';
+\$BOT_TOKEN   = '${BOT_TOKEN}';
+\$CHAT_ID     = '${CHAT_ID}';
+\$LEAD_SECRET = '${LEAD_SECRET}';
 PHP
 touch "$WWW/leads.log"
 chown -R www-data:www-data "$WWW"

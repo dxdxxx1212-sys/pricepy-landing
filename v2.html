@@ -317,6 +317,7 @@ function render(){
     html+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
     html+='<div class="field"><label>Ваше имя</label><input id="cName" placeholder="Как к вам обращаться"></div>';
     html+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
+    html+='<input id="cHp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" placeholder="Оставьте пустым">'; // honeypot: люди не видят, боты заполняют
     html+='<div class="err" id="cErr">Заполните имя и контакт</div>';
     html+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
     html+='<button class="btn" id="send">Получить подбор →</button>';
@@ -348,7 +349,7 @@ function submit(){
   if(!name||contact.length<4){$('#cErr').classList.add('show');return;}
   if(!$('#cAgree').checked){$('#cErr').textContent='Подтвердите согласие на обработку данных';$('#cErr').classList.add('show');return;}
   _submitting=true;
-  const payload={source:'quiz-v2', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
+  const payload={source:'quiz-v2', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact, hp:(($('#cHp')||{}).value||'')};
   sendLead(payload);
   const labels={use:'Назначение',capacity:'Грузоподъёмность',type:'Тип',budget:'Бюджет',timing:'Сроки'};
   const rows=Object.keys(labels).filter(k=>payload[k]).map(k=>'<div class="row"><span class="k">'+labels[k]+'</span><span class="v">'+esc(payload[k])+'</span></div>').join('');

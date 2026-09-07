@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Поднимает CRM-панель на crm.восток-прицеп.рф (root = /var/www/pricepy/crm, PHP, HTTPS).
 # База SQLite лежит ВНЕ веб-корня: /var/lib/pricepy-crm/leads.sqlite (не скачать через браузер).
-# Перед запуском: в DNS (sprinthost) добавить A-запись  crm → 45.150.39.174
+# Перед запуском: в DNS (sprinthost) добавить A-запись  crm → <IP-сервера>
 # Запуск на сервере:
 #   curl -fsSL https://dxdxxx1212-sys.github.io/pricepy-landing/subdomain-crm.sh | bash
 set -euo pipefail
@@ -62,7 +62,7 @@ echo "==> HTTPS (Let's Encrypt)..."
 if certbot --nginx -d "${SUB}" --non-interactive --agree-tos -m "admin@jefwipwero.online" --redirect; then
   echo "    ✅ HTTPS включён"
 else
-  echo "    ⚠️ Серт пока не выпущен — проверь A-запись crm→45.150.39.174 и повтори:"
+  echo "    ⚠️ Серт пока не выпущен — проверь A-запись crm→<IP-сервера> и повтори:"
   echo "       certbot --nginx -d ${SUB} --redirect"
 fi
 
