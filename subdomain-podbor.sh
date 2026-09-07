@@ -26,7 +26,6 @@ server {
     listen [::]:80;
     server_name ${SUB};
     root ${WWW};
-    http2 on;
 
     # не отдавать наружу логи заявок (ПДн), базы и скрипты
     location ~* \.(log|sqlite|sqlite-wal|sqlite-shm|sh|md)\$ { deny all; }
@@ -63,6 +62,10 @@ nginx -t && systemctl reload nginx
 echo "==> HTTPS (Let's Encrypt)..."
 if certbot --nginx -d "${SUB}" --non-interactive --agree-tos -m "admin@jefwipwero.online" --redirect; then
   echo "    ✅ HTTPS включён"
+  # HTTP/2 для nginx 1.24: параметр в строке listen 443 (директивы http2 on; тут ещё нет).
+  # certbot создаёт "listen 443 ssl;" — дописываем http2 (идемпотентно: если уже есть, не дублируется).
+  sed -i 's/listen 443 ssl;/listen 443 ssl http2;/g; s/listen \[::\]:443 ssl;/listen [::]:443 ssl http2;/g' /etc/nginx/sites-available/podbor
+  if nginx -t 2>/dev/null; then systemctl reload nginx; echo "    ✅ HTTP/2 включён"; else echo "    ⚠️ HTTP/2 не применился — проверь: nginx -t"; fi
 else
   echo "    ⚠️ Серт пока не выпущен — повтори: certbot --nginx -d ${SUB} --redirect"
   echo "       (иногда с 2-3 попытки из-за капризной сети РФ↔Let's Encrypt)"
