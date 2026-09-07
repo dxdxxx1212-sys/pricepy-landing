@@ -8,13 +8,16 @@ $ST = crm_statuses(); $users = crm_users_map();
 $fStatus = $_GET['status'] ?? '';
 $fCall = $_GET['call'] ?? '';
 $fSource = $_GET['source'] ?? '';
+$fDue = isset($_GET['due']);
 $q = trim($_GET['q'] ?? '');
 $fMine = isset($_GET['mine']);
 $fUnassigned = isset($_GET['unassigned']);
+$tomorrow = date('c', strtotime('tomorrow')); // граница «на сегодня» = всё, что до начала завтра
 $where=[]; $args=[];
 if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
 if($fCall!==''){ $where[]='call_status=?'; $args[]=$fCall; }
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
+if($fDue){ $where[]="next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"; $args[]=$tomorrow; }
 if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
 if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
 if($q!==''){
@@ -25,12 +28,14 @@ if($q!==''){
 $wsql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
 $tc=$db->prepare("SELECT COUNT(*) c FROM leads $wsql"); $tc->execute($args); $total=(int)$tc->fetch()['c'];
 $per=100; $pages=max(1,(int)ceil($total/$per)); $page=max(1,min($pages,(int)($_GET['page']??1))); $off=($page-1)*$per;
-$st=$db->prepare("SELECT * FROM leads $wsql ORDER BY id DESC LIMIT $per OFFSET $off");
+$order = $fDue ? 'next_action_at ASC' : 'id DESC'; // очередь «на сегодня» — самые срочные сверху
+$st=$db->prepare("SELECT * FROM leads $wsql ORDER BY $order LIMIT $per OFFSET $off");
 $st->execute($args); $rows=$st->fetchAll();
 $maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m']; // для сигнала о новом лиде
 
 // KPI — минимум для работы
 $k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new'")->fetch()['c'];
+$kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
 $k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE call_status='noanswer'")->fetch()['c'];
 $k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won'")->fetch()['c'];
 $k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads")->fetch()['c'];
@@ -46,6 +51,7 @@ crm_head('Лиды'); ?>
 <?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
 <div class="kpi">
   <a class="k" href="?status=new" style="text-decoration:none"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
+  <a class="k" href="?due=1" style="text-decoration:none"><b style="color:<?=$k_due?'#ff8a5b':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
   <a class="k" href="?call=noanswer" style="text-decoration:none"><b style="color:#9aa2ab"><?=$k_noanswer?></b><span>не дозвонился</span></a>
   <div class="k"><b style="color:#5fd08a"><?=$k_won?></b><span>продажи</span></div>
   <div class="k"><b><?=$k_total?></b><span>всего</span></div>
@@ -56,6 +62,7 @@ crm_head('Лиды'); ?>
   <a class="pill" href="index.php" style="<?=(!$fMine&&!$fUnassigned)?$chipOn:''?>">Все лиды</a>
   <a class="pill" href="?mine=1" style="<?=$fMine?$chipOn:''?>">Мои лиды</a>
   <a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые</a>
+  <a class="pill" href="?due=1" style="<?=$fDue?$chipOn:''?>">На сегодня<?=$k_due?' · '.$k_due:''?></a>
 </div>
 
 <form class="filters" method="get">
@@ -69,14 +76,14 @@ crm_head('Лиды'); ?>
     <?php foreach($sources as $s){ ?><option value="<?=h($s)?>" <?=$fSource===$s?'selected':''?>><?=h($s)?></option><?php } ?></select>
   <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон (любой формат)" style="min-width:220px">
   <button class="btn btn-sec">Найти</button>
-  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
+  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
   <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto">
 <table>
-<thead><tr><th>Дата</th><th>Имя / контакт</th><th>Запрос</th><th>Источник</th><th>Связь</th><th>Статус</th></tr></thead>
+<thead><tr><th>Дата</th><th>Имя / контакт</th><th>Запрос</th><th>Источник</th><th>Связь</th><th>Статус</th><th>Напомнить</th></tr></thead>
 <tbody>
 <?php foreach($rows as $r){ ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
@@ -86,8 +93,9 @@ crm_head('Лиды'); ?>
   <td><span class="pill"><?=h($r['source']?:'—')?></span></td>
   <td><?php if($r['call_status']){ ?><span class="badge" style="background:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
+  <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'#ff8a5b':'var(--muted)'?>;font-weight:<?=$over?'700':'400'?>"><?=$over?'⏰ ':''?><?=crm_dt($na)?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Лидов пока нет. Как только придёт заявка с сайта — появится здесь.</td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
 </tbody></table>
 </div>
 

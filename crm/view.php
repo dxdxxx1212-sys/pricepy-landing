@@ -30,6 +30,24 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
         $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]);
         crm_event($id,$me['id'],'статус','Новый → В работе');
       }
+      // «Не дозвонился» без напоминания → авто-перезвон через 2 часа, чтобы лид не потерялся.
+      if($nc==='noanswer' && empty($L['next_action_at'])){
+        $t=date('c',strtotime('+2 hours'));
+        $db->prepare("UPDATE leads SET next_action_at=? WHERE id=?")->execute([$t,$id]);
+        crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($t));
+      }
+    }
+  } elseif($act==='remind'){
+    $when=$_POST['when']??'';
+    $ts=null;
+    if($when==='clear'){ $ts=''; }
+    elseif($when==='eve'){ $ts=date('c',strtotime('today 18:00')); }
+    elseif($when==='tom'){ $ts=date('c',strtotime('tomorrow 10:00')); }
+    elseif($when==='d3'){ $ts=date('c',strtotime('+3 days 10:00')); }
+    elseif($when==='custom'){ $c=trim($_POST['dt']??''); $t=$c?strtotime($c):0; if($t) $ts=date('c',$t); }
+    if($ts!==null){
+      $db->prepare("UPDATE leads SET next_action_at=?,updated_at=? WHERE id=?")->execute([$ts,date('c'),$id]);
+      crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято');
     }
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
@@ -60,6 +78,10 @@ crm_head('Лид #'.$id); ?>
 .gtag{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
 .rowbreak{flex-basis:100%;height:0}
 .clr{color:var(--muted);font-size:13px;background:none;border:0;cursor:pointer;text-decoration:underline;padding:4px 2px;font-family:inherit}
+.remind-now{padding:8px 12px;border-radius:8px;font-size:14px;margin-bottom:12px}
+.remind-set{background:#173a24;color:#8ff0b0}
+.remind-over{background:#3a1717;color:#ffb0b0}
+.dtin{padding:8px 10px}
 .reqline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .reqline i{color:var(--muted);font-style:normal;margin-right:5px}
 </style>
@@ -100,6 +122,22 @@ if($reqs){ ?>
     <?php foreach($ST as $k=>$v){ $active=$L['status']===$k; $col=crm_status_color($k); ?>
       <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
     <?php } ?>
+  </form>
+</div>
+
+<!-- НАПОМИНАНИЕ (следующий контакт) — чтобы лид не потерялся -->
+<?php $na=$L['next_action_at']; $naTs=$na?strtotime($na):0; $overdue=$naTs && $naTs<time(); ?>
+<div class="card">
+  <div class="grouplbl">Следующий контакт:</div>
+  <?php if($na){ ?><div class="remind-now <?=$overdue?'remind-over':'remind-set'?>"><?=$overdue?'⏰ Просрочено: ':'📅 Напомнить: '?><?=crm_dt($na)?><?=$overdue?' — пора связаться':''?></div><?php } ?>
+  <form method="post" class="statusrow">
+    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="remind">
+    <button name="when" value="eve" class="spill">Сегодня вечером</button>
+    <button name="when" value="tom" class="spill">Завтра</button>
+    <button name="when" value="d3" class="spill">Через 3 дня</button>
+    <input type="datetime-local" name="dt" class="dtin">
+    <button name="when" value="custom" class="spill">Задать</button>
+    <?php if($na){ ?><button name="when" value="clear" class="clr" title="убрать напоминание">× убрать</button><?php } ?>
   </form>
 </div>
 
