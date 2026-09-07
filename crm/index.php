@@ -6,12 +6,14 @@ $ST = crm_statuses(); $users = crm_users_map();
 
 // фильтры
 $fStatus = $_GET['status'] ?? '';
+$fCall = $_GET['call'] ?? '';
 $fSource = $_GET['source'] ?? '';
 $q = trim($_GET['q'] ?? '');
 $fMine = isset($_GET['mine']);
 $fUnassigned = isset($_GET['unassigned']);
 $where=[]; $args=[];
 if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
+if($fCall!==''){ $where[]='call_status=?'; $args[]=$fCall; }
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
 if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
 if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
@@ -29,7 +31,7 @@ $maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m'];
 
 // KPI — минимум для работы
 $k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new'")->fetch()['c'];
-$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='noanswer'")->fetch()['c'];
+$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE call_status='noanswer'")->fetch()['c'];
 $k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won'")->fetch()['c'];
 $k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads")->fetch()['c'];
 $sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
@@ -44,7 +46,7 @@ crm_head('Лиды'); ?>
 <?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
 <div class="kpi">
   <a class="k" href="?status=new" style="text-decoration:none"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
-  <a class="k" href="?status=noanswer" style="text-decoration:none"><b style="color:#9aa2ab"><?=$k_noanswer?></b><span>не дозвонился</span></a>
+  <a class="k" href="?call=noanswer" style="text-decoration:none"><b style="color:#9aa2ab"><?=$k_noanswer?></b><span>не дозвонился</span></a>
   <div class="k"><b style="color:#5fd08a"><?=$k_won?></b><span>продажи</span></div>
   <div class="k"><b><?=$k_total?></b><span>всего</span></div>
 </div>
@@ -61,18 +63,20 @@ crm_head('Лиды'); ?>
   <?php if($fUnassigned){ ?><input type="hidden" name="unassigned" value="1"><?php } ?>
   <select name="status" onchange="this.form.submit()"><option value="">Все статусы</option>
     <?php foreach($ST as $k=>$v){ ?><option value="<?=$k?>" <?=$fStatus===$k?'selected':''?>><?=h($v)?></option><?php } ?></select>
+  <select name="call" onchange="this.form.submit()"><option value="">Любой канал</option>
+    <?php foreach(crm_contacts() as $k=>$v){ ?><option value="<?=$k?>" <?=$fCall===$k?'selected':''?>><?=h($v['l'])?></option><?php } ?></select>
   <select name="source" onchange="this.form.submit()"><option value="">Все источники</option>
     <?php foreach($sources as $s){ ?><option value="<?=h($s)?>" <?=$fSource===$s?'selected':''?>><?=h($s)?></option><?php } ?></select>
   <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон (любой формат)" style="min-width:220px">
   <button class="btn btn-sec">Найти</button>
-  <?php if($fStatus||$fSource||$q||$fMine||$fUnassigned){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
+  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
   <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto">
 <table>
-<thead><tr><th>Дата</th><th>Имя / контакт</th><th>Запрос</th><th>Источник</th><th>Статус</th></tr></thead>
+<thead><tr><th>Дата</th><th>Имя / контакт</th><th>Запрос</th><th>Источник</th><th>Связь</th><th>Статус</th></tr></thead>
 <tbody>
 <?php foreach($rows as $r){ ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
@@ -80,9 +84,10 @@ crm_head('Лиды'); ?>
   <td><b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?><br><span class="muted"><?=h($r['contact'])?></span></td>
   <td class="muted" style="max-width:260px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); echo h(implode(' · ',$req)); ?></td>
   <td><span class="pill"><?=h($r['source']?:'—')?></span></td>
+  <td><?php if($r['call_status']){ ?><span class="badge" style="background:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="5" class="muted" style="padding:24px;text-align:center">Лидов пока нет. Как только придёт заявка с сайта — появится здесь.</td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Лидов пока нет. Как только придёт заявка с сайта — появится здесь.</td></tr><?php } ?>
 </tbody></table>
 </div>
 

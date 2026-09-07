@@ -18,6 +18,19 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $db->prepare("UPDATE leads SET status=?,assignee_id=?,updated_at=? WHERE id=?")->execute([$ns,$assignee,date('c'),$id]);
       if($ns!==$L['status']) crm_event($id,$me['id'],'статус',($ST[$L['status']]??$L['status']).' → '.($ST[$ns]??$ns));
     }
+  } elseif($act==='contact'){
+    $C=crm_contacts();
+    $nc=$_POST['contact']??'';
+    if($nc==='' || isset($C[$nc])){
+      $db->prepare("UPDATE leads SET call_status=?,updated_at=? WHERE id=?")->execute([$nc,date('c'),$id]);
+      if($nc!==$L['call_status']) crm_event($id,$me['id'],'контакт',$nc?crm_contact_label($nc):'сброшен');
+      // Первый контакт по «новому» лиду → сам берём в работу и назначаем на оператора.
+      if($nc!=='' && $L['status']==='new'){
+        $as=$L['assignee_id']?:$me['id'];
+        $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]);
+        crm_event($id,$me['id'],'статус','Новый → В работе');
+      }
+    }
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
     if($body!==''){ $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]); }
@@ -40,9 +53,13 @@ $csrf=h(crm_csrf());
 crm_head('Лид #'.$id); ?>
 <style>
 .lead-wrap{max-width:720px;margin:0 auto}
-.statusrow{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.statusrow{display:flex;flex-wrap:wrap;gap:8px;margin:0;align-items:center}
 .spill{font-family:inherit;font-size:14px;padding:10px 15px;border-radius:22px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted);transition:filter .1s}
 .spill:hover{filter:brightness(1.25)}
+.grouplbl{color:var(--muted);font-size:13px;margin-bottom:9px}
+.gtag{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
+.gtag:not(:first-child){margin-left:6px}
+.clr{color:var(--muted);font-size:13px;background:none;border:0;cursor:pointer;text-decoration:underline;padding:4px 2px;font-family:inherit}
 .reqline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .reqline i{color:var(--muted);font-style:normal;margin-right:5px}
 </style>
@@ -54,14 +71,7 @@ crm_head('Лид #'.$id); ?>
 <!-- КОНТАКТ -->
 <div class="card">
   <h2 style="margin:0 0 4px;font-size:22px"><?=h($L['name']?:'Без имени')?></h2>
-  <div style="font-size:18px;margin-bottom:12px"><?=h($L['contact']?:'—')?><?php if($ch){ ?> <span class="muted" style="font-size:13px">· выбрал: <?=h($chName[$ch]??$ch)?></span><?php } ?></div>
-  <?php if($dig){ ?>
-  <div style="display:flex;flex-wrap:wrap;gap:8px">
-    <a class="btn btn-sec" href="tel:+<?=$dig?>">📞 Позвонить</a>
-    <a class="btn btn-sec" href="https://wa.me/<?=$dig?>" target="_blank">WhatsApp</a>
-    <a class="btn btn-sec" href="https://t.me/+<?=$dig?>" target="_blank">Telegram</a>
-  </div>
-  <?php } ?>
+  <div style="font-size:18px"><?=h($L['contact']?:'—')?><?php if($ch){ ?> <span class="muted" style="font-size:13px">· выбрал: <?=h($chName[$ch]??$ch)?></span><?php } ?></div>
 </div>
 
 <!-- ЗАПРОС (что нужно клиенту — чтобы собрать подборку) -->
@@ -74,9 +84,17 @@ if($reqs){ ?>
 </div>
 <?php } ?>
 
-<!-- СТАТУС (одно действие, нажатие = сохранение) -->
+<!-- КАК СВЯЗАЛИСЬ (канал) и СТАТУС СДЕЛКИ (воронка) — нажатие = сохранение -->
+<?php $C=crm_contacts(); $cc=$L['call_status']; ?>
 <div class="card">
-  <div class="muted" style="font-size:13px;margin-bottom:9px">Статус — нажми, чтобы сменить:</div>
+  <div class="grouplbl">Как связались — нажми:</div>
+  <form method="post" class="statusrow" style="margin-bottom:16px">
+    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="contact">
+    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=$cc===$k; $col=crm_contact_color($k); ?>
+      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v['l'])?></button>
+    <?php } if($cc){ ?><button name="contact" value="" class="clr" title="сбросить канал связи">× сбросить</button><?php } ?>
+  </form>
+  <div class="grouplbl">Статус сделки — нажми:</div>
   <form method="post" class="statusrow">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="status">
     <?php foreach($ST as $k=>$v){ $active=$L['status']===$k; $col=crm_status_color($k); ?>

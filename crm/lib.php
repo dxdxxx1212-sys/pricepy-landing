@@ -6,20 +6,33 @@ define('CRM_DB_PATH', getenv('CRM_DB') ?: '/var/lib/pricepy-crm/leads.sqlite');
 date_default_timezone_set('Europe/Moscow'); // все даты/время и KPI «сегодня» — по Москве
 
 // ---- Справочники ----
-// Единая линейная воронка под флоу оператора: взял → мессенджер/звонок → подборка → итог.
+// Два независимых поля под флоу оператора:
+//  1) КАК СВЯЗАЛИСЬ (call_status) — сначала ищем в мессенджере, иначе звоним.
+//  2) СТАТУС СДЕЛКИ (status) — воронка: новый → в работе → подборка → итог.
 function crm_statuses(){ return [
-  'new'      => 'Новый',
-  'work'     => 'В работе',
-  'messaged' => 'Написал в мессенджере',
-  'sent'     => 'Отправил подборку',
-  'noanswer' => 'Не дозвонился',
-  'won'      => 'Продажа',
-  'lost'     => 'Отказ',
+  'new'  => 'Новый',
+  'work' => 'В работе',
+  'sent' => 'Отправил подборку',
+  'won'  => 'Продажа',
+  'lost' => 'Отказ',
 ];}
 function crm_status_color($s){ return [
-  'new'=>'#f5b301','work'=>'#3b82f6','messaged'=>'#8b5cf6','sent'=>'#0ea5e9',
-  'noanswer'=>'#9aa2ab','won'=>'#1f9d55','lost'=>'#6b7280',
+  'new'=>'#f5b301','work'=>'#3b82f6','sent'=>'#0ea5e9','won'=>'#1f9d55','lost'=>'#6b7280',
 ][$s] ?? '#9aa2ab'; }
+
+// Канал связи: как оператор реально достучался до клиента. '' = ещё не связывались.
+// g — группа (msg = в мессенджере, call = по телефону) для группировки в UI.
+function crm_contacts(){ return [
+  'wa'       => ['l'=>'WhatsApp',      'g'=>'msg'],
+  'tg'       => ['l'=>'Telegram',      'g'=>'msg'],
+  'max'      => ['l'=>'МАКС',          'g'=>'msg'],
+  'called'   => ['l'=>'Дозвонился',    'g'=>'call'],
+  'noanswer' => ['l'=>'Не дозвонился', 'g'=>'call'],
+];}
+function crm_contact_label($c){ $C=crm_contacts(); return $C[$c]['l'] ?? ''; }
+function crm_contact_color($c){ return [
+  'wa'=>'#22c55e','tg'=>'#0ea5e9','max'=>'#8b5cf6','called'=>'#1f9d55','noanswer'=>'#9aa2ab',
+][$c] ?? '#9aa2ab'; }
 
 // ---- База ----
 function crm_db(){
@@ -38,7 +51,16 @@ function crm_db(){
 function crm_migrate($db){ static $done=false; if($done) return; $done=true;
   $cols = $db->query("PRAGMA table_info(leads)")->fetchAll(PDO::FETCH_COLUMN, 1);
   if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
+  if(!in_array('call_status',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN call_status TEXT DEFAULT ''"); }
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)");
+  // Перенос старой плоской воронки в двухполевую модель (идемпотентно — после переноса таких строк нет).
+  $legacy = (int)$db->query("SELECT COUNT(*) FROM leads WHERE status IN('messaged','noanswer')")->fetchColumn();
+  if($legacy){
+    // «Не дозвонился» был этапом → теперь это канал связи, а сделка остаётся «в работе».
+    $db->exec("UPDATE leads SET call_status='noanswer', status='work' WHERE status='noanswer'");
+    // «Написал в мессенджере» → канал = мессенджер, который клиент выбрал в квизе (если знаем), иначе WhatsApp.
+    $db->exec("UPDATE leads SET call_status=CASE channel WHEN 'telegram' THEN 'tg' WHEN 'max' THEN 'max' ELSE 'wa' END, status='work' WHERE status='messaged'");
+  }
   // заполнить нормализованный телефон там, где ещё пусто (после ALTER или для старых строк)
   $need = $db->query("SELECT id,contact FROM leads WHERE (phone_norm IS NULL OR phone_norm='') AND contact<>''")->fetchAll();
   if($need){ $up=$db->prepare("UPDATE leads SET phone_norm=? WHERE id=?");
