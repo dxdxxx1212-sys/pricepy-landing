@@ -23,16 +23,19 @@ function crm_status_color($s){ return [
 // Канал связи: как оператор реально достучался до клиента. '' = ещё не связывались.
 // g — группа (msg = в мессенджере, call = по телефону) для группировки в UI.
 function crm_contacts(){ return [
-  'wa'       => ['l'=>'WhatsApp',      'g'=>'msg'],
-  'tg'       => ['l'=>'Telegram',      'g'=>'msg'],
-  'max'      => ['l'=>'МАКС',          'g'=>'msg'],
-  'called'   => ['l'=>'Дозвонился',    'g'=>'call'],
-  'noanswer' => ['l'=>'Не дозвонился', 'g'=>'call'],
+  'wa'       => ['l'=>'WhatsApp',         'g'=>'msg'],
+  'tg'       => ['l'=>'Telegram',         'g'=>'msg'],
+  'max'      => ['l'=>'МАКС',             'g'=>'msg'],
+  'nomsg'    => ['l'=>'Нет в мессенджере','g'=>'msg'],
+  'called'   => ['l'=>'Дозвонился',       'g'=>'call'],
+  'noanswer' => ['l'=>'Не дозвонился',    'g'=>'call'],
 ];}
 function crm_contact_label($c){ $C=crm_contacts(); return $C[$c]['l'] ?? ''; }
 function crm_contact_color($c){ return [
-  'wa'=>'#22c55e','tg'=>'#0ea5e9','max'=>'#8b5cf6','called'=>'#1f9d55','noanswer'=>'#9aa2ab',
+  'wa'=>'#22c55e','tg'=>'#0ea5e9','max'=>'#8b5cf6','nomsg'=>'#f59e0b','called'=>'#1f9d55','noanswer'=>'#9aa2ab',
 ][$c] ?? '#9aa2ab'; }
+// Канал, который клиент выбрал в квизе (поле channel) — куда он ждёт сообщение.
+function crm_channel_label($ch){ return ['whatsapp'=>'WhatsApp','telegram'=>'Telegram','max'=>'МАКС','phone'=>'Телефон'][$ch] ?? ($ch?:''); }
 
 // ---- База ----
 function crm_db(){

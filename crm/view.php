@@ -79,7 +79,6 @@ $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.
 $related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,status FROM leads WHERE phone_norm=? AND id<>? ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); }
 $dig=crm_phone_digits($L['contact']);
 $ch=$L['channel'];
-$chName=['whatsapp'=>'WhatsApp','telegram'=>'Telegram','max'=>'МАКС','phone'=>'по телефону'];
 $csrf=h(crm_csrf());
 $activeUsers=$db->query("SELECT id,name,role FROM users WHERE active=1 ORDER BY role='owner' DESC, id")->fetchAll();
 crm_head('Лид #'.$id); ?>
@@ -107,8 +106,22 @@ crm_head('Лид #'.$id); ?>
 <!-- КОНТАКТ -->
 <div class="card">
   <h2 style="margin:0 0 4px;font-size:22px"><?=h($L['name']?:'Без имени')?></h2>
-  <div style="font-size:18px"><?=h($L['contact']?:'—')?><?php if($ch){ ?> <span class="muted" style="font-size:13px">· выбрал: <?=h($chName[$ch]??$ch)?></span><?php } ?></div>
+  <div style="font-size:18px"><?=h($L['contact']?:'—')?><?php if($ch){ ?> <span class="muted" style="font-size:13px">· клиент выбрал: <b style="color:var(--ink)"><?=h(crm_channel_label($ch))?></b></span><?php } ?></div>
+  <?php
+    $waUrl = $dig ? 'https://wa.me/'.$dig : '';
+    $tgUrl = preg_match('/@([A-Za-z0-9_]{4,})/u',$L['contact'],$m) ? 'https://t.me/'.$m[1] : ($dig ? 'tg://resolve?phone='.$dig : '');
+    $hl = function($c) use($ch){ return $ch===$c ? ' style="border-color:#f6871f;color:#f6871f;font-weight:700"' : ''; };
+    $cj = h(json_encode($L['contact'], JSON_UNESCAPED_UNICODE));
+  ?>
+  <div class="statusrow" style="margin-top:12px">
+    <?php if($dig){ ?><a class="spill" href="tel:+<?=$dig?>">📞 Позвонить</a><?php } ?>
+    <?php if($waUrl){ ?><a class="spill" href="<?=$waUrl?>" target="_blank" rel="noopener"<?=$hl('whatsapp')?>>WhatsApp</a><?php } ?>
+    <?php if($tgUrl){ ?><a class="spill" href="<?=h($tgUrl)?>" target="_blank" rel="noopener"<?=$hl('telegram')?>>Telegram</a><?php } ?>
+    <a class="spill" href="https://max.ru/" target="_blank" rel="noopener" onclick="crmCopy(<?=$cj?>)"<?=$hl('max')?> title="Откроет МАКС и скопирует номер — вставьте в поиск">МАКС</a>
+    <button type="button" class="spill" onclick="crmCopy(<?=$cj?>);this.textContent='Скопировано ✓'">⧉ Копировать номер</button>
+  </div>
 </div>
+<script>function crmCopy(t){try{navigator.clipboard.writeText(t);}catch(e){}}</script>
 
 <!-- ЗАПРОС (что нужно клиенту — чтобы собрать подборку) -->
 <?php
