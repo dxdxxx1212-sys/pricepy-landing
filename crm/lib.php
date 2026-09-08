@@ -116,7 +116,7 @@ function crm_sess(){ if(session_status()!==PHP_SESSION_ACTIVE){ session_set_cook
 function crm_user(){ crm_sess(); if(empty($_SESSION['uid'])) return null; $s=crm_db()->prepare("SELECT * FROM users WHERE id=? AND active=1"); $s->execute([$_SESSION['uid']]); return $s->fetch() ?: null; }
 function crm_require(){ $u=crm_user(); if(!$u){ header('Location: login.php'); exit; } return $u; }
 function crm_require_owner(){ $u=crm_require(); if($u['role']!=='owner'){ http_response_code(403); exit('Только для владельца'); } return $u; }
-function crm_login($login,$pass){ $s=crm_db()->prepare("SELECT * FROM users WHERE login=? AND active=1"); $s->execute([trim($login)]); $u=$s->fetch();
+function crm_login($login,$pass){ $s=crm_db()->prepare("SELECT * FROM users WHERE login=? COLLATE NOCASE AND active=1"); $s->execute([trim($login)]); $u=$s->fetch();
   if($u && password_verify($pass,$u['pass_hash'])){ crm_sess(); session_regenerate_id(true); $_SESSION['uid']=$u['id']; return true; } return false; }
 function crm_logout(){ crm_sess(); $_SESSION=[]; session_destroy(); }
 // антибрутфорс логина: не более 10 неудач с одного IP за 15 минут

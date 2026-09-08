@@ -15,7 +15,7 @@ crm_head('Вход'); ?>
     <?php if($err){ ?><div style="background:#3a1d1d;color:#ffb4b4;padding:9px 12px;border-radius:8px;margin-bottom:12px;font-size:14px"><?=h($err)?></div><?php } ?>
     <form method="post">
       <input type="hidden" name="csrf" value="<?=h(crm_csrf())?>">
-      <div style="margin-bottom:10px"><input name="login" placeholder="Логин" style="width:100%" autofocus></div>
+      <div style="margin-bottom:10px"><input name="login" placeholder="Логин" style="width:100%" autofocus autocapitalize="off" autocorrect="off" autocomplete="username" spellcheck="false"></div>
       <div style="margin-bottom:14px"><input name="pass" type="password" placeholder="Пароль" style="width:100%"></div>
       <button class="btn" style="width:100%">Войти</button>
     </form>

@@ -47,7 +47,7 @@ crm_head('Операторы'); ?>
     <form method="post">
       <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="add">
       <div style="margin-bottom:9px"><input name="name" placeholder="Имя" style="width:100%"></div>
-      <div style="margin-bottom:9px"><input name="login" placeholder="Логин" style="width:100%" required></div>
+      <div style="margin-bottom:9px"><input name="login" placeholder="Логин (латиницей, без пробелов)" style="width:100%" required autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <div style="margin-bottom:9px"><input name="pass" type="password" placeholder="Пароль (≥10)" style="width:100%" required></div>
       <div style="margin-bottom:12px"><select name="role" style="width:100%"><option value="operator">Оператор</option><option value="owner">Владелец</option></select></div>
       <button class="btn">Добавить</button>
