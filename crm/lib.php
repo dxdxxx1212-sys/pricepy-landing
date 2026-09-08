@@ -91,9 +91,10 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
 }
 
 // Вставка лида (вызывается из api/lead.php). Возвращает id или бросает исключение.
-function crm_insert_lead($data, $raw){
+// $createdAt — необязательно: исторический момент заявки (для импорта из leads.log).
+function crm_insert_lead($data, $raw, $createdAt=null){
   $g = function($k) use($data){ return isset($data[$k]) ? mb_substr((string)$data[$k],0,500) : ''; };
-  $now = date('c');
+  $now = $createdAt ?: date('c');
   $st = crm_db()->prepare("INSERT INTO leads
     (created_at,source,name,contact,channel,use_,capacity,type,budget,timing,
      utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,yclid,items,phone_norm,ip,ua,raw,status,updated_at)
