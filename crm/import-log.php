@@ -3,14 +3,19 @@
 // ТОЛЬКО из консоли сервера. Идемпотентно: повторный запуск не создаёт дублей.
 // Ничего не отправляет в Telegram — только пишет в базу.
 // Запуск на сервере:
-//   php /var/www/pricepy/crm/import-log.php
+//   php /var/www/pricepy/crm/import-log.php dry   ← предпросмотр (ничего не пишет)
+//   php /var/www/pricepy/crm/import-log.php        ← реальный импорт
 //   (можно указать путь к логу: php .../import-log.php /var/lib/pricepy-crm/leads.log)
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit('Доступно только из консоли сервера.'); }
 require __DIR__.'/lib.php';
 
-// Ищем лог в тех же местах, куда его пишет api/lead.php.
-$paths = [];
-if (!empty($argv[1])) $paths[] = $argv[1];
+// Разбор аргументов: флаг dry (предпросмотр) и/или путь к логу.
+$dry = false; $paths = [];
+foreach (array_slice($argv, 1) as $a) {
+  if ($a === 'dry' || $a === '--dry') { $dry = true; }
+  else { $paths[] = $a; }
+}
+if ($dry) echo "=== РЕЖИМ ПРЕДПРОСМОТРА: ничего не записывается ===\n";
 $paths[] = '/var/lib/pricepy-crm/leads.log';
 $paths[] = __DIR__.'/../leads.log';
 $log = '';
@@ -49,9 +54,15 @@ while (($line = fgets($fh)) !== false) {
   $check->execute([$ca, $phone]);
   if ($check->fetchColumn()) { $skipped++; continue; }
 
-  crm_insert_lead($data, $json, $ca);
+  if ($dry) {
+    echo sprintf("  + %s | %s | %s | %s\n", crm_dt($ca), $name ?: '(без имени)', $contact ?: '(нет контакта)', crm_channel_label($data['channel'] ?? ''));
+  } else {
+    crm_insert_lead($data, $json, $ca);
+  }
   $imported++;
 }
 fclose($fh);
 
-echo "Готово. Импортировано: $imported · пропущено (дубли/пустые): $skipped · нечитаемых строк: $bad · всего строк: $ln\n";
+$word = $dry ? "БУДЕТ импортировано" : "Импортировано";
+echo "\nГотово. $word: $imported · пропущено (дубли/пустые): $skipped · нечитаемых строк: $bad · всего строк: $ln\n";
+if ($dry && $imported) echo "Если список выше устраивает — запусти без 'dry' для реального импорта.\n";
