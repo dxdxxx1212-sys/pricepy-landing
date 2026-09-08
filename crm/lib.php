@@ -194,7 +194,8 @@ tr:hover td{background:#1b232c}
 .req{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qa{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:#9cc4ff;margin-right:3px}
 .qa:hover{background:#1b232c;text-decoration:none}
-.want{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:transparent}
+.want{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:transparent;color:var(--muted);border:1px solid var(--line)}
+.badge-o{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:transparent;border:1px solid currentColor}
 @media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{gap:12px;font-size:14px}}
 /* Мобильные карточки: таблица лидов превращается в стопку карточек, без гориз. скролла */
 @media(max-width:760px){

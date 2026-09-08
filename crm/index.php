@@ -90,10 +90,10 @@ crm_head('Лиды'); ?>
   <td>
     <b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
     <br><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span>
-    <?php if($r['channel']){ $chC=crm_channel_color($r['channel']); ?> <span class="want" style="color:<?=$chC?>;border:1px solid <?=$chC?>" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
+    <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
-  <td><?php if($r['call_status']){ ?><span class="badge" style="background:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
+  <td><?php if($r['call_status']){ ?><span class="badge-o" style="color:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:+<?=$dig?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$dig?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$dig?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" class="muted"><?=crm_dt($r['created_at'])?><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><br><span style="color:<?=$over?'#ff8a5b':'#5fd08a'?>;font-weight:600"><?=$over?'⏰':'📅'?> <?=crm_dt($na)?></span><?php } ?></td>
