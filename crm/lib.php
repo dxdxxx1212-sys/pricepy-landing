@@ -35,7 +35,25 @@ function crm_contact_color($c){ return [
   'wa'=>'#22c55e','tg'=>'#0ea5e9','max'=>'#8b5cf6','nomsg'=>'#f59e0b','called'=>'#1f9d55','noanswer'=>'#9aa2ab',
 ][$c] ?? '#9aa2ab'; }
 // Канал, который клиент выбрал в квизе (поле channel) — куда он ждёт сообщение.
-function crm_channel_label($ch){ return ['whatsapp'=>'WhatsApp','telegram'=>'Telegram','max'=>'МАКС','phone'=>'Телефон'][$ch] ?? ($ch?:''); }
+// Значение приходит по-разному (max/МАКС/макс, phone/Телефон, WhatsApp/whatsapp) из
+// разных версий квиза и импорта — нормализуем к единому ключу whatsapp/telegram/max/phone.
+function crm_channel_norm($ch){
+  $c = mb_strtolower(trim((string)$ch), 'UTF-8');
+  $map = [
+    'whatsapp'=>'whatsapp','вотсап'=>'whatsapp','ватсап'=>'whatsapp','wa'=>'whatsapp',
+    'telegram'=>'telegram','телеграм'=>'telegram','тг'=>'telegram','tg'=>'telegram',
+    'max'=>'max','макс'=>'max',
+    'phone'=>'phone','телефон'=>'phone','тел'=>'phone','звонок'=>'phone',
+  ];
+  return $map[$c] ?? '';
+}
+function crm_channel_label($ch){
+  $l = ['whatsapp'=>'WhatsApp','telegram'=>'Telegram','max'=>'МАКС','phone'=>'Телефон'][crm_channel_norm($ch)] ?? '';
+  return $l !== '' ? $l : trim((string)$ch);
+}
+function crm_channel_color($ch){
+  return ['whatsapp'=>'#22c55e','telegram'=>'#0ea5e9','max'=>'#8b5cf6','phone'=>'#9aa2ab'][crm_channel_norm($ch)] ?? '#9aa2ab';
+}
 
 // ---- База ----
 function crm_db(){

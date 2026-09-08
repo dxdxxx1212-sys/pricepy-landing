@@ -110,7 +110,7 @@ crm_head('Лид #'.$id); ?>
   <?php
     $waUrl = $dig ? 'https://wa.me/'.$dig : '';
     $tgUrl = preg_match('/@([A-Za-z0-9_]{4,})/u',$L['contact'],$m) ? 'https://t.me/'.$m[1] : ($dig ? 'tg://resolve?phone='.$dig : '');
-    $hl = function($c) use($ch){ return $ch===$c ? ' style="border-color:#f6871f;color:#f6871f;font-weight:700"' : ''; };
+    $hl = function($c) use($ch){ return crm_channel_norm($ch)===$c ? ' style="border-color:#f6871f;color:#f6871f;font-weight:700"' : ''; };
     $cj = h(json_encode($L['contact'], JSON_UNESCAPED_UNICODE));
   ?>
   <div class="statusrow" style="margin-top:12px">
