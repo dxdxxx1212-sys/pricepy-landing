@@ -49,6 +49,19 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $db->prepare("UPDATE leads SET next_action_at=?,updated_at=? WHERE id=?")->execute([$ts,date('c'),$id]);
       crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято');
     }
+  } elseif($act==='assign'){
+    $uid=$_POST['uid']??'';
+    if($uid===''){ // снять назначение
+      $db->prepare("UPDATE leads SET assignee_id=NULL,updated_at=? WHERE id=?")->execute([date('c'),$id]);
+      if($L['assignee_id']) crm_event($id,$me['id'],'назначение','снято');
+    } else {
+      $uid=(int)$uid;
+      $chk=$db->prepare("SELECT name FROM users WHERE id=? AND active=1"); $chk->execute([$uid]); $nm=$chk->fetchColumn();
+      if($nm && (int)$L['assignee_id']!==$uid){
+        $db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=?")->execute([$uid,date('c'),$id]);
+        crm_event($id,$me['id'],'назначение',$nm);
+      }
+    }
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
     if($body!==''){ $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]); }
@@ -68,6 +81,7 @@ $dig=crm_phone_digits($L['contact']);
 $ch=$L['channel'];
 $chName=['whatsapp'=>'WhatsApp','telegram'=>'Telegram','max'=>'МАКС','phone'=>'по телефону'];
 $csrf=h(crm_csrf());
+$activeUsers=$db->query("SELECT id,name,role FROM users WHERE active=1 ORDER BY role='owner' DESC, id")->fetchAll();
 crm_head('Лид #'.$id); ?>
 <style>
 .lead-wrap{max-width:720px;margin:0 auto}
@@ -122,6 +136,15 @@ if($reqs){ ?>
     <?php foreach($ST as $k=>$v){ $active=$L['status']===$k; $col=crm_status_color($k); ?>
       <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
     <?php } ?>
+  </form>
+
+  <div class="grouplbl" style="margin-top:16px">Ответственный<?=$L['assignee_id']?'':' — не назначен'?>:</div>
+  <form method="post" class="statusrow">
+    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="assign">
+    <?php foreach($activeUsers as $au){ $active=(int)$L['assignee_id']===(int)$au['id']; ?>
+      <button name="uid" value="<?=$au['id']?>" class="spill"<?=$active?' style="background:#8b5cf6;color:#12181f;font-weight:800;border-color:#8b5cf6"':''?>><?=h($au['name'])?><?=$au['role']==='owner'?' ★':''?></button>
+    <?php } ?>
+    <?php if($L['assignee_id']){ ?><button name="uid" value="" class="clr" title="снять ответственного">× снять</button><?php } ?>
   </form>
 </div>
 
