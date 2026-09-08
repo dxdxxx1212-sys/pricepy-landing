@@ -28,7 +28,7 @@ if($q!==''){
 $wsql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
 $tc=$db->prepare("SELECT COUNT(*) c FROM leads $wsql"); $tc->execute($args); $total=(int)$tc->fetch()['c'];
 $per=100; $pages=max(1,(int)ceil($total/$per)); $page=max(1,min($pages,(int)($_GET['page']??1))); $off=($page-1)*$per;
-$order = $fDue ? 'next_action_at ASC' : 'id DESC'; // очередь «на сегодня» — самые срочные сверху
+$order = $fDue ? 'next_action_at ASC' : 'created_at DESC, id DESC'; // по дате заявки (не по порядку добавления — иначе импорт «прыгает»)
 $st=$db->prepare("SELECT * FROM leads $wsql ORDER BY $order LIMIT $per OFFSET $off");
 $st->execute($args); $rows=$st->fetchAll();
 $maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m']; // для сигнала о новом лиде
