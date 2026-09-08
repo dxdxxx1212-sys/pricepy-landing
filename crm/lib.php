@@ -152,6 +152,13 @@ function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM us
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
 function crm_phone_digits($c){ return preg_replace('/\D+/','',$c); }
+// Красивый вид телефона: +7 900 123-45-67. Ник/необычный формат — как есть.
+function crm_phone_fmt($c){
+  $d = preg_replace('/\D+/','',(string)$c);
+  if(preg_match('/^[78](\d{3})(\d{3})(\d{2})(\d{2})$/',$d,$m)) return '+7 '.$m[1].' '.$m[2].'-'.$m[3].'-'.$m[4];
+  if(preg_match('/^(9\d{2})(\d{3})(\d{2})(\d{2})$/',$d,$m))    return '+7 '.$m[1].' '.$m[2].'-'.$m[3].'-'.$m[4];
+  return trim((string)$c);
+}
 
 // ---- Вёрстка ----
 function crm_head($title){ $u=crm_user(); ?><!DOCTYPE html><html lang="ru"><head>
@@ -184,7 +191,20 @@ tr:hover td{background:#1b232c}
 .kpi .k b{font-size:24px;display:block}.kpi .k span{color:var(--muted);font-size:12px}
 .dl{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
 .cmt{border-top:1px solid var(--line);padding:10px 0}.cmt .m{color:var(--muted);font-size:12px}
-@media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{display:none}}
+.req{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qa{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:#9cc4ff;margin-right:3px}
+.qa:hover{background:#1b232c;text-decoration:none}
+.want{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:transparent}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{gap:12px;font-size:14px}}
+/* Мобильные карточки: таблица лидов превращается в стопку карточек, без гориз. скролла */
+@media(max-width:760px){
+  table.leads thead{display:none}
+  table.leads,table.leads tbody,table.leads tr,table.leads td{display:block;width:100%}
+  table.leads tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 12px;background:var(--panel)}
+  table.leads tr:hover td{background:transparent}
+  table.leads td{border:0;padding:4px 0}
+  .req{max-width:none;white-space:normal}
+}
 </style></head><body>
 <div class="top"><span class="brand">Восток<span>Прицеп</span> · CRM</span>
 <?php if($u){ ?><nav><a href="index.php">Лиды</a><?php if($u['role']==='owner'){ ?><a href="users.php">Операторы</a><?php } ?></nav>

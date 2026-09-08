@@ -50,11 +50,11 @@ foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE p
 crm_head('Лиды'); ?>
 <?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
 <div class="kpi">
-  <a class="k" href="?status=new" style="text-decoration:none"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
-  <a class="k" href="?due=1" style="text-decoration:none"><b style="color:<?=$k_due?'#ff8a5b':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
+  <a class="k" href="?due=1" style="text-decoration:none;border-color:<?=$k_due?'#ff8a5b':'var(--line)'?>"><b style="color:<?=$k_due?'#ff8a5b':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
+  <a class="k" href="?status=new" style="text-decoration:none;border-color:<?=$k_new?'var(--acc)':'var(--line)'?>"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
   <a class="k" href="?call=noanswer" style="text-decoration:none"><b style="color:#9aa2ab"><?=$k_noanswer?></b><span>не дозвонился</span></a>
-  <div class="k"><b style="color:#5fd08a"><?=$k_won?></b><span>продажи</span></div>
-  <div class="k"><b><?=$k_total?></b><span>всего</span></div>
+  <div class="k" style="opacity:.75"><b style="color:#5fd08a"><?=$k_won?></b><span>продажи</span></div>
+  <div class="k" style="opacity:.75"><b><?=$k_total?></b><span>всего</span></div>
 </div>
 
 <?php $chipOn='background:var(--acc);color:#12181f;font-weight:700'; ?>
@@ -82,20 +82,23 @@ crm_head('Лиды'); ?>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto">
-<table>
-<thead><tr><th>Дата</th><th>Имя / контакт</th><th>Запрос</th><th>Источник</th><th>Связь</th><th>Статус</th><th>Напомнить</th></tr></thead>
+<table class="leads">
+<thead><tr><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Связаться</th><th>Когда</th></tr></thead>
 <tbody>
-<?php foreach($rows as $r){ ?>
+<?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
-  <td class="muted" style="white-space:nowrap"><?=crm_dt($r['created_at'])?></td>
-  <td><b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?><br><span class="muted"><?=h($r['contact'])?></span><?php if($r['channel']){ $chC=crm_channel_color($r['channel']); ?> <span class="pill" style="color:<?=$chC?>;border:1px solid <?=$chC?>;background:transparent" title="Способ связи, который клиент выбрал в квизе">хочет: <?=h(crm_channel_label($r['channel']))?></span><?php } ?></td>
-  <td class="muted" style="max-width:260px"><?php $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); echo h(implode(' · ',$req)); ?></td>
-  <td><span class="pill"><?=h($r['source']?:'—')?></span></td>
+  <td>
+    <b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
+    <br><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span>
+    <?php if($r['channel']){ $chC=crm_channel_color($r['channel']); ?> <span class="want" style="color:<?=$chC?>;border:1px solid <?=$chC?>" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
+  </td>
+  <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
   <td><?php if($r['call_status']){ ?><span class="badge" style="background:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
-  <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'#ff8a5b':'var(--muted)'?>;font-weight:<?=$over?'700':'400'?>"><?=$over?'⏰ ':''?><?=crm_dt($na)?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
+  <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:+<?=$dig?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$dig?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$dig?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
+  <td style="white-space:nowrap" class="muted"><?=crm_dt($r['created_at'])?><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><br><span style="color:<?=$over?'#ff8a5b':'#5fd08a'?>;font-weight:600"><?=$over?'⏰':'📅'?> <?=crm_dt($na)?></span><?php } ?></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="6" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
 </tbody></table>
 </div>
 
