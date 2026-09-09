@@ -2,39 +2,16 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<!-- Top.Mail.Ru counter (VK / myTarget) -->
-<script type="text/javascript">
-var _tmr = window._tmr || (window._tmr = []);
-_tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
-(function (d, w, id) {
-  if (d.getElementById(id)) return;
-  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-  ts.src = "https://top-fwz1.mail.ru/js/code.js";
-  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-})(document, window, "tmr-code");
-</script>
-<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3787094;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-<!-- /Top.Mail.Ru counter -->
-<!-- Yandex.Metrika counter -->
-<script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111722114', 'ym');
-    ym(111722114, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/111722114" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-<!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Восток Прицеп — подберём прицеп под вашу задачу за 1 минуту</title>
 <meta name="description" content="Пройдите короткий тест — подберём прицеп под груз и бюджет, пришлём цены. Прямые поставки, ЭПТС, доставка по России, гарантия завода. Отвечаем 9:00–21:00, в течение 15 минут.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="images/hero-tonna.jpg" media="(min-width:901px)">
-<link rel="preload" as="image" href="images/hero-tonna-m.jpg" media="(max-width:900px)">
+<!-- hero — приоритетная картинка первого экрана, находится парсером сразу -->
+<link rel="preload" as="image" href="images/hero-tonna.jpg" media="(min-width:901px)" fetchpriority="high">
+<link rel="preload" as="image" href="images/hero-tonna-m.jpg" media="(max-width:900px)" fetchpriority="high">
+<!-- шрифты грузим не блокируя рендер: как print, по onload → all (с noscript-фолбэком) -->
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"></noscript>
 
 <!-- ═══ HERO-ФОТО (концепт «ТОННА»). ChatGPT / DALL·E промпт: ═══
   "Photorealistic galvanized steel utility cargo trailer loaded with construction materials,
@@ -111,7 +88,7 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .opt .chk{margin-left:auto;width:22px;height:22px;border:2px solid var(--line);border-radius:3px;flex:none;display:grid;place-items:center;color:#fff;font-size:12px}
 .opt.sel .chk{background:var(--signal);border-color:var(--signal);color:var(--asphalt)}
 .popt{flex-direction:column;align-items:stretch;padding:0;gap:0;overflow:hidden}
-.popt .ph{height:92px;background:#e6e9ec center/cover no-repeat;position:relative}
+.popt .ph{aspect-ratio:4/3;background:#e6e9ec center/cover no-repeat;position:relative}
 .popt .pchk{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:3px;background:var(--signal);color:var(--asphalt);display:grid;place-items:center;font-size:14px;font-weight:700;opacity:0}
 .popt.sel .pchk{opacity:1}
 .popt .pl{padding:10px 12px;font-size:15px}
@@ -122,8 +99,9 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
 .field input{width:100%;padding:14px;border:2px solid var(--line);border-radius:var(--r);font-size:16px;font-family:Inter;scroll-margin-top:78px}
 .field input:focus{outline:none;border-color:var(--signal)}
-.chans{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.chan{flex:1;min-width:82px;min-height:46px;border:2px solid var(--line);border-radius:var(--r);padding:12px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px}
+.field input.bad{border-color:#cc3b3b}
+.chans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.chan{min-height:48px;border:2px solid var(--line);border-radius:var(--r);padding:12px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center}
 .chan.sel{border-color:var(--signal);background:#fffaef}
 .consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:2px 0 12px;padding:6px 0;cursor:pointer}
 .consent input{width:20px;height:20px;margin-top:0;accent-color:var(--asphalt);flex:none}
@@ -215,7 +193,7 @@ footer .fcontacts a,footer .fcontacts span{display:inline-flex;align-items:cente
 footer .fcontacts svg{width:16px;height:16px;stroke:#9aa2ab;flex:none}
 footer .docs{margin-top:6px}
 footer .docs a{text-decoration:underline;cursor:pointer;display:inline-block;padding:8px 0;margin-right:18px}
-footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin-top:8px;line-height:1.7;color:#7c848d}
+footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin-top:8px;line-height:1.7;color:#9aa2ab}
 
 .modal{position:fixed;inset:0;z-index:80;background:rgba(15,17,20,.7);display:none;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
 .modal.on{display:flex}
@@ -230,6 +208,8 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
 .mcta .btn{flex:1;margin:0;min-height:50px}
 .mcta .call{flex:0 0 54px;min-width:54px;min-height:50px;background:transparent;border:2px solid rgba(255,255,255,.3);border-radius:var(--r);display:grid;place-items:center;padding:0;cursor:pointer}
 .mcta .call svg{width:22px;height:22px;stroke:var(--signal)}
+/* при вводе в форму (открыта клавиатура) прячем липкий CTA, чтобы не перекрывал поле */
+body.kbd .mcta{display:none}
 
 @media(max-width:900px){
   .hero h1{font-size:48px}
@@ -251,7 +231,9 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   .hero h1{font-size:clamp(28px,7.8vw,44px);letter-spacing:0}
   .hero .sub{font-size:16.5px;max-width:440px}
   .hero-inner{padding:0}
-  .hero-inner>div:first-child{padding:40px 0 30px}
+  .hero-inner>div:first-child{padding:24px 0 16px}
+  .hero .sub{margin-bottom:16px}
+  .tonnage{margin-bottom:18px}
   .tonnage{max-width:100%}
   .tonnage .t{padding:11px 8px}
   .sec{padding:40px 0}
@@ -284,6 +266,34 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   html{scroll-behavior:auto}
 }
 </style>
+
+<!-- Аналитика опущена в конец head, чтобы не задерживать hero/LCP -->
+<!-- Top.Mail.Ru counter (VK / myTarget) -->
+<script type="text/javascript">
+var _tmr = window._tmr || (window._tmr = []);
+_tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
+(function (d, w, id) {
+  if (d.getElementById(id)) return;
+  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+  ts.src = "https://top-fwz1.mail.ru/js/code.js";
+  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+})(document, window, "tmr-code");
+</script>
+<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3787094;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
+<!-- /Top.Mail.Ru counter -->
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=111722114', 'ym');
+    ym(111722114, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/111722114" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 </head>
 <body>
 
@@ -301,7 +311,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
   <div class="wrap hero-inner">
     <div>
       <h1>Прицеп под ваш груз и под ваш бюджет</h1>
-      <p class="sub">Ответьте на 5 вопросов — подберём модель и пришлём цены. Прямые поставки, ЭПТС, доставка по России. Отвечаем 9:00–21:00, в течение 15 минут.</p>
+      <p class="sub">Ответьте на несколько вопросов — подберём модель и пришлём цены. Прямые поставки, ЭПТС, доставка по России. Отвечаем 9:00–21:00, в течение 15 минут.</p>
       <div class="tonnage">
         <div class="t"><b>ЭПТС</b><span>документы</span></div>
         <div class="t"><b class="num-t">250+</b><span>моделей</span></div>
@@ -314,6 +324,7 @@ footer .legal{border-top:1px solid rgba(255,255,255,.12);padding-top:16px;margin
         <div class="qbar-wrap"><div class="qbar" id="qbar"></div></div>
       </div>
       <div class="qbody" id="qbody"></div>
+      <noscript><div style="padding:20px"><p style="margin:0 0 12px">Для подбора включите JavaScript — или позвоните, подберём по телефону:</p><a href="tel:+74954873838" style="display:inline-block;background:var(--signal);color:var(--asphalt);font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.6px;padding:14px 22px;border-radius:var(--r);text-decoration:none">+7 495 487-38-38</a></div></noscript>
     </div>
   </div>
 </section>
@@ -428,25 +439,25 @@ const QUIZ = [
 const $=s=>document.querySelector(s);
 const esc=s=>(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money=n=>n.toLocaleString('ru-RU')+' ₽';
-const st={step:0, ans:{}, channel:'Телефон'};
+const st={step:0, ans:{}, channel:'Телефон', name:'', contactVal:''};
 
 function render(){
   const q=QUIZ[st.step];
   $('#qcount').textContent='Шаг '+(st.step+1)+' из '+QUIZ.length;
-  $('#qbar').style.width=Math.max(9,st.step/(QUIZ.length-1)*100)+'%';
+  $('#qbar').style.width=Math.max(8,Math.round(st.step/QUIZ.length*100))+'%';
   let h='<h2>'+esc(q.title)+'</h2>';
   if(q.hint) h+='<p class="hint">'+esc(q.hint)+'</p>';
   if(q.type==='single'){
     h+='<div class="opts'+(q.photos?' photos':'')+'">';
     q.options.forEach((o,i)=>{const label=q.photos?o.label:o;const sel=st.ans[q.key]===label?' sel':'';
       if(q.photos) h+='<div class="opt popt'+sel+'" role="button" tabindex="0" aria-pressed="'+(sel?'true':'false')+'" data-opt="'+i+'"><div class="ph" style="background-image:url(\''+o.photo+'\')"><span class="pchk">✓</span></div><div class="pl">'+esc(label)+'</div></div>';
-      else h+='<button class="opt'+sel+'" data-opt="'+i+'">'+esc(label)+'<span class="chk">✓</span></button>';});
+      else h+='<button class="opt'+sel+'" data-opt="'+i+'" aria-pressed="'+(sel?'true':'false')+'">'+esc(label)+'<span class="chk" aria-hidden="true">✓</span></button>';});
     h+='</div><div class="qfoot">'+(st.step>0?'<button class="back" id="back" aria-label="Назад">←</button>':'')+'<button class="btn" id="next" '+(st.ans[q.key]?'':'disabled')+'>Далее</button></div>';
   } else {
     const isTg=st.channel==='Telegram';
     h+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" role="button" tabindex="0" aria-pressed="'+(st.channel===c?'true':'false')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
-    h+='<div class="field"><label>Ваше имя</label><input id="cName" autocomplete="name" placeholder="Как к вам обращаться"></div>';
-    h+='<div class="field"><label>'+(isTg?'Телефон или @username':'Телефон')+'</label><input id="cContact" '+(isTg?'type="text" inputmode="text"':'type="tel" inputmode="tel" autocomplete="tel"')+' enterkeyhint="send" placeholder="'+(isTg?'+7… или @username':'+7 (___) ___-__-__')+'"></div>';
+    h+='<div class="field"><label>Ваше имя</label><input id="cName" autocomplete="name" value="'+esc(st.name)+'" placeholder="Как к вам обращаться"></div>';
+    h+='<div class="field"><label>'+(isTg?'Телефон или @username':'Телефон')+'</label><input id="cContact" '+(isTg?'type="text" inputmode="text"':'type="tel" inputmode="tel" autocomplete="tel"')+' enterkeyhint="send" value="'+esc(st.contactVal)+'" placeholder="'+(isTg?'+7… или @username':'+7 (___) ___-__-__')+'"></div>';
     h+='<div class="err" id="cErr" role="alert">Заполните имя и контакт</div>';
     h+='<div class="qfoot"><button class="back" id="back" aria-label="Назад">←</button><button class="btn" id="send">Получить подбор</button></div>';
     h+='<div class="consent-note">Нажимая «Получить подбор», вы соглашаетесь с <a data-doc="privacy">политикой конфиденциальности</a> и <a data-doc="consent">обработкой персональных данных</a>.</div>';
@@ -456,22 +467,38 @@ function render(){
 $('#qbody').addEventListener('click',e=>{
   const opt=e.target.closest('[data-opt]');
   if(opt){const q=QUIZ[st.step];const o=q.options[+opt.dataset.opt];st.ans[q.key]=q.photos?o.label:o;render();return;}
-  const chan=e.target.closest('[data-chan]'); if(chan){st.channel=chan.dataset.chan;render();return;}
+  const chan=e.target.closest('[data-chan]'); if(chan){const _n=$('#cName'),_c=$('#cContact'); if(_n)st.name=_n.value; if(_c)st.contactVal=_c.value; st.channel=chan.dataset.chan;render();return;}
   if(e.target.id==='next'){st.step++;render();scrollQuiz();return;}
   if(e.target.id==='back'){if(st.step>0)st.step--;render();scrollQuiz();return;}
   if(e.target.id==='send'){submit();return;}
   const d=e.target.closest('[data-doc]'); if(d){openDoc(d.dataset.doc);return;}
 });
-$('#qbody').addEventListener('focusin',e=>{if(e.target.tagName==='INPUT'&&e.target.type!=='checkbox')setTimeout(()=>{try{e.target.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}} ,300);});
-$('#qbody').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest('[data-opt],[data-chan]');if(t){e.preventDefault();t.click();}}});
+$('#qbody').addEventListener('focusin',e=>{if(e.target.tagName==='INPUT'){document.body.classList.add('kbd');setTimeout(()=>{try{e.target.scrollIntoView({block:'center'})}catch(_){}} ,300);}});
+$('#qbody').addEventListener('focusout',e=>{if(e.target.tagName==='INPUT'){if(e.target.id==='cName')st.name=e.target.value;if(e.target.id==='cContact')st.contactVal=e.target.value;setTimeout(()=>{if(!/^(cName|cContact)$/.test((document.activeElement||{}).id))document.body.classList.remove('kbd');},80);}});
+$('#qbody').addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')){const t=e.target.closest('[data-opt],[data-chan]');if(t){e.preventDefault();t.click();return;}}
+  if(e.key==='Enter'&&(e.target.id==='cName'||e.target.id==='cContact')){e.preventDefault();submit();}
+});
 function scrollQuiz(){if(window.innerWidth<=900){const y=$('#quiz').getBoundingClientRect().top+scrollY-12;scrollTo({top:y,behavior:'smooth'});}}
 
 let _submitting=false;
+function showErr(msg,field){
+  const e=$('#cErr'); if(e){e.textContent=msg;e.classList.add('show');}
+  $('#cName') && $('#cName').classList.remove('bad'); $('#cContact') && $('#cContact').classList.remove('bad');
+  const f=field&&$('#'+field); if(f){f.classList.add('bad');try{f.focus();}catch(_){}}
+}
 function submit(){
   if(_submitting)return;
   const name=($('#cName').value||'').trim(), contact=($('#cContact').value||'').trim();
-  if(!name||contact.length<4){$('#cErr').textContent='Заполните имя и контакт';$('#cErr').classList.add('show');return;}
-  _submitting=true;
+  const isTg=st.channel==='Telegram', digits=contact.replace(/\D/g,'');
+  if(!name){showErr('Введите ваше имя','cName');return;}
+  if(isTg){
+    const nick=contact.replace(/^@/,'');
+    if(digits.length<10 && !/^[A-Za-z0-9_]{4,}$/.test(nick)){showErr('Введите телефон или @username','cContact');return;}
+  } else if(digits.length<10){
+    showErr('Введите корректный номер телефона','cContact');return;
+  }
+  _submitting=true; document.body.classList.remove('kbd');
   const p={source:'quiz-v3-тонна', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
   sendLead(p);
   const L={use:'Назначение',capacity:'Грузоп.',type:'Тип',budget:'Бюджет',timing:'Сроки'};
@@ -509,7 +536,7 @@ const FAQ=[
  ['Можно осмотреть прицеп перед покупкой?','Да, на складе во Владивостоке. Иногородним пришлём фото и видео конкретной модели перед отправкой.'],
 ];
 function renderFaq(){
-  $('#faq').innerHTML=FAQ.map(([q,a])=>'<details class="qa"><summary>'+esc(q)+'<span class="pl">+</span></summary><div class="ans">'+esc(a)+'</div></details>').join('');
+  $('#faq').innerHTML=FAQ.map(([q,a])=>'<details class="qa"><summary>'+esc(q)+'<span class="pl" aria-hidden="true">+</span></summary><div class="ans">'+esc(a)+'</div></details>').join('');
 }
 
 const REVIEWS=[
