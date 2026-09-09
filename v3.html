@@ -547,7 +547,6 @@ function openModel(i){var m=MODELS[i];
     '<div class="mdl-price">'+money(m.price)+' <small>с документами</small></div>'+
     '<p class="mdl-about">'+esc(m.about)+'</p>'+
     '<button class="btn" type="button" onclick="leadFor('+i+')">Оставить заявку на эту модель</button>'+
-    '<a class="mdl-cat" href="'+CAT+'#p'+m.id+'" target="_blank" rel="noopener">Все фото и характеристики в каталоге →</a>'+
     '</div>';
   $('#modal').classList.add('on');}
 function leadFor(i){st.model=MODELS[i].name;$('#modal').classList.remove('on');
