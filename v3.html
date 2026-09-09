@@ -490,14 +490,9 @@ function showErr(msg,field){
 function submit(){
   if(_submitting)return;
   const name=($('#cName').value||'').trim(), contact=($('#cContact').value||'').trim();
-  const isTg=st.channel==='Telegram', digits=contact.replace(/\D/g,'');
+  // без строгой проверки формата номера — чтобы не терять заявки; ловим только пустые поля
   if(!name){showErr('Введите ваше имя','cName');return;}
-  if(isTg){
-    const nick=contact.replace(/^@/,'');
-    if(digits.length<10 && !/^[A-Za-z0-9_]{4,}$/.test(nick)){showErr('Введите телефон или @username','cContact');return;}
-  } else if(digits.length<10){
-    showErr('Введите корректный номер телефона','cContact');return;
-  }
+  if(!contact){showErr('Укажите, куда прислать подбор','cContact');return;}
   _submitting=true; document.body.classList.remove('kbd');
   const p={source:'quiz-v3-тонна', use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
   sendLead(p);
