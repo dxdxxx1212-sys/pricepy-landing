@@ -143,7 +143,7 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .steps .s p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 
 /* models */
-.models{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.models{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .m{border:2px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:.13s}
 .m:hover{border-color:var(--asphalt)}
 .m .mi{aspect-ratio:4/3;background:#e6e9ec center/cover no-repeat;position:relative}
@@ -153,6 +153,9 @@ header{background:var(--asphalt);color:#fff;position:sticky;top:0;z-index:40;bor
 .m .ms{font-size:13px;color:var(--muted)}
 .m .mp{font-family:Oswald,sans-serif;font-size:24px;font-weight:700;margin-top:auto;font-variant-numeric:tabular-nums}
 .m .mp small{font-family:Inter;font-size:12px;color:var(--muted);font-weight:400;display:block;text-transform:none;letter-spacing:0}
+.m .md{font-size:12.5px;color:var(--muted);line-height:1.35}
+.m .more{font-size:13px;color:var(--signal-d);text-decoration:none;font-weight:600;margin-top:2px;display:inline-block}
+.m .more:hover{text-decoration:underline}
 .m .btn{border-radius:var(--r-hard);width:100%}
 
 /* delivery */
@@ -551,14 +554,17 @@ const REVIEWS=[
  {img:'reviews/5.jpg',ini:'СК',name:'Сергей К.',city:'Санкт-Петербург',model:'ALASKA Скала 3.5 · июнь 2026',text:'Двухосный берём для выездов на природу и лодки. На ходу стабильный, доставили в срок.'},
  {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',model:'МЗСА 817701 · май 2026',text:'Искал недорогой надёжный прицеп. Прислали варианты с ценами — выбрал за вечер.'},
 ];
+const CAT='https://xn--80adsazqn.xn----ctbklixakchgm2d.xn--p1ai/'; // каталог: фото и карточки моделей
 const MODELS=[
- {img:'images/17.jpg',kind:'Бортовой',name:'Титан 3015-03',spec:'1 ось · до 750 кг',price:60660},
- {img:'images/18.jpg',kind:'С тентом',name:'Трейлер 829450',spec:'1 ось · 3,0×1,5 м',price:70275},
- {img:'images/21.jpg',kind:'Двухосный',name:'Славич 255Д',spec:'2 оси · до 1500 кг',price:72900},
- {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',spec:'1 ось · 3,5 м',price:92800},
+ {id:'480507227802',img:'media/480507227802/01.webp',kind:'Бортовой',name:'Avtos A25M1B',spec:'1 ось · до 748 кг',desc:'Лёгкий универсал для дачи и грузов',price:56525},
+ {id:'407714905512',img:'media/407714905512/01.jpg',kind:'С тентом',name:'ССТ-7132-9К',spec:'1 ось · до 500 кг',desc:'Груз под тентом — не мокнет в пути',price:79600},
+ {id:'962094307052',img:'media/962094307052/01.webp',kind:'С крышкой',name:'МЗСА 817704 (крышка)',spec:'1 ось · до 487 кг',desc:'Жёсткая крышка — защита и сохранность',price:89110},
+ {id:'230392810202',img:'media/230392810202/01.jpg',kind:'Лодочный',name:'МЗСА 81771D',spec:'1 ось · до 563 кг',desc:'Под лодку и катер, с ложементами',price:63864},
+ {id:'288623778462',img:'media/288623778462/01.jpg',kind:'Для мототехники',name:'МЗСА 817712',spec:'1 ось · до 750 кг',desc:'Под мото, квадро и снегоход',price:66384},
+ {id:'606355993572',img:'media/606355993572/01.jpg',kind:'Самосвальный',name:'MG 203F',spec:'1 ось · до 1000 кг',desc:'Самосвал — разгрузка опрокидыванием',price:52500},
 ];
 function renderModels(){
-  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
+  $('#models').innerHTML=MODELS.map(m=>'<div class="m"><div class="mi" data-bg="'+CAT+m.img+'"><span class="badge">'+esc(m.kind)+'</span></div><div class="mb"><div class="mn">'+esc(m.name)+'</div><div class="ms">'+esc(m.spec)+'</div><div class="md">'+esc(m.desc)+'</div><div class="mp">'+money(m.price)+'<small>с документами</small></div><a class="more" href="'+CAT+'#p'+m.id+'" target="_blank" rel="noopener">Подробнее о модели →</a></div><button class="btn" onclick="document.querySelector(\'.quiz\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">Подобрать</button></div>').join('');
 }
 function renderReviews(){
   $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="ri" data-bg="'+r.img+'"></div><div class="rb"><div class="st">★★★★★</div><p class="rt">'+esc(r.text)+'</p><div class="rmodel">'+esc(r.model)+'</div><div class="rw"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
