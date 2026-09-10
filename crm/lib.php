@@ -152,6 +152,15 @@ function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM us
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
 function crm_phone_digits($c){ return preg_replace('/\D+/','',$c); }
+// Телефон в формате для набора/мессенджеров (МАКС, WhatsApp, звонилка): +7XXXXXXXXXX.
+// Учитывает, что в базе номер может лежать как 79.., 89.., так и просто 9.. (без кода страны).
+function crm_phone_e164($c){
+  $d = preg_replace('/\D+/','',(string)$c);
+  if(strlen($d)===11 && ($d[0]==='8'||$d[0]==='7')) return '+7'.substr($d,1);
+  if(strlen($d)===10 && $d[0]==='9') return '+7'.$d;
+  if($d==='') return '';
+  return '+'.$d; // нестандартный — отдаём как есть с плюсом
+}
 // Красивый вид телефона: +7 900 123-45-67. Ник/необычный формат — как есть.
 function crm_phone_fmt($c){
   $d = preg_replace('/\D+/','',(string)$c);
@@ -221,8 +230,8 @@ tr:hover td{background:#1b232c}
 </div><div class="wrap"><?php }
 function crm_foot(){ ?></div><div id="crmtoast"></div><script>
 function crmToast(m){var t=document.getElementById('crmtoast');if(!t)return;t.textContent=m;t.classList.add('on');clearTimeout(window._crmtt);window._crmtt=setTimeout(function(){t.classList.remove('on');},1600);}
-function crmCopy(el){var v=el.getAttribute('data-c')||el.textContent.trim();
-  var ok=function(){el.classList.add('ok');crmToast('Скопировано: '+v);setTimeout(function(){el.classList.remove('ok');},1200);};
+function crmCopy(x){var el=(x&&x.nodeType)?x:null;var v=el?(el.getAttribute('data-c')||el.textContent.trim()):String(x);
+  var ok=function(){if(el)el.classList.add('ok');crmToast('Скопировано: '+v);if(el)setTimeout(function(){el.classList.remove('ok');},1200);};
   var fb=function(){try{var t=document.createElement('textarea');t.value=v;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();document.execCommand('copy');document.body.removeChild(t);ok();}catch(e){crmToast('Не удалось скопировать');}};
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(ok,fb);}else{fb();}}
 </script></body></html><?php }
