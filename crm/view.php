@@ -21,20 +21,30 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   } elseif($act==='contact'){
     $C=crm_contacts();
     $nc=$_POST['contact']??'';
-    if($nc==='' || isset($C[$nc])){
-      $db->prepare("UPDATE leads SET call_status=?,updated_at=? WHERE id=?")->execute([$nc,date('c'),$id]);
-      if($nc!==$L['call_status']) crm_event($id,$me['id'],'контакт',$nc?crm_contact_label($nc):'сброшен');
-      // Первый контакт по «новому» лиду → сам берём в работу и назначаем на оператора.
-      if($nc!=='' && $L['status']==='new'){
-        $as=$L['assignee_id']?:$me['id'];
-        $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]);
-        crm_event($id,$me['id'],'статус','Новый → В работе');
+    if($nc===''){ // сбросить все каналы
+      if($L['call_status']!==''){
+        $db->prepare("UPDATE leads SET call_status='',updated_at=? WHERE id=?")->execute([date('c'),$id]);
+        crm_event($id,$me['id'],'контакт','сброшено');
       }
-      // «Не дозвонился» без напоминания → авто-перезвон через 2 часа, чтобы лид не потерялся.
-      if($nc==='noanswer' && empty($L['next_action_at'])){
-        $t=date('c',strtotime('+2 hours'));
-        $db->prepare("UPDATE leads SET next_action_at=? WHERE id=?")->execute([$t,$id]);
-        crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($t));
+    } elseif(isset($C[$nc])){
+      $old=(string)$L['call_status'];
+      $new=crm_contact_toggle($old,$nc);
+      if($new!==$old){
+        $wasOn=in_array($nc,crm_contact_list($old),true); // сейчас снимаем канал или добавляем
+        $db->prepare("UPDATE leads SET call_status=?,updated_at=? WHERE id=?")->execute([$new,date('c'),$id]);
+        crm_event($id,$me['id'],'контакт',($wasOn?'убрано: ':'').crm_contact_label($nc));
+        // Первый контакт по «новому» лиду → сам берём в работу и назначаем на оператора.
+        if(!$wasOn && $L['status']==='new'){
+          $as=$L['assignee_id']?:$me['id'];
+          $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]);
+          crm_event($id,$me['id'],'статус','Новый → В работе');
+        }
+        // Добавили «Не дозвонился» и нет напоминания → авто-перезвон через 2 часа, чтобы лид не потерялся.
+        if(!$wasOn && $nc==='noanswer' && empty($L['next_action_at'])){
+          $t=date('c',strtotime('+2 hours'));
+          $db->prepare("UPDATE leads SET next_action_at=? WHERE id=?")->execute([$t,$id]);
+          crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($t));
+        }
       }
     }
   } elseif($act==='remind'){
@@ -134,14 +144,14 @@ if($reqs){ ?>
 <?php } ?>
 
 <!-- КАК СВЯЗАЛИСЬ (канал) и СТАТУС СДЕЛКИ (воронка) — нажатие = сохранение -->
-<?php $C=crm_contacts(); $cc=$L['call_status']; ?>
+<?php $C=crm_contacts(); $ccList=crm_contact_list($L['call_status']); ?>
 <div class="card">
-  <div class="grouplbl">Как связались — нажми:</div>
+  <div class="grouplbl">Как связались — можно отметить несколько:</div>
   <form method="post" class="statusrow" style="margin-bottom:16px">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="contact">
-    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=$cc===$k; $col=crm_contact_color($k); ?>
-      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v['l'])?></button>
-    <?php } if($cc){ ?><button name="contact" value="" class="clr" title="сбросить канал связи">× сбросить</button><?php } ?>
+    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=in_array($k,$ccList,true); $col=crm_contact_color($k); ?>
+      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?> title="<?=$active?'нажми, чтобы убрать':'нажми, чтобы отметить'?>"><?=$active?'✓ ':''?><?=h($v['l'])?></button>
+    <?php } if($ccList){ ?><button name="contact" value="" class="clr" title="сбросить все каналы">× сбросить всё</button><?php } ?>
   </form>
   <div class="grouplbl">Статус сделки — нажми:</div>
   <form method="post" class="statusrow">

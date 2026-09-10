@@ -34,6 +34,27 @@ function crm_contact_label($c){ $C=crm_contacts(); return $C[$c]['l'] ?? ''; }
 function crm_contact_color($c){ return [
   'wa'=>'#22c55e','tg'=>'#0ea5e9','max'=>'#8b5cf6','nomsg'=>'#f59e0b','called'=>'#1f9d55','noanswer'=>'#9aa2ab',
 ][$c] ?? '#9aa2ab'; }
+// С клиентом могут связаться в нескольких каналах (созвон + перевели в мессенджер),
+// поэтому call_status хранит НЕСКОЛЬКО ключей через запятую: "called,max". '' = ещё не связывались.
+function crm_contact_list($cs){ $out=[]; foreach(explode(',',(string)$cs) as $k){ $k=trim($k); if($k!==''&&!in_array($k,$out,true)) $out[]=$k; } return $out; }
+function crm_contact_labels($cs){ return array_map('crm_contact_label', crm_contact_list($cs)); }
+// Включить/выключить канал в наборе. Правила: «Дозвонился»/«Не дозвонился» — взаимоисключающие;
+// «Нет в мессенджере» несовместимо с конкретным мессенджером (wa/tg/max) и наоборот.
+function crm_contact_toggle($cs,$k){
+  $C=crm_contacts(); if(!isset($C[$k])) return (string)$cs;
+  $cur=crm_contact_list($cs);
+  if(in_array($k,$cur,true)){
+    $cur=array_values(array_filter($cur,function($x)use($k){ return $x!==$k; }));
+  } else {
+    if(($C[$k]['g']??'')==='call'){ $cur=array_values(array_filter($cur,function($x)use($C){ return ($C[$x]['g']??'')!=='call'; })); }
+    if($k==='nomsg'){ $cur=array_values(array_filter($cur,function($x){ return !in_array($x,['wa','tg','max'],true); })); }
+    elseif(in_array($k,['wa','tg','max'],true)){ $cur=array_values(array_filter($cur,function($x){ return $x!=='nomsg'; })); }
+    $cur[]=$k;
+  }
+  $order=array_keys($C); // канонический порядок как в crm_contacts()
+  usort($cur,function($a,$b)use($order){ return array_search($a,$order)-array_search($b,$order); });
+  return implode(',',$cur);
+}
 // Канал, который клиент выбрал в квизе (поле channel) — куда он ждёт сообщение.
 // Значение приходит по-разному (max/МАКС/макс, phone/Телефон, WhatsApp/whatsapp) из
 // разных версий квиза и импорта — нормализуем к единому ключу whatsapp/telegram/max/phone.

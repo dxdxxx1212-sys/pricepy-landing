@@ -15,7 +15,7 @@ $fUnassigned = isset($_GET['unassigned']);
 $tomorrow = date('c', strtotime('tomorrow')); // граница «на сегодня» = всё, что до начала завтра
 $where=[]; $args=[];
 if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
-if($fCall!==''){ $where[]='call_status=?'; $args[]=$fCall; }
+if($fCall!==''){ $where[]="(','||call_status||',') LIKE ?"; $args[]='%,'.$fCall.',%'; } // членство в наборе каналов
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
 if($fDue){ $where[]="next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"; $args[]=$tomorrow; }
 if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
@@ -36,7 +36,7 @@ $maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m'];
 // KPI — минимум для работы
 $k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new'")->fetch()['c'];
 $kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
-$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE call_status='noanswer'")->fetch()['c'];
+$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE (','||call_status||',') LIKE '%,noanswer,%'")->fetch()['c'];
 $k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won'")->fetch()['c'];
 $k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads")->fetch()['c'];
 $sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
@@ -93,7 +93,7 @@ crm_head('Лиды'); ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
-  <td><?php if($r['call_status']){ ?><span class="badge-o" style="color:<?=crm_contact_color($r['call_status'])?>"><?=h(crm_contact_label($r['call_status']))?></span><?php }else{ ?><span class="muted">—</span><?php } ?></td>
+  <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ ?><span class="badge-o" style="color:<?=crm_contact_color($ck)?>;margin:1px 2px 1px 0"><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:<?=$e164?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" class="muted"><?=crm_dt($r['created_at'])?><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><br><span style="color:<?=$over?'#ff8a5b':'#5fd08a'?>;font-weight:600"><?=$over?'⏰':'📅'?> <?=crm_dt($na)?></span><?php } ?></td>
