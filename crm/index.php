@@ -88,8 +88,8 @@ crm_head('Лиды'); ?>
 <?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
   <td>
-    <b><?=h($r['name']?:'—')?></b><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
-    <br><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span>
+    <a href="view.php?id=<?=$r['id']?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$r['id']?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="badge" style="background:#ff8a5b" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
+    <br><?php if($dig){ ?><span class="cphone" data-c="+<?=$dig?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>

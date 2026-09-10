@@ -196,6 +196,14 @@ tr:hover td{background:#1b232c}
 .qa:hover{background:#1b232c;text-decoration:none}
 .want{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:transparent;color:var(--muted);border:1px solid var(--line)}
 .badge-o{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:transparent;border:1px solid currentColor}
+.lead-name{color:var(--ink)}.lead-name:hover{color:#fff;text-decoration:none}
+.newtab{display:inline-block;margin-left:6px;color:var(--muted);font-size:13px;line-height:18px;border:1px solid var(--line);border-radius:6px;padding:0 6px;vertical-align:middle}
+.newtab:hover{color:#9cc4ff;background:#1b232c;text-decoration:none}
+.cphone{color:var(--muted);cursor:pointer;border-bottom:1px dashed var(--line)}
+.cphone:hover{color:#9cc4ff}
+.cphone.ok{color:#5fd08a;border-bottom-color:transparent}
+#crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
+#crmtoast.on{opacity:1}
 @media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{gap:12px;font-size:14px}}
 /* Мобильные карточки: таблица лидов превращается в стопку карточек, без гориз. скролла */
 @media(max-width:760px){
@@ -211,4 +219,10 @@ tr:hover td{background:#1b232c}
 <?php if($u){ ?><nav><a href="index.php">Лиды</a><?php if($u['role']==='owner'){ ?><a href="users.php">Операторы</a><?php } ?></nav>
 <span class="sp"></span><span class="me"><?=h($u['name'])?> · <?=$u['role']==='owner'?'владелец':'оператор'?></span> <a href="logout.php" class="muted">выйти</a><?php } ?>
 </div><div class="wrap"><?php }
-function crm_foot(){ echo '</div></body></html>'; }
+function crm_foot(){ ?></div><div id="crmtoast"></div><script>
+function crmToast(m){var t=document.getElementById('crmtoast');if(!t)return;t.textContent=m;t.classList.add('on');clearTimeout(window._crmtt);window._crmtt=setTimeout(function(){t.classList.remove('on');},1600);}
+function crmCopy(el){var v=el.getAttribute('data-c')||el.textContent.trim();
+  var ok=function(){el.classList.add('ok');crmToast('Скопировано: '+v);setTimeout(function(){el.classList.remove('ok');},1200);};
+  var fb=function(){try{var t=document.createElement('textarea');t.value=v;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();document.execCommand('copy');document.body.removeChild(t);ok();}catch(e){crmToast('Не удалось скопировать');}};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(ok,fb);}else{fb();}}
+</script></body></html><?php }
