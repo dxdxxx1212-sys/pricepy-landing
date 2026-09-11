@@ -108,6 +108,13 @@ crm_head('Лид #'.$id); ?>
 .dtin{padding:8px 10px}
 .reqline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .reqline i{color:var(--muted);font-style:normal;margin-right:5px}
+@media(max-width:760px){
+  .lead-wrap .card{padding:14px}
+  .lead-wrap h2{font-size:20px}
+  .spill{font-size:15px;padding:11px 16px}            /* удобный тап */
+  .statusrow{gap:9px}
+  .dtin{flex:1 1 100%}                                 /* дата-время на всю ширину */
+}
 </style>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>

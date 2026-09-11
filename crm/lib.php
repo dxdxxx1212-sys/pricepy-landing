@@ -237,12 +237,30 @@ tr:hover td{background:#1b232c}
 @media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{gap:12px;font-size:14px}}
 /* Мобильные карточки: таблица лидов превращается в стопку карточек, без гориз. скролла */
 @media(max-width:760px){
+  /* поля ≥16px — iOS иначе зумит страницу при фокусе */
+  input,select,textarea{font-size:16px}
+  .wrap{padding:14px 12px}
+  /* верхняя панель: перенос и компактность на узком экране */
+  .top{padding:10px 12px;gap:8px 12px;flex-wrap:wrap}
+  .top .me{font-size:12px}
+  /* KPI — по 2 в ряд */
+  .kpi{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi .k{padding:12px}.kpi .k b{font-size:21px}
+  /* фильтры на всю ширину — крупные тап-таргеты */
+  .filters{gap:8px}
+  .filters select{flex:1 1 46%;min-width:0}
+  .filters input[name=q]{flex:1 1 100%;min-width:0}
+  .filters .btn{flex:1 1 100%}
   table.leads thead{display:none}
   table.leads,table.leads tbody,table.leads tr,table.leads td{display:block;width:100%}
-  table.leads tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 12px;background:var(--panel)}
+  table.leads tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:8px 12px;background:var(--panel)}
   table.leads tr:hover td{background:transparent}
-  table.leads td{border:0;padding:4px 0}
+  table.leads td{border:0;padding:5px 0}
   .req{max-width:none;white-space:normal}
+  /* крупнее для пальца: быстрые действия и «открыть в новой вкладке» */
+  .qa{padding:9px 13px;font-size:14px;margin-right:7px}
+  .newtab{padding:3px 11px;font-size:15px;line-height:22px}
+  .cphone{padding:2px 0;display:inline-block}
 }
 </style></head><body>
 <div class="top"><span class="brand">Восток<span>Прицеп</span> · CRM</span>
