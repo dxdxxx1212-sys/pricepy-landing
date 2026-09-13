@@ -231,6 +231,8 @@ tr:hover td{background:#1b232c}
 .newtab:hover{color:#9cc4ff;background:#1b232c;text-decoration:none}
 .cphone{color:var(--muted);cursor:pointer;border-bottom:1px dashed var(--line)}
 .cphone:hover{color:#9cc4ff}
+.mgr{display:inline-block;margin-top:6px;font-size:12px;color:#c3b6ef}
+.mgr-none{color:#8a97a5;padding:1px 7px;border:1px dashed var(--line);border-radius:6px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
 #crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
