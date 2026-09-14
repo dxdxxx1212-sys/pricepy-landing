@@ -105,7 +105,7 @@ crm_head('Лиды'); ?>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
   <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ ?><span class="badge-o" style="color:<?=crm_contact_color($ck)?>;margin:1px 2px 1px 0"><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид">👤 <?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
-  <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и историю"><?php if($lc!==''){ ?><span class="lc-txt">💬 <?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
+  <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть: действия, комментарии, история"><?php if($lc!==''){ ?><span class="lc-txt">💬 <?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="lc lc-empty" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Быстрые действия и комментарий">＋ отметить</span><?php } ?></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:<?=$e164?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" class="muted"><?=crm_dt($r['created_at'])?><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><br><span style="color:<?=$over?'#ff8a5b':'#5fd08a'?>;font-weight:600"><?=$over?'⏰':'📅'?> <?=crm_dt($na)?></span><?php } ?></td>
 </tr>
@@ -138,22 +138,24 @@ crm_head('Лиды'); ?>
   <div class="hm-box"><button class="hm-x" type="button" onclick="closeHist()" title="Закрыть">×</button><div id="histBody"></div></div>
 </div>
 <script>
-var histReq=0;
+var histReq=0, histChanged=false;
 function openHist(id){ var m=document.getElementById('histModal'), b=document.getElementById('histBody');
-  histReq=id;                                   // актуальный запрошенный лид — ответы старых игнорируем
+  histReq=id; histChanged=false;                // актуальный запрошенный лид — ответы старых игнорируем
   b.innerHTML='<div class="muted" style="padding:24px 4px">Загрузка…</div>'; b.setAttribute('data-id',id);
   m.hidden=false; document.body.style.overflow='hidden';
   fetch('hist.php?id='+id,{cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(histReq===id && !document.getElementById('histModal').hidden) b.innerHTML=html; })
     .catch(function(){ if(histReq===id) b.innerHTML='<div class="muted" style="padding:24px 4px">Не удалось загрузить</div>'; }); }
-function closeHist(){ document.getElementById('histModal').hidden=true; document.body.style.overflow=''; }
+function closeHist(){ document.getElementById('histModal').hidden=true; document.body.style.overflow='';
+  if(histChanged){ histChanged=false; location.reload(); } }   // применились действия — обновляем список
 document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !document.getElementById('histModal').hidden) closeHist(); });
-// правка/удаление внутри поп-апа — через fetch, затем перерисовать фрагмент (confirm у удаления уже отработал в onsubmit)
+// любые действия в поп-апе (канал/статус/перезвон/назначение/коммент, правка/удаление) — через fetch, затем перерисовать фрагмент
 document.getElementById('histBody').addEventListener('submit',function(e){
-  var f=e.target.closest && e.target.closest('.cmt-act'); if(!f) return;
+  var f=e.target.closest && e.target.closest('form'); if(!f) return;
   if(e.defaultPrevented) return;              // отмена подтверждения удаления
   e.preventDefault();
   var b=document.getElementById('histBody'), id=b.getAttribute('data-id'), fd=new FormData(f);
-  fetch('hist.php?id='+id,{method:'POST',body:fd,cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ b.innerHTML=html; b.setAttribute('data-id',id); })
+  if(e.submitter && e.submitter.name) fd.append(e.submitter.name, e.submitter.value); // значение нажатой кнопки-чипа
+  fetch('hist.php?id='+id,{method:'POST',body:fd,cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(document.getElementById('histBody').getAttribute('data-id')===String(id)){ b.innerHTML=html; b.setAttribute('data-id',id); histChanged=true; } })
     .catch(function(){ if(window.crmToast)crmToast('Не удалось сохранить'); }); });
 </script>
 <?php crm_foot();

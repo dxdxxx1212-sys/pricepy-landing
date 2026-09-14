@@ -191,6 +191,64 @@ function crm_process_comment_ops($me,$act){
   }
   return null;
 }
+// Обработка действий над лидом (общая для карточки и поп-апа): статус, канал связи, напоминание, назначение, комментарий(+фото).
+// Возвращает true, если act обработан. CSRF должен быть проверен вызывающим.
+function crm_process_lead_action($me,$id,$act){
+  $db=crm_db(); $id=(int)$id;
+  $s=$db->prepare("SELECT * FROM leads WHERE id=?"); $s->execute([$id]); $L=$s->fetch();
+  if(!$L) return false;
+  $ST=crm_statuses();
+  if($act==='status'){
+    $ns=$_POST['status']??$L['status'];
+    if(isset($ST[$ns])){
+      $assignee=$L['assignee_id'];
+      if(!$assignee && $ns!=='new') $assignee=$me['id'];
+      $db->prepare("UPDATE leads SET status=?,assignee_id=?,updated_at=? WHERE id=?")->execute([$ns,$assignee,date('c'),$id]);
+      if(in_array($ns,['won','lost'],true) && !empty($L['next_action_at'])){ $db->prepare("UPDATE leads SET next_action_at='' WHERE id=?")->execute([$id]); }
+      if($ns!==$L['status']) crm_event($id,$me['id'],'статус',($ST[$L['status']]??$L['status']).' → '.($ST[$ns]??$ns));
+    }
+  } elseif($act==='contact'){
+    $C=crm_contacts(); $nc=$_POST['contact']??'';
+    if($nc===''){
+      if($L['call_status']!==''){ $db->prepare("UPDATE leads SET call_status='',updated_at=? WHERE id=?")->execute([date('c'),$id]); crm_event($id,$me['id'],'контакт','сброшено'); }
+    } elseif(isset($C[$nc])){
+      $old=(string)$L['call_status']; $new=crm_contact_toggle($old,$nc);
+      if($new!==$old){
+        $wasOn=in_array($nc,crm_contact_list($old),true);
+        $db->prepare("UPDATE leads SET call_status=?,updated_at=? WHERE id=?")->execute([$new,date('c'),$id]);
+        crm_event($id,$me['id'],'контакт',($wasOn?'убрано: ':'').crm_contact_label($nc));
+        if(!$wasOn && $L['status']==='new'){ $as=$L['assignee_id']?:$me['id']; $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]); crm_event($id,$me['id'],'статус','Новый → В работе'); }
+        if(!$wasOn && $nc==='noanswer' && empty($L['next_action_at'])){ $t=date('c',strtotime('+2 hours')); $db->prepare("UPDATE leads SET next_action_at=? WHERE id=?")->execute([$t,$id]); crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($t)); }
+      }
+    }
+  } elseif($act==='remind'){
+    $when=$_POST['when']??''; $ts=null;
+    if($when==='clear'){ $ts=''; }
+    elseif($when==='eve'){ $ts=date('c',strtotime('today 18:00')); }
+    elseif($when==='tom'){ $ts=date('c',strtotime('tomorrow 10:00')); }
+    elseif($when==='d3'){ $ts=date('c',strtotime('+3 days 10:00')); }
+    elseif($when==='custom'){ $cv=trim($_POST['dt']??''); $t=$cv?strtotime($cv):0; if($t) $ts=date('c',$t); }
+    if($ts!==null){ $db->prepare("UPDATE leads SET next_action_at=?,updated_at=? WHERE id=?")->execute([$ts,date('c'),$id]); crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято'); }
+  } elseif($act==='assign'){
+    $uid=$_POST['uid']??'';
+    if($uid===''){ $db->prepare("UPDATE leads SET assignee_id=NULL,updated_at=? WHERE id=?")->execute([date('c'),$id]); if($L['assignee_id']) crm_event($id,$me['id'],'назначение','снято'); }
+    else { $uid=(int)$uid; $chk=$db->prepare("SELECT name FROM users WHERE id=? AND active=1"); $chk->execute([$uid]); $nm=$chk->fetchColumn();
+      if($nm && (int)$L['assignee_id']!==$uid){ $db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=?")->execute([$uid,date('c'),$id]); crm_event($id,$me['id'],'назначение',$nm); } }
+  } elseif($act==='comment'){
+    $body=trim($_POST['body']??''); $F=$_FILES['att']??null;
+    $hasFiles = is_array($F) && isset($F['name']) && is_array($F['name']) && array_filter($F['name'], function($n){ return $n!==''; });
+    if($body!=='' || $hasFiles){
+      $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]);
+      $cid=(int)$db->lastInsertId(); $saved=0;
+      if($hasFiles){ $n=count($F['name']);
+        for($i=0;$i<$n && $saved<10;$i++){ if((int)($F['error'][$i]??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) continue;
+          $one=['name'=>$F['name'][$i],'tmp_name'=>$F['tmp_name'][$i],'error'=>$F['error'][$i],'size'=>$F['size'][$i]];
+          if(crm_attach_save($id,$cid,$me['id'],$one)) $saved++; } }
+      if($saved) crm_event($id,$me['id'],'вложение',$saved.' фото');
+    }
+  } else { return false; }
+  return true;
+}
 // HTML одной карточки комментария (общий для карточки лида и поп-апа). $canManage — показать правку/удаление (владелец).
 function crm_comment_card_html($c,$atts,$canManage,$csrf){
   $h='<div class="cmt" data-cid="'.(int)$c['id'].'"><div class="cmt-view">';
@@ -347,6 +405,8 @@ tr:hover td{background:#1b232c}
 .cmt-col .lc{cursor:pointer;margin-top:0}
 .cmt-col .lc:hover .lc-txt{color:#c9d3dd}
 .cmt-col .lc-txt{max-width:200px}
+.lc-empty{display:inline-block;cursor:pointer;color:#6b7580;font-size:12px;border:1px dashed var(--line);border-radius:6px;padding:2px 8px}
+.lc-empty:hover{color:#9cc4ff;border-color:#3a4553}
 /* карточка комментария: инструменты владельца, форма правки, сетка фото */
 .att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
@@ -367,6 +427,18 @@ tr:hover td{background:#1b232c}
 .hist-head{font-size:16px;margin:0 0 6px;padding-right:26px}
 .hist-sec{margin-top:16px}
 .hist-lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+/* быстрые действия в поп-апе */
+.hist-quick{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.hq-contacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.hq-lbl{color:var(--muted);font-size:12px;margin:10px 0 6px}
+.hq-form{display:flex;flex-wrap:wrap;gap:7px;margin:0}
+.hist-quick .spill{font-family:inherit;font-size:13px;padding:8px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted);text-decoration:none}
+.hist-quick a.spill{color:#9cc4ff}
+.hist-quick .spill:hover{filter:brightness(1.25)}
+.hist-quick .spill.on{background:var(--acc);color:#12181f;font-weight:800;border-color:var(--acc)}
+.hist-quick .hq-clr{color:#e0796b;border-style:dashed}
+.hq-comment{margin-top:12px;gap:8px}
+.hq-comment textarea{flex:1 1 100%;background:#0f151c;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px;font-family:inherit;font-size:14px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
 #crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
