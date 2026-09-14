@@ -90,6 +90,8 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       }
       if($saved) crm_event($id,$me['id'],'вложение',$saved.($saved==1?' фото':' фото'));
     }
+  } elseif($act==='comment_edit' || $act==='comment_delete'){
+    crm_process_comment_ops($me,$act); // правка/удаление комментария — только владелец (проверка внутри)
   } elseif($act==='delete'){
     if($me['role']!=='owner'){ http_response_code(403); exit('Удалять лиды может только владелец'); }
     crm_delete_lead($id);
@@ -133,10 +135,7 @@ crm_head('Лид #'.$id); ?>
 .att-prev .pv img{width:100%;height:100%;object-fit:cover;display:block}
 .att-prev .pv b{position:absolute;top:2px;right:2px;width:20px;height:20px;line-height:19px;text-align:center;border-radius:50%;background:rgba(0,0,0,.66);color:#fff;font-weight:400;cursor:pointer;font-size:15px}
 #cmtForm.drag{outline:2px dashed var(--acc);outline-offset:3px;border-radius:8px}
-.att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
-.att-th img{width:100%;height:100%;object-fit:cover;display:block}
-.att-th:hover{border-color:var(--acc)}
+/* .att-grid/.att-th — общие, определены в lib.php */
 @media(max-width:760px){
   .att-th{width:84px;height:84px}
   .lead-wrap .card{padding:14px}
@@ -239,13 +238,7 @@ if($reqs){ ?>
       <button class="btn btn-b">Добавить</button>
     </div>
   </form>
-  <?php foreach($comments as $c){ $atts=crm_comment_attachments($c['id']); ?>
-    <div class="cmt">
-      <?php if($c['body']!==''){ ?><div><?=nl2br(h($c['body']))?></div><?php } ?>
-      <?php if($atts){ ?><div class="att-grid"><?php foreach($atts as $a){ ?><a class="att-th" href="att.php?id=<?=$a['id']?>" target="_blank" rel="noopener" title="Открыть в полном размере"><img src="att.php?id=<?=$a['id']?>" loading="lazy" alt=""></a><?php } ?></div><?php } ?>
-      <div class="m"><?=h($c['un']?:'?')?> · <?=crm_dt($c['created_at'])?></div>
-    </div>
-  <?php } ?>
+  <?php $canManage=($me['role']==='owner'); foreach($comments as $c){ echo crm_comment_card_html($c, crm_comment_attachments($c['id']), $canManage, $csrf); } ?>
   <?php if(!$comments){ ?><div class="muted" style="font-size:14px">Пока нет комментариев.</div><?php } ?>
 </div>
 

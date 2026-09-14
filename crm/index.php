@@ -91,7 +91,7 @@ crm_head('Лиды'); ?>
 
 <div class="card" style="padding:0;overflow-x:auto">
 <table class="leads">
-<thead><tr><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Связаться</th><th>Когда</th></tr></thead>
+<thead><tr><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Связаться</th><th>Когда</th></tr></thead>
 <tbody>
 <?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $digN=ltrim($e164,'+'); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
@@ -100,19 +100,14 @@ crm_head('Лиды'); ?>
     <br><?php if($dig){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
-  <td class="req-cell"><div class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></div>
-    <?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?>
-    <div class="lc">
-      <?php if($la){ ?><a class="lc-thumb" href="att.php?id=<?=$la?>" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Открыть фото"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></a><?php } ?>
-      <?php if($lc!==''){ ?><span class="lc-txt" title="<?=h($lc)?>">💬 <?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,80,'…','UTF-8'))?></span><?php } ?>
-    </div><?php } ?>
-  </td>
+  <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
   <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ ?><span class="badge-o" style="color:<?=crm_contact_color($ck)?>;margin:1px 2px 1px 0"><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид">👤 <?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
+  <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и историю"><?php if($lc!==''){ ?><span class="lc-txt">💬 <?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:<?=$e164?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" class="muted"><?=crm_dt($r['created_at'])?><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><br><span style="color:<?=$over?'#ff8a5b':'#5fd08a'?>;font-weight:600"><?=$over?'⏰':'📅'?> <?=crm_dt($na)?></span><?php } ?></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="6" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
 </tbody></table>
 </div>
 
@@ -134,5 +129,27 @@ crm_head('Лиды'); ?>
     }).catch(function(){});
   }, 30000);
 })();
+</script>
+<!-- поп-ап: комментарии + история изменений лида -->
+<div id="histModal" class="hm" hidden>
+  <div class="hm-back" onclick="closeHist()"></div>
+  <div class="hm-box"><button class="hm-x" type="button" onclick="closeHist()" title="Закрыть">×</button><div id="histBody"></div></div>
+</div>
+<script>
+function openHist(id){ var m=document.getElementById('histModal'), b=document.getElementById('histBody');
+  b.innerHTML='<div class="muted" style="padding:24px 4px">Загрузка…</div>'; b.setAttribute('data-id',id);
+  m.hidden=false; document.body.style.overflow='hidden';
+  fetch('hist.php?id='+id,{cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(!document.getElementById('histModal').hidden) b.innerHTML=html; })
+    .catch(function(){ b.innerHTML='<div class="muted" style="padding:24px 4px">Не удалось загрузить</div>'; }); }
+function closeHist(){ document.getElementById('histModal').hidden=true; document.body.style.overflow=''; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !document.getElementById('histModal').hidden) closeHist(); });
+// правка/удаление внутри поп-апа — через fetch, затем перерисовать фрагмент (confirm у удаления уже отработал в onsubmit)
+document.getElementById('histBody').addEventListener('submit',function(e){
+  var f=e.target.closest && e.target.closest('.cmt-act'); if(!f) return;
+  if(e.defaultPrevented) return;              // отмена подтверждения удаления
+  e.preventDefault();
+  var b=document.getElementById('histBody'), id=b.getAttribute('data-id'), fd=new FormData(f);
+  fetch('hist.php?id='+id,{method:'POST',body:fd,cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ b.innerHTML=html; b.setAttribute('data-id',id); })
+    .catch(function(){ if(window.crmToast)crmToast('Не удалось сохранить'); }); });
 </script>
 <?php crm_foot();

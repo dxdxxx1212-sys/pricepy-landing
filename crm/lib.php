@@ -98,6 +98,9 @@ function crm_migrate($db){ static $done=false; if($done) return; $done=true;
   if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
   if(!in_array('call_status',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN call_status TEXT DEFAULT ''"); }
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)");
+  // комментарии: колонка edited_at (для пометки «изменён» владельцем)
+  $ccols = $db->query("PRAGMA table_info(comments)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if($ccols && !in_array('edited_at',$ccols,true)){ $db->exec("ALTER TABLE comments ADD COLUMN edited_at TEXT"); }
   // Перенос старой плоской воронки в двухполевую модель (идемпотентно — после переноса таких строк нет).
   $legacy = (int)$db->query("SELECT COUNT(*) FROM leads WHERE status IN('messaged','noanswer')")->fetchColumn();
   if($legacy){
@@ -127,7 +130,7 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
     id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, pass_hash TEXT,
     name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS comments(
-    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT)");
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT, edited_at TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS events(
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, type TEXT, detail TEXT, created_at TEXT)");
   // Вложения к комментариям (фото/скрины). path — имя файла внутри CRM_UPLOAD_DIR (генерим сами, не из ввода).
@@ -161,6 +164,55 @@ function crm_attach_save($lead_id,$comment_id,$user_id,$f){
   return (int)crm_db()->lastInsertId();
 }
 function crm_comment_attachments($comment_id){ $s=crm_db()->prepare("SELECT * FROM attachments WHERE comment_id=? ORDER BY id"); $s->execute([(int)$comment_id]); return $s->fetchAll(); }
+function crm_comment_get($cid){ $s=crm_db()->prepare("SELECT * FROM comments WHERE id=?"); $s->execute([(int)$cid]); return $s->fetch() ?: null; }
+// Удалить комментарий вместе с прикреплёнными файлами (с диска) и их записями.
+function crm_comment_delete($cid){ $db=crm_db(); $cid=(int)$cid;
+  $att=$db->prepare("SELECT path FROM attachments WHERE comment_id=?"); $att->execute([$cid]);
+  foreach($att->fetchAll(PDO::FETCH_COLUMN) as $p){ if($p){ $full=CRM_UPLOAD_DIR.'/'.$p; if(is_file($full)) @unlink($full); } }
+  $db->prepare("DELETE FROM attachments WHERE comment_id=?")->execute([$cid]);
+  $db->prepare("DELETE FROM comments WHERE id=?")->execute([$cid]);
+}
+// Обработка POST-операций над комментарием. ТОЛЬКО владелец. Возвращает lead_id при успехе, иначе null.
+function crm_process_comment_ops($me,$act){
+  if(($me['role']??'')!=='owner') return null;                 // операторам нельзя
+  $cid=(int)($_POST['cid']??0); if(!$cid) return null;
+  $c=crm_comment_get($cid); if(!$c) return null;
+  if($act==='comment_delete'){ crm_comment_delete($cid); crm_event((int)$c['lead_id'],$me['id'],'комментарий','удалён'); return (int)$c['lead_id']; }
+  if($act==='comment_edit'){
+    $body=trim($_POST['body']??'');
+    crm_db()->prepare("UPDATE comments SET body=?,edited_at=? WHERE id=?")->execute([$body,date('c'),$cid]);
+    crm_event((int)$c['lead_id'],$me['id'],'комментарий','изменён');
+    return (int)$c['lead_id'];
+  }
+  return null;
+}
+// HTML одной карточки комментария (общий для карточки лида и поп-апа). $canManage — показать правку/удаление (владелец).
+function crm_comment_card_html($c,$atts,$canManage,$csrf){
+  $h='<div class="cmt" data-cid="'.(int)$c['id'].'"><div class="cmt-view">';
+  if(($c['body']??'')!=='') $h.='<div class="cmt-body">'.nl2br(h($c['body'])).'</div>';
+  if($atts){ $h.='<div class="att-grid">'; foreach($atts as $a){ $h.='<a class="att-th" href="att.php?id='.(int)$a['id'].'" target="_blank" rel="noopener" title="Открыть в полном размере"><img src="att.php?id='.(int)$a['id'].'" loading="lazy" alt=""></a>'; } $h.='</div>'; }
+  $h.='<div class="m">'.h($c['un']?:'?').' · '.crm_dt($c['created_at']).(!empty($c['edited_at'])?' · <span title="отредактировано">изм.</span>':'').'</div>';
+  if($canManage){
+    $h.='<div class="cmt-tools">'
+      .'<button type="button" class="cmt-edit-btn">изменить</button>'
+      .'<form method="post" class="cmt-act cmt-del" onsubmit="return confirm(\'Удалить комментарий? Вместе с прикреплёнными фото.\')" style="display:inline">'
+      .'<input type="hidden" name="csrf" value="'.$csrf.'"><input type="hidden" name="act" value="comment_delete"><input type="hidden" name="cid" value="'.(int)$c['id'].'">'
+      .'<button type="submit" class="cmt-del-btn">удалить</button></form></div>';
+  }
+  $h.='</div>'; // .cmt-view
+  if($canManage){
+    $h.='<form method="post" class="cmt-act cmt-editform" style="display:none">'
+      .'<input type="hidden" name="csrf" value="'.$csrf.'"><input type="hidden" name="act" value="comment_edit"><input type="hidden" name="cid" value="'.(int)$c['id'].'">'
+      .'<textarea name="body" rows="3" style="width:100%">'.h($c['body']).'</textarea>'
+      .'<div style="margin-top:6px"><button type="submit" class="btn btn-b">Сохранить</button> <button type="button" class="cmt-cancel clr">отмена</button></div></form>';
+  }
+  return $h.'</div>';
+}
+function crm_events_list_html($events){
+  if(!$events) return '<div class="muted" style="font-size:14px">Действий ещё не было.</div>';
+  $h=''; foreach($events as $e){ $h.='<div class="cmt" style="padding:7px 0"><span class="pill">'.h($e['type']).'</span> '.h($e['detail']).' <span class="m"> — '.h($e['un']?:'?').', '.crm_dt($e['created_at']).'</span></div>'; }
+  return $h;
+}
 
 // Вставка лида (вызывается из api/lead.php). Возвращает id или бросает исключение.
 // $createdAt — необязательно: исторический момент заявки (для импорта из leads.log).
@@ -276,6 +328,30 @@ tr:hover td{background:#1b232c}
 .lc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .lc-txt{color:var(--muted);font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:270px}
 .lc-more{color:#7f8a96;font-size:11px}
+/* колонка «Коммент» в списке: клик открывает поп-ап */
+.cmt-col .lc{cursor:pointer;margin-top:0}
+.cmt-col .lc:hover .lc-txt{color:#c9d3dd}
+.cmt-col .lc-txt{max-width:200px}
+/* карточка комментария: инструменты владельца, форма правки, сетка фото */
+.att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
+.att-th img{width:100%;height:100%;object-fit:cover;display:block}
+.att-th:hover{border-color:var(--acc)}
+.cmt-body{white-space:pre-wrap}
+.cmt-tools{margin-top:5px;display:flex;gap:14px}
+.cmt-tools button{background:none;border:0;color:#9cc4ff;cursor:pointer;font:inherit;font-size:12px;text-decoration:underline;padding:0}
+.cmt-del-btn{color:#e0796b}
+.cmt-cancel{background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;font-size:13px;text-decoration:underline;padding:4px 2px}
+.cmt-editform textarea{background:#0f151c;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px;font-family:inherit;font-size:14px}
+/* поп-ап истории + комментариев (страница списка) */
+.hm{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center}
+.hm[hidden]{display:none}
+.hm-back{position:absolute;inset:0;background:rgba(0,0,0,.62)}
+.hm-box{position:relative;z-index:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:560px;width:calc(100% - 28px);margin:5vh 0;max-height:90vh;overflow:auto;padding:18px 18px 22px}
+.hm-x{position:absolute;top:6px;right:10px;background:none;border:0;color:var(--muted);font-size:26px;line-height:1;cursor:pointer}
+.hist-head{font-size:16px;margin:0 0 6px;padding-right:26px}
+.hist-sec{margin-top:16px}
+.hist-lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
 #crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
@@ -319,4 +395,11 @@ function crmCopy(x){var el=(x&&x.nodeType)?x:null;var v=el?(el.getAttribute('dat
   var ok=function(){if(el)el.classList.add('ok');crmToast('Скопировано: '+v);if(el)setTimeout(function(){el.classList.remove('ok');},1200);};
   var fb=function(){try{var t=document.createElement('textarea');t.value=v;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.focus();t.select();document.execCommand('copy');document.body.removeChild(t);ok();}catch(e){crmToast('Не удалось скопировать');}};
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(v).then(ok,fb);}else{fb();}}
+// правка комментария: показать/скрыть форму (владелец). Делегировано — работает и в карточке, и в поп-апе.
+document.addEventListener('click',function(e){
+  var eb=e.target.closest && e.target.closest('.cmt-edit-btn');
+  if(eb){ var c=eb.closest('.cmt'); if(c){ var v=c.querySelector('.cmt-view'), f=c.querySelector('.cmt-editform'); if(v&&f){ v.style.display='none'; f.style.display='block'; var t=f.querySelector('textarea'); if(t){t.focus();} } } return; }
+  var cc=e.target.closest && e.target.closest('.cmt-cancel');
+  if(cc){ var c2=cc.closest('.cmt'); if(c2){ var v2=c2.querySelector('.cmt-view'), f2=c2.querySelector('.cmt-editform'); if(v2&&f2){ f2.style.display='none'; v2.style.display=''; } } }
+});
 </script></body></html><?php }
