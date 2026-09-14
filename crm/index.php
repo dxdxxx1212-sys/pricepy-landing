@@ -22,7 +22,9 @@ if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
 if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
 if($q!==''){
   $qd=preg_replace('/\D+/','',$q); // цифры номера — поиск по телефону в любом формате
-  if($qd!==''){ $where[]='(name LIKE ? OR contact LIKE ? OR phone_norm LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; $args[]="%$qd%"; }
+  // убираем ведущий код страны (8/7 перед мобильной 9) — чтобы номер находился в любом формате (phone_norm = 7XXXXXXXXXX)
+  $qtail = (strlen($qd)>=2 && ($qd[0]==='7'||$qd[0]==='8') && $qd[1]==='9') ? substr($qd,1) : $qd;
+  if($qd!==''){ $where[]='(name LIKE ? OR contact LIKE ? OR phone_norm LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; $args[]="%$qtail%"; }
   else { $where[]='(name LIKE ? OR contact LIKE ?)'; $args[]="%$q%"; $args[]="%$q%"; }
 }
 $wsql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
@@ -136,11 +138,13 @@ crm_head('Лиды'); ?>
   <div class="hm-box"><button class="hm-x" type="button" onclick="closeHist()" title="Закрыть">×</button><div id="histBody"></div></div>
 </div>
 <script>
+var histReq=0;
 function openHist(id){ var m=document.getElementById('histModal'), b=document.getElementById('histBody');
+  histReq=id;                                   // актуальный запрошенный лид — ответы старых игнорируем
   b.innerHTML='<div class="muted" style="padding:24px 4px">Загрузка…</div>'; b.setAttribute('data-id',id);
   m.hidden=false; document.body.style.overflow='hidden';
-  fetch('hist.php?id='+id,{cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(!document.getElementById('histModal').hidden) b.innerHTML=html; })
-    .catch(function(){ b.innerHTML='<div class="muted" style="padding:24px 4px">Не удалось загрузить</div>'; }); }
+  fetch('hist.php?id='+id,{cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(histReq===id && !document.getElementById('histModal').hidden) b.innerHTML=html; })
+    .catch(function(){ if(histReq===id) b.innerHTML='<div class="muted" style="padding:24px 4px">Не удалось загрузить</div>'; }); }
 function closeHist(){ document.getElementById('histModal').hidden=true; document.body.style.overflow=''; }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !document.getElementById('histModal').hidden) closeHist(); });
 // правка/удаление внутри поп-апа — через fetch, затем перерисовать фрагмент (confirm у удаления уже отработал в onsubmit)

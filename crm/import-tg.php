@@ -60,7 +60,7 @@ foreach ($blocks as $b) {
   if (tg_is_test($name)) { $tests++; continue; }
   if (!tg_valid_contact($contact)) { $junk++; continue; }
 
-  $phone = crm_phone_digits($contact);
+  $phone = crm_phone_norm($contact); // канонический ключ (совпадает с phone_norm в базе) — дедуп ловит 8/7-форматы
   $key = $phone ? 'p:'.$phone : 'c:'.mb_strtolower($contact);
   if (isset($seen[$key])) { $dupes++; continue; }   // повтор внутри файла
   $seen[$key] = 1;

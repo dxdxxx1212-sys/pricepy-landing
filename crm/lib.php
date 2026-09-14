@@ -6,6 +6,7 @@ define('CRM_DB_PATH', getenv('CRM_DB') ?: '/var/lib/pricepy-crm/leads.sqlite');
 // Вложения к комментариям (фото/скрины) — рядом с базой: вне веб-корня и вне git,
 // значит переживают автодеплой и недоступны напрямую по URL (отдаём только через att.php за авторизацией).
 define('CRM_UPLOAD_DIR', getenv('CRM_UPLOAD') ?: dirname(CRM_DB_PATH).'/uploads');
+define('CRM_SCHEMA_VERSION', 2); // версия схемы (PRAGMA user_version): миграции гоняются только когда БД отстаёт
 date_default_timezone_set('Europe/Moscow'); // все даты/время и KPI «сегодня» — по Москве
 
 // ---- Справочники ----
@@ -94,6 +95,8 @@ function crm_db(){
 }
 // Лёгкие миграции для баз, созданных до появления колонок (ALTER + бэкофилл).
 function crm_migrate($db){ static $done=false; if($done) return; $done=true;
+  $ver = (int)$db->query("PRAGMA user_version")->fetchColumn();
+  if($ver >= CRM_SCHEMA_VERSION) return; // схема актуальна — тяжёлые проверки/бэкофиллы не гоняем на каждый запрос
   $cols = $db->query("PRAGMA table_info(leads)")->fetchAll(PDO::FETCH_COLUMN, 1);
   if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
   if(!in_array('call_status',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN call_status TEXT DEFAULT ''"); }
@@ -109,10 +112,12 @@ function crm_migrate($db){ static $done=false; if($done) return; $done=true;
     // «Написал в мессенджере» → канал = мессенджер, который клиент выбрал в квизе (если знаем), иначе WhatsApp.
     $db->exec("UPDATE leads SET call_status=CASE channel WHEN 'telegram' THEN 'tg' WHEN 'max' THEN 'max' ELSE 'wa' END, status='work' WHERE status='messaged'");
   }
-  // заполнить нормализованный телефон там, где ещё пусто (после ALTER или для старых строк)
-  $need = $db->query("SELECT id,contact FROM leads WHERE (phone_norm IS NULL OR phone_norm='') AND contact<>''")->fetchAll();
+  // Пересчитать нормализованный телефон для ВСЕХ строк (канонизация 8→7, 10-значный 9XX→7 9XX) —
+  // чтобы дедуп/поиск/«повторный клиент» ловили один номер в любом формате.
+  $need = $db->query("SELECT id,contact FROM leads WHERE contact<>''")->fetchAll();
   if($need){ $up=$db->prepare("UPDATE leads SET phone_norm=? WHERE id=?");
-    foreach($need as $r){ $up->execute([crm_phone_digits($r['contact']), $r['id']]); } }
+    foreach($need as $r){ $up->execute([crm_phone_norm($r['contact']), $r['id']]); } }
+  $db->exec("PRAGMA user_version=".CRM_SCHEMA_VERSION);
 }
 function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
   $db->exec("CREATE TABLE IF NOT EXISTS leads(
@@ -227,7 +232,7 @@ function crm_insert_lead($data, $raw, $createdAt=null){
     ':ca'=>$now, ':up'=>$now, ':src'=>$g('source'), ':nm'=>$g('name'), ':ct'=>$g('contact'), ':ch'=>$g('channel'),
     ':us'=>$g('use'), ':cp'=>$g('capacity'), ':tp'=>$g('type'), ':bg'=>$g('budget'), ':tm'=>$g('timing'),
     ':u1'=>$g('utm_source'), ':u2'=>$g('utm_medium'), ':u3'=>$g('utm_campaign'), ':u4'=>$g('utm_content'), ':u5'=>$g('utm_term'),
-    ':gc'=>$g('gclid'), ':yc'=>$g('yclid'), ':it'=>$g('items'), ':pn'=>crm_phone_digits($g('contact')),
+    ':gc'=>$g('gclid'), ':yc'=>$g('yclid'), ':it'=>$g('items'), ':pn'=>crm_phone_norm($g('contact')),
     ':ip'=>($_SERVER['REMOTE_ADDR']??''), ':ua'=>mb_substr($_SERVER['HTTP_USER_AGENT']??'',0,300), ':raw'=>$raw,
   ]);
   return crm_db()->lastInsertId();
@@ -253,7 +258,9 @@ function crm_login($login,$pass){ $s=crm_db()->prepare("SELECT * FROM users WHER
 function crm_logout(){ crm_sess(); $_SESSION=[]; session_destroy(); }
 // антибрутфорс логина: не более 10 неудач с одного IP за 15 минут
 function crm_login_throttle(){ $db=crm_db(); $db->exec("CREATE TABLE IF NOT EXISTS login_fails(ip TEXT, ts INTEGER)"); $s=$db->prepare("SELECT COUNT(*) c FROM login_fails WHERE ip=? AND ts>?"); $s->execute([$_SERVER['REMOTE_ADDR']??'', time()-900]); return ((int)$s->fetch()['c']) < 10; }
-function crm_login_fail(){ $db=crm_db(); $db->exec("CREATE TABLE IF NOT EXISTS login_fails(ip TEXT, ts INTEGER)"); $db->prepare("INSERT INTO login_fails(ip,ts) VALUES(?,?)")->execute([$_SERVER['REMOTE_ADDR']??'', time()]); }
+function crm_login_fail(){ $db=crm_db(); $db->exec("CREATE TABLE IF NOT EXISTS login_fails(ip TEXT, ts INTEGER)"); $db->exec("CREATE INDEX IF NOT EXISTS idx_login_fails ON login_fails(ip,ts)");
+  $db->prepare("INSERT INTO login_fails(ip,ts) VALUES(?,?)")->execute([$_SERVER['REMOTE_ADDR']??'', time()]);
+  $db->prepare("DELETE FROM login_fails WHERE ts < ?")->execute([time()-86400]); } // чистим старше суток, чтобы не рос
 function crm_csrf(){ crm_sess(); if(empty($_SESSION['csrf'])) $_SESSION['csrf']=bin2hex(random_bytes(16)); return $_SESSION['csrf']; }
 function crm_csrf_ok(){ crm_sess(); return isset($_POST['csrf']) && hash_equals($_SESSION['csrf']??'',$_POST['csrf']); }
 function crm_event($lead_id,$user_id,$type,$detail=''){ $s=crm_db()->prepare("INSERT INTO events(lead_id,user_id,type,detail,created_at) VALUES(?,?,?,?,?)"); $s->execute([$lead_id,$user_id,$type,$detail,date('c')]); }
@@ -262,6 +269,14 @@ function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM us
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
 function crm_phone_digits($c){ return preg_replace('/\D+/','',$c); }
+// Канонический ключ телефона для дедупа/поиска/связки: РФ-номер → 7XXXXXXXXXX (8→7, 10-значный 9XX→7 9XX).
+// Ник/не-телефон — как цифры (обычно ''). Совпадает по логике с crm_phone_e164 (только без «+»).
+function crm_phone_norm($c){
+  $d = preg_replace('/\D+/','',(string)$c);
+  if(strlen($d)===11 && ($d[0]==='8'||$d[0]==='7')) return '7'.substr($d,1);
+  if(strlen($d)===10 && $d[0]==='9') return '7'.$d;
+  return $d;
+}
 // Телефон в формате для набора/мессенджеров (МАКС, WhatsApp, звонилка): +7XXXXXXXXXX.
 // Учитывает, что в базе номер может лежать как 79.., 89.., так и просто 9.. (без кода страны).
 function crm_phone_e164($c){

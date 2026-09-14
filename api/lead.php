@@ -43,10 +43,11 @@ $vName = trim((string)($data['name'] ?? ''));
 $vContact = trim((string)($data['contact'] ?? ''));
 if ($vName === '' && mb_strlen($vContact) < 4) { http_response_code(422); echo '{"ok":false}'; exit; }
 
-// логи пишем ВНЕ веб-корня, если папка CRM уже создана (её нельзя скачать из браузера);
-// иначе — рядом с сайтом (nginx закрывает *.log правилом deny). Так копия лида не теряется.
-$LOG_DIR = (is_dir('/var/lib/pricepy-crm') && is_writable('/var/lib/pricepy-crm'))
-  ? '/var/lib/pricepy-crm' : (__DIR__ . '/..');
+// логи и антифлуд-файлы пишем ТОЛЬКО вне веб-корня (нельзя скачать из браузера, переживает git reset).
+// Приоритет: постоянный каталог CRM; если недоступен — системный temp. Веб-корень как запасной путь НЕ используем.
+$LOG_DIR = '/var/lib/pricepy-crm';
+if (!is_dir($LOG_DIR)) { @mkdir($LOG_DIR, 0770, true); }
+if (!is_dir($LOG_DIR) || !is_writable($LOG_DIR)) { $LOG_DIR = sys_get_temp_dir(); }
 
 // мягкий анти-флуд: не более 30 заявок с одного IP за 60 сек (режем ботов, людям не мешает).
 // fail-open: любая ошибка троттлинга не блокирует лид.

@@ -16,6 +16,8 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $assignee=$L['assignee_id'];
       if(!$assignee && $ns!=='new') $assignee=$me['id']; // взял в работу — авто-назначение
       $db->prepare("UPDATE leads SET status=?,assignee_id=?,updated_at=? WHERE id=?")->execute([$ns,$assignee,date('c'),$id]);
+      // сделка закрыта (продажа/отказ) — снимаем напоминание, чтобы не висело «⏰ Просрочено»
+      if(in_array($ns,['won','lost'],true) && !empty($L['next_action_at'])){ $db->prepare("UPDATE leads SET next_action_at='' WHERE id=?")->execute([$id]); }
       if($ns!==$L['status']) crm_event($id,$me['id'],'статус',($ST[$L['status']]??$L['status']).' → '.($ST[$ns]??$ns));
     }
   } elseif($act==='contact'){
@@ -88,7 +90,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
           if(crm_attach_save($id,$cid,$me['id'],$one)) $saved++;
         }
       }
-      if($saved) crm_event($id,$me['id'],'вложение',$saved.($saved==1?' фото':' фото'));
+      if($saved) crm_event($id,$me['id'],'вложение',$saved.' фото');
     }
   } elseif($act==='comment_edit' || $act==='comment_delete'){
     crm_process_comment_ops($me,$act); // правка/удаление комментария — только владелец (проверка внутри)
@@ -300,9 +302,10 @@ if($reqs){ ?>
     if(sending || !pend.length) return;               // без файлов — обычная отправка
     e.preventDefault(); sending=true;
     Promise.all(pend.map(function(p){return shrink(p.file);})).then(function(files){
-      try{ var dt=new DataTransfer(); files.forEach(function(f){ dt.items.add(f); }); input.files=dt.files; }catch(_){}
+      try{ var dt=new DataTransfer(); files.forEach(function(f){ dt.items.add(f); }); input.files=dt.files; }
+      catch(err){ sending=false; if(window.crmToast)crmToast('Браузер не смог прикрепить фото — обновите страницу и попробуйте снова'); return; } // не отправляем пустое
       form.submit();
-    }).catch(function(){ sending=false; form.submit(); }); });
+    }).catch(function(){ sending=false; if(window.crmToast)crmToast('Не удалось подготовить фото, попробуйте ещё раз'); }); });
 })();
 </script>
 <?php crm_foot();
