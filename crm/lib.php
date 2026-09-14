@@ -3,6 +3,9 @@
 // База лежит ВНЕ веб-корня (нельзя скачать через браузер) и не в git (переживает автодеплой).
 
 define('CRM_DB_PATH', getenv('CRM_DB') ?: '/var/lib/pricepy-crm/leads.sqlite');
+// Вложения к комментариям (фото/скрины) — рядом с базой: вне веб-корня и вне git,
+// значит переживают автодеплой и недоступны напрямую по URL (отдаём только через att.php за авторизацией).
+define('CRM_UPLOAD_DIR', getenv('CRM_UPLOAD') ?: dirname(CRM_DB_PATH).'/uploads');
 date_default_timezone_set('Europe/Moscow'); // все даты/время и KPI «сегодня» — по Москве
 
 // ---- Справочники ----
@@ -127,7 +130,37 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS events(
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, type TEXT, detail TEXT, created_at TEXT)");
+  // Вложения к комментариям (фото/скрины). path — имя файла внутри CRM_UPLOAD_DIR (генерим сами, не из ввода).
+  $db->exec("CREATE TABLE IF NOT EXISTS attachments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, comment_id INTEGER, user_id INTEGER,
+    path TEXT, orig_name TEXT, mime TEXT, size INTEGER, created_at TEXT)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_att_lead ON attachments(lead_id)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_att_comment ON attachments(comment_id)");
 }
+
+// ---- Вложения ----
+function crm_att_types(){ return ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif']; }
+function crm_upload_dir(){ if(!is_dir(CRM_UPLOAD_DIR)) @mkdir(CRM_UPLOAD_DIR,0770,true); return CRM_UPLOAD_DIR; }
+// Сохранить одну картинку из $_FILES-элемента ['name','tmp_name','error','size',...]. Вернёт id или null.
+function crm_attach_save($lead_id,$comment_id,$user_id,$f){
+  if(!is_array($f) || (int)($f['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) return null;
+  if(empty($f['tmp_name']) || !is_uploaded_file($f['tmp_name'])) return null;
+  if(($f['size']??0)<=0 || $f['size']>15*1024*1024) return null;      // до 15 МБ
+  $info = @getimagesize($f['tmp_name']);                              // валидирует, что это реально картинка
+  $mime = $info['mime'] ?? '';
+  $types = crm_att_types();
+  if(!isset($types[$mime])) return null;
+  $rel = date('Y/m').'/'.bin2hex(random_bytes(16)).'.'.$types[$mime];
+  $full = crm_upload_dir().'/'.$rel;
+  if(!is_dir(dirname($full))) @mkdir(dirname($full),0770,true);
+  if(!move_uploaded_file($f['tmp_name'],$full)) return null;
+  @chmod($full,0640);
+  $orig = mb_substr(preg_replace('/[\r\n\t]/',' ',(string)($f['name']??'')),0,160);
+  $st=crm_db()->prepare("INSERT INTO attachments(lead_id,comment_id,user_id,path,orig_name,mime,size,created_at) VALUES(?,?,?,?,?,?,?,?)");
+  $st->execute([(int)$lead_id,(int)$comment_id,(int)$user_id,$rel,$orig,$mime,(int)$f['size'],date('c')]);
+  return (int)crm_db()->lastInsertId();
+}
+function crm_comment_attachments($comment_id){ $s=crm_db()->prepare("SELECT * FROM attachments WHERE comment_id=? ORDER BY id"); $s->execute([(int)$comment_id]); return $s->fetchAll(); }
 
 // Вставка лида (вызывается из api/lead.php). Возвращает id или бросает исключение.
 // $createdAt — необязательно: исторический момент заявки (для импорта из leads.log).
@@ -149,6 +182,10 @@ function crm_insert_lead($data, $raw, $createdAt=null){
 }
 // Полное удаление лида вместе с комментариями и историей (только владелец — проверка на странице).
 function crm_delete_lead($id){ $db=crm_db(); $id=(int)$id;
+  // сначала удалить файлы вложений с диска
+  $att=$db->prepare("SELECT path FROM attachments WHERE lead_id=?"); $att->execute([$id]);
+  foreach($att->fetchAll(PDO::FETCH_COLUMN) as $p){ if($p){ $full=CRM_UPLOAD_DIR.'/'.$p; if(is_file($full)) @unlink($full); } }
+  $db->prepare("DELETE FROM attachments WHERE lead_id=?")->execute([$id]);
   $db->prepare("DELETE FROM comments WHERE lead_id=?")->execute([$id]);
   $db->prepare("DELETE FROM events WHERE lead_id=?")->execute([$id]);
   $db->prepare("DELETE FROM leads WHERE id=?")->execute([$id]);
@@ -233,6 +270,12 @@ tr:hover td{background:#1b232c}
 .cphone:hover{color:#9cc4ff}
 .mgr{display:inline-block;margin-top:6px;font-size:12px;color:#c3b6ef}
 .mgr-none{color:#8a97a5;padding:1px 7px;border:1px dashed var(--line);border-radius:6px}
+/* строка последнего комментария + превью вложения в списке лидов */
+.lc{display:flex;align-items:center;gap:8px;margin-top:8px}
+.lc-thumb{flex:none;width:40px;height:40px;border-radius:7px;overflow:hidden;border:1px solid var(--line);display:block;background:#0f151c}
+.lc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lc-txt{color:var(--muted);font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:270px}
+.lc-more{color:#7f8a96;font-size:11px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
 #crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
@@ -259,6 +302,7 @@ tr:hover td{background:#1b232c}
   table.leads tr:hover td{background:transparent}
   table.leads td{border:0;padding:5px 0}
   .req{max-width:none;white-space:normal}
+  .lc-txt{max-width:none}
   /* крупнее для пальца: быстрые действия и «открыть в новой вкладке» */
   .qa{padding:9px 13px;font-size:14px;margin-right:7px}
   .newtab{padding:3px 11px;font-size:15px;line-height:22px}

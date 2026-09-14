@@ -74,7 +74,22 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
     }
   } elseif($act==='comment'){
     $body=trim($_POST['body']??'');
-    if($body!==''){ $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]); }
+    $F=$_FILES['att']??null;
+    $hasFiles = is_array($F) && isset($F['name']) && is_array($F['name']) && array_filter($F['name'], function($n){ return $n!==''; });
+    if($body!=='' || $hasFiles){
+      $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,date('c')]);
+      $cid=(int)$db->lastInsertId();
+      $saved=0;
+      if($hasFiles){
+        $n=count($F['name']);
+        for($i=0;$i<$n && $saved<10;$i++){ // не больше 10 файлов на комментарий
+          if((int)($F['error'][$i]??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) continue;
+          $one=['name'=>$F['name'][$i],'tmp_name'=>$F['tmp_name'][$i],'error'=>$F['error'][$i],'size'=>$F['size'][$i]];
+          if(crm_attach_save($id,$cid,$me['id'],$one)) $saved++;
+        }
+      }
+      if($saved) crm_event($id,$me['id'],'вложение',$saved.($saved==1?' фото':' фото'));
+    }
   } elseif($act==='delete'){
     if($me['role']!=='owner'){ http_response_code(403); exit('Удалять лиды может только владелец'); }
     crm_delete_lead($id);
@@ -108,7 +123,22 @@ crm_head('Лид #'.$id); ?>
 .dtin{padding:8px 10px}
 .reqline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .reqline i{color:var(--muted);font-style:normal;margin-right:5px}
+/* загрузка фото/скринов в комментарий */
+.att-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.att-add{font-family:inherit;font-size:14px;padding:9px 13px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#1b232c;color:var(--ink)}
+.att-add:hover{filter:brightness(1.15)}
+.att-hint{color:var(--muted);font-size:12px}
+.att-prev{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.att-prev .pv{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
+.att-prev .pv img{width:100%;height:100%;object-fit:cover;display:block}
+.att-prev .pv b{position:absolute;top:2px;right:2px;width:20px;height:20px;line-height:19px;text-align:center;border-radius:50%;background:rgba(0,0,0,.66);color:#fff;font-weight:400;cursor:pointer;font-size:15px}
+#cmtForm.drag{outline:2px dashed var(--acc);outline-offset:3px;border-radius:8px}
+.att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
+.att-th img{width:100%;height:100%;object-fit:cover;display:block}
+.att-th:hover{border-color:var(--acc)}
 @media(max-width:760px){
+  .att-th{width:84px;height:84px}
   .lead-wrap .card{padding:14px}
   .lead-wrap h2{font-size:20px}
   .spill{font-size:15px;padding:11px 16px}            /* удобный тап */
@@ -197,12 +227,25 @@ if($reqs){ ?>
 <!-- КОММЕНТАРИИ -->
 <div class="card">
   <h3 style="margin:0 0 10px">Комментарии</h3>
-  <form method="post" style="margin-bottom:8px">
+  <form method="post" enctype="multipart/form-data" style="margin-bottom:8px" id="cmtForm">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="comment">
-    <textarea name="body" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости…"></textarea>
-    <div style="margin-top:8px"><button class="btn btn-b">Добавить</button></div>
+    <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V"></textarea>
+    <input type="file" name="att[]" id="cmtFiles" accept="image/*" multiple hidden>
+    <div id="cmtPrev" class="att-prev" hidden></div>
+    <div class="att-bar">
+      <button type="button" class="att-add" id="cmtAdd">📎 Прикрепить фото / скрин</button>
+      <span class="att-hint">перетащите сюда или вставьте скрин Ctrl+V</span>
+      <span style="flex:1"></span>
+      <button class="btn btn-b">Добавить</button>
+    </div>
   </form>
-  <?php foreach($comments as $c){ ?><div class="cmt"><div><?=nl2br(h($c['body']))?></div><div class="m"><?=h($c['un']?:'?')?> · <?=crm_dt($c['created_at'])?></div></div><?php } ?>
+  <?php foreach($comments as $c){ $atts=crm_comment_attachments($c['id']); ?>
+    <div class="cmt">
+      <?php if($c['body']!==''){ ?><div><?=nl2br(h($c['body']))?></div><?php } ?>
+      <?php if($atts){ ?><div class="att-grid"><?php foreach($atts as $a){ ?><a class="att-th" href="att.php?id=<?=$a['id']?>" target="_blank" rel="noopener" title="Открыть в полном размере"><img src="att.php?id=<?=$a['id']?>" loading="lazy" alt=""></a><?php } ?></div><?php } ?>
+      <div class="m"><?=h($c['un']?:'?')?> · <?=crm_dt($c['created_at'])?></div>
+    </div>
+  <?php } ?>
   <?php if(!$comments){ ?><div class="muted" style="font-size:14px">Пока нет комментариев.</div><?php } ?>
 </div>
 
@@ -225,4 +268,48 @@ if($reqs){ ?>
   <?php } ?>
 </div>
 </div>
+<script>
+(function(){
+  var form=document.getElementById('cmtForm'); if(!form) return;
+  var input=document.getElementById('cmtFiles'), prev=document.getElementById('cmtPrev'), addBtn=document.getElementById('cmtAdd');
+  var pend=[], MAX=10, MAXW=1600, Q=0.82;
+  function draw(){ prev.hidden=pend.length===0;
+    prev.innerHTML=pend.map(function(p,i){return '<div class="pv"><img src="'+p.url+'" alt=""><b data-i="'+i+'" title="убрать">×</b></div>';}).join(''); }
+  function add(files){ for(var i=0;i<files.length;i++){ var f=files[i];
+      if(!f.type||f.type.indexOf('image/')!==0) continue;
+      if(pend.length>=MAX){ if(window.crmToast)crmToast('Максимум '+MAX+' фото'); break; }
+      pend.push({file:f,url:URL.createObjectURL(f)}); } draw(); }
+  addBtn.addEventListener('click',function(){ input.click(); });
+  input.addEventListener('change',function(){ add(input.files); input.value=''; });
+  prev.addEventListener('click',function(e){ var b=e.target.closest('b[data-i]'); if(!b)return;
+    var i=+b.getAttribute('data-i'); try{URL.revokeObjectURL(pend[i].url);}catch(_){} pend.splice(i,1); draw(); });
+  ['dragenter','dragover'].forEach(function(ev){ form.addEventListener(ev,function(e){ e.preventDefault(); form.classList.add('drag'); }); });
+  ['dragleave','drop'].forEach(function(ev){ form.addEventListener(ev,function(e){ e.preventDefault();
+    if(ev==='drop' && e.dataTransfer && e.dataTransfer.files) add(e.dataTransfer.files); form.classList.remove('drag'); }); });
+  form.addEventListener('paste',function(e){ var items=(e.clipboardData||{}).items||[], imgs=[];
+    for(var i=0;i<items.length;i++){ if(items[i].kind==='file'&&items[i].type.indexOf('image/')===0){ var f=items[i].getAsFile(); if(f)imgs.push(f);} }
+    if(imgs.length){ e.preventDefault(); add(imgs); } });
+  function shrink(file){ return new Promise(function(res){
+    if(file.type==='image/gif'){ res(file); return; }
+    var url=URL.createObjectURL(file), img=new Image();
+    img.onload=function(){ try{
+      var w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,MAXW/Math.max(w,h));
+      if(s>=1 && file.size<600*1024){ URL.revokeObjectURL(url); res(file); return; }
+      var cw=Math.round(w*s),ch=Math.round(h*s),cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+      cv.getContext('2d').drawImage(img,0,0,cw,ch);
+      cv.toBlob(function(b){ URL.revokeObjectURL(url); if(!b){res(file);return;}
+        res(new File([b],(file.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'})); },'image/jpeg',Q);
+    }catch(_){ URL.revokeObjectURL(url); res(file); } };
+    img.onerror=function(){ URL.revokeObjectURL(url); res(file); };
+    img.src=url; }); }
+  var sending=false;
+  form.addEventListener('submit',function(e){
+    if(sending || !pend.length) return;               // без файлов — обычная отправка
+    e.preventDefault(); sending=true;
+    Promise.all(pend.map(function(p){return shrink(p.file);})).then(function(files){
+      try{ var dt=new DataTransfer(); files.forEach(function(f){ dt.items.add(f); }); input.files=dt.files; }catch(_){}
+      form.submit();
+    }).catch(function(){ sending=false; form.submit(); }); });
+})();
+</script>
 <?php crm_foot();

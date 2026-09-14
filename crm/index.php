@@ -33,6 +33,14 @@ $st=$db->prepare("SELECT * FROM leads $wsql ORDER BY $order LIMIT $per OFFSET $o
 $st->execute($args); $rows=$st->fetchAll();
 $maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m']; // для сигнала о новом лиде
 
+// Для страницы: последний комментарий и последнее вложение по каждому лиду (одним запросом, без N+1).
+$lastCmt=[]; $lastAtt=[];
+$pageIds=array_map(function($r){return (int)$r['id'];}, $rows);
+if($pageIds){ $in=implode(',',$pageIds);
+  foreach($db->query("SELECT c.lead_id, c.body FROM comments c JOIN (SELECT lead_id, MAX(id) mid FROM comments WHERE lead_id IN($in) GROUP BY lead_id) m ON m.mid=c.id") as $r){ $lastCmt[(int)$r['lead_id']]=$r['body']; }
+  foreach($db->query("SELECT a.lead_id, a.id FROM attachments a JOIN (SELECT lead_id, MAX(id) mid FROM attachments WHERE lead_id IN($in) GROUP BY lead_id) m ON m.mid=a.id") as $r){ $lastAtt[(int)$r['lead_id']]=(int)$r['id']; }
+}
+
 // KPI — минимум для работы
 $k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new'")->fetch()['c'];
 $kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
@@ -92,7 +100,13 @@ crm_head('Лиды'); ?>
     <br><?php if($dig){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе">хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
-  <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
+  <td class="req-cell"><div class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></div>
+    <?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?>
+    <div class="lc">
+      <?php if($la){ ?><a class="lc-thumb" href="att.php?id=<?=$la?>" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Открыть фото"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></a><?php } ?>
+      <?php if($lc!==''){ ?><span class="lc-txt" title="<?=h($lc)?>">💬 <?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,80,'…','UTF-8'))?></span><?php } ?>
+    </div><?php } ?>
+  </td>
   <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ ?><span class="badge-o" style="color:<?=crm_contact_color($ck)?>;margin:1px 2px 1px 0"><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид">👤 <?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ ?><a class="qa" href="tel:<?=$e164?>" title="Позвонить">📞</a><a class="qa" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
