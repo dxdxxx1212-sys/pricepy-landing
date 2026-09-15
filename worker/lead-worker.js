@@ -3,6 +3,11 @@
 // Секреты в Cloudflare: BOT_TOKEN, CHAT_ID. Этот файл — источник правды (в репо не автодеплоится).
 // Особенности: доставка в фоне (ctx.waitUntil) + до 4 повторов (retry_after) — заявки не теряются.
 // Поле contact/phone оборачивается в <code> → в Telegram тап по номеру копирует его.
+//
+// Две ветки:
+//  1) обычная заявка с сайта → форматируется и шлётся в CHAT_ID (владельцу). НЕ менялась.
+//  2) {op_notify:{chat_id,text}} от CRM → готовый текст шлётся в указанный chat_id
+//     (личный Telegram оператора при назначении лида). За тем же секретом LEAD_SECRET.
 export default {
   async fetch(request, env, ctx) {
     const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,X-Lead-Secret'};
@@ -19,6 +24,37 @@ export default {
     let d;
     try { d = await request.json(); } catch(e){ d = {}; }
 
+    const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`;
+    // отправка в фоне с повторами — Cloudflare не оборвёт (waitUntil)
+    const send = (payload) => {
+      const body = JSON.stringify(payload);
+      ctx.waitUntil((async () => {
+        for (let i = 0; i < 4; i++) {
+          try {
+            const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body});
+            const j = await r.json().catch(()=>({}));
+            if (j && j.ok) return;
+            const wait = (j && j.parameters && j.parameters.retry_after) ? j.parameters.retry_after : 2;
+            await new Promise(res => setTimeout(res, Math.min(wait,15)*1000));
+          } catch(e) {
+            await new Promise(res => setTimeout(res, 2000));
+          }
+        }
+      })());
+    };
+
+    // Ветка 2: уведомление оператору в его личный чат. Текст уже готов на стороне CRM.
+    if (d && d.op_notify && d.op_notify.chat_id && d.op_notify.text) {
+      send({
+        chat_id: d.op_notify.chat_id,
+        text: String(d.op_notify.text),
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      });
+      return new Response('{"ok":true}',{headers:{...cors,'Content-Type':'application/json'}});
+    }
+
+    // Ветка 1: обычная заявка с сайта → владельцу (CHAT_ID). Поведение как раньше.
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const copyable = ['contact','phone'];   // эти поля — тап-для-копирования
     const skip = ['hp'];                      // служебные поля (honeypot) — не показываем
@@ -27,29 +63,12 @@ export default {
       if (skip.includes(k)) continue;
       lines += `${esc(k)}: ` + (copyable.includes(k) ? `<code>${esc(v)}</code>` : esc(v)) + '\n';
     }
-    const body = JSON.stringify({
+    send({
       chat_id: env.CHAT_ID,
       text: `🆕 <b>Новая заявка с сайта</b>\n\n${lines}`,
       parse_mode: 'HTML',
       disable_web_page_preview: true
     });
-    const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`;
-
-    // доставка в фоне с повторами — Cloudflare не оборвёт (waitUntil)
-    const deliver = (async () => {
-      for (let i = 0; i < 4; i++) {
-        try {
-          const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body});
-          const j = await r.json().catch(()=>({}));
-          if (j && j.ok) return;
-          const wait = (j && j.parameters && j.parameters.retry_after) ? j.parameters.retry_after : 2;
-          await new Promise(res => setTimeout(res, Math.min(wait,15)*1000));
-        } catch(e) {
-          await new Promise(res => setTimeout(res, 2000));
-        }
-      }
-    })();
-    ctx.waitUntil(deliver);
 
     return new Response('{"ok":true}',{headers:{...cors,'Content-Type':'application/json'}});
   }

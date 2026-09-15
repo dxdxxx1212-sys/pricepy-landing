@@ -35,6 +35,15 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $db->prepare("UPDATE users SET feed_share=?,feed_active=? WHERE id=?")->execute([$share,$active,$uid]);
       $msg=$share>0?('Подача обновлена: '.$share.'%'):'Подача выключена';
     }
+  } elseif($act==='tg'){
+    $uid=(int)$_POST['uid'];
+    $t=$db->prepare("SELECT role FROM users WHERE id=?"); $t->execute([$uid]); $role=$t->fetchColumn();
+    if($role!=='operator'){ $err='Telegram задаётся только операторам'; }
+    else{
+      $tg=trim($_POST['tg']??'');
+      if($tg!=='' && !preg_match('/^-?\d{5,20}$/',$tg)){ $err='chat_id — это число (у групп с «−»), 5–20 цифр. Узнать через @userinfobot.'; }
+      else{ $db->prepare("UPDATE users SET tg_chat_id=? WHERE id=?")->execute([$tg,$uid]); $msg=$tg!==''?'Telegram привязан к оператору':'Telegram отвязан'; }
+    }
   }
 }
 $list=$db->query("SELECT * FROM users ORDER BY id")->fetchAll();
@@ -46,10 +55,11 @@ crm_head('Операторы'); ?>
 <div class="card" style="margin-bottom:14px">
   <div style="font-weight:700;margin-bottom:4px">Авто-подача новых лидов</div>
   <div style="font-size:14px;color:var(--muted2)">Из каждых 100 заявок с сайта: <b style="color:var(--ink)"><?=$feedSum?>%</b> уходит операторам автоматически по долям ниже, <b style="color:var(--ink)"><?=$manual?>%</b> остаётся вам в «Нераспределённых» (раздаёте вручную). Меняется в лайве — действует со следующей заявки.</div>
+  <div style="font-size:13px;color:var(--muted);margin-top:8px">Личный Telegram: оператор жмёт <b>Start</b> у вашего бота (иначе Telegram не даст боту написать первым), узнаёт свой числовой <b>chat_id</b> (напр. через @userinfobot) — впишите в колонку «Telegram». Тогда назначенные ему лиды падают в личку.</div>
 </div>
 <div class="grid2">
   <div class="card" style="padding:0;overflow-x:auto">
-    <table><thead><tr><th>#</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Подача лидов</th><th></th></tr></thead><tbody>
+    <table><thead><tr><th>#</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Подача лидов</th><th>Telegram</th><th></th></tr></thead><tbody>
     <?php foreach($list as $u){ ?><tr>
       <td class="muted"><?=$u['id']?></td><td><?=h($u['name'])?></td><td class="muted"><?=h($u['login'])?></td>
       <td><?=$u['role']==='owner'?'владелец':'оператор'?></td>
@@ -59,6 +69,11 @@ crm_head('Операторы'); ?>
           <input type="number" name="share" min="0" max="100" value="<?=(int)($u['feed_share']??0)?>" style="width:62px;padding:6px 8px" title="Доля потока новых лидов в % (0 = выключено)"><span class="muted" style="font-size:13px">%</span>
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Владелец получает нераспределённый остаток">—</span><?php } ?></td>
+      <td><?php if($u['role']==='operator'){ ?><form method="post" style="display:flex;align-items:center;gap:6px;margin:0">
+          <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="tg"><input type="hidden" name="uid" value="<?=$u['id']?>">
+          <input type="text" name="tg" value="<?=h($u['tg_chat_id']??'')?>" placeholder="chat_id" style="width:118px;padding:6px 8px" inputmode="numeric" title="Telegram chat_id оператора — узнать через @userinfobot">
+          <button class="btn btn-sec" style="padding:5px 10px">OK</button>
+        </form><?php }else{ ?><span class="muted" title="Уведомления идут в общий канал владельца">—</span><?php } ?></td>
       <td class="right"><?php if($u['id']!==$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form><?php } ?></td>
     </tr><?php } ?></tbody></table>
   </div>

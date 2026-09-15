@@ -7,6 +7,9 @@ define('CRM_DB_PATH', getenv('CRM_DB') ?: '/var/lib/pricepy-crm/leads.sqlite');
 // значит переживают автодеплой и недоступны напрямую по URL (отдаём только через att.php за авторизацией).
 define('CRM_UPLOAD_DIR', getenv('CRM_UPLOAD') ?: dirname(CRM_DB_PATH).'/uploads');
 define('CRM_SCHEMA_VERSION', 3); // версия схемы (PRAGMA user_version): миграции гоняются только когда БД отстаёт
+// Для уведомлений операторам в личный Telegram (Этап 3). Тот же воркер и секрет, что и приём заявок.
+define('CRM_WORKER_URL', getenv('CRM_WORKER') ?: 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev');
+define('CRM_BASE_URL', getenv('CRM_BASE') ?: 'https://crm.xn----ctbklixakchgm2d.xn--p1ai'); // ссылка на карточку лида в уведомлении
 date_default_timezone_set('Europe/Moscow'); // все даты/время и KPI «сегодня» — по Москве
 
 // ---- Справочники ----
@@ -252,7 +255,7 @@ function crm_process_lead_action($me,$id,$act){
     $uid=$_POST['uid']??'';
     if($uid===''){ $db->prepare("UPDATE leads SET assignee_id=NULL,updated_at=? WHERE id=?")->execute([date('c'),$id]); if($L['assignee_id']) crm_event($id,$me['id'],'назначение','снято'); }
     else { $uid=(int)$uid; $chk=$db->prepare("SELECT name FROM users WHERE id=? AND active=1"); $chk->execute([$uid]); $nm=$chk->fetchColumn();
-      if($nm && (int)$L['assignee_id']!==$uid){ $db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=?")->execute([$uid,date('c'),$id]); crm_event($id,$me['id'],'назначение',$nm); } }
+      if($nm && (int)$L['assignee_id']!==$uid){ $db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=?")->execute([$uid,date('c'),$id]); crm_event($id,$me['id'],'назначение',$nm); crm_notify_operator($uid,$id); } }
   } elseif($act==='comment'){
     $body=trim($_POST['body']??''); $F=$_FILES['att']??null;
     $hasFiles = is_array($F) && isset($F['name']) && is_array($F['name']) && array_filter($F['name'], function($n){ return $n!==''; });
@@ -331,9 +334,46 @@ function crm_autoassign_new_lead($leadId){
     // идемпотентно: назначаем только если ещё никто не назначен (ручное назначение не перетираем)
     $upd=$db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=? AND (assignee_id IS NULL OR assignee_id=0)");
     $upd->execute([$winner,date('c'),$leadId]);
-    if($upd->rowCount()>0){ crm_event($leadId,0,'назначение',$wname.' (авто-подача)'); return $winner; }
+    if($upd->rowCount()>0){ crm_event($leadId,0,'назначение',$wname.' (авто-подача)'); crm_notify_operator($winner,$leadId); return $winner; }
     return null;
   }catch(Throwable $e){ return null; } // подача необязательна — заявку не трогаем
+}
+// Уведомление оператору в его личный Telegram при назначении лида (авто или вручную).
+// Идёт через тот же Cloudflare Worker (прямой api.telegram.org с РФ-сервера закрыт), ветка op_notify.
+// Тихо не делает ничего, если у оператора не задан tg_chat_id. Полностью fail-safe:
+// доставка заявки/работа UI от этого не зависят.
+function crm_notify_operator($uid,$leadId){
+  try{
+    $uid=(int)$uid; $leadId=(int)$leadId; if($uid<=0||$leadId<=0) return;
+    $db=crm_db();
+    $u=$db->prepare("SELECT name,tg_chat_id FROM users WHERE id=? AND active=1"); $u->execute([$uid]); $u=$u->fetch();
+    if(!$u || trim((string)$u['tg_chat_id'])===''){ return; } // нет привязанного чата — выходим тихо
+    $l=$db->prepare("SELECT * FROM leads WHERE id=?"); $l->execute([$leadId]); $L=$l->fetch();
+    if(!$L) return;
+    // секрет для воркера — из api/config.php (вне git); включаем в область функции
+    // секрет для воркера. В пути приёма заявки api/lead.php он уже подключён на верхнем уровне
+    // (глобальная $LEAD_SECRET) — берём оттуда, без повторного include. Иначе (ручное назначение
+    // из view.php) config.php ещё не подключён — подключаем впервые (без риска двойного include).
+    $secret='';
+    if(isset($GLOBALS['LEAD_SECRET'])){ $secret=(string)$GLOBALS['LEAD_SECRET']; }
+    else { $cfg=__DIR__.'/../api/config.php'; if(is_file($cfg)){ include $cfg; if(isset($LEAD_SECRET)) $secret=(string)$LEAD_SECRET; } }
+    $esc=function($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
+    $req=array_filter([$L['use_'],$L['type'],$L['capacity'],$L['budget'],$L['items']]);
+    $phone=crm_phone_e164($L['contact']) ?: $L['contact'];
+    $text="🔔 <b>Вам назначен лид</b>\n"
+        ."Имя: ".$esc($L['name']?:'—')."\n"
+        ."Телефон: <code>".$esc($phone)."</code>\n"
+        .($req ? ("Запрос: ".$esc(implode(' · ',$req))."\n") : '')
+        ."\n".CRM_BASE_URL."/view.php?id=".$leadId;
+    $payload=json_encode(['op_notify'=>['chat_id'=>(string)$u['tg_chat_id'],'text'=>$text]], JSON_UNESCAPED_UNICODE);
+    $ch=curl_init(CRM_WORKER_URL);
+    curl_setopt_array($ch,[
+      CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true,
+      CURLOPT_HTTPHEADER=>['Content-Type: application/json','X-Lead-Secret: '.$secret],
+      CURLOPT_POSTFIELDS=>$payload, CURLOPT_TIMEOUT=>6, CURLOPT_CONNECTTIMEOUT=>4,
+    ]);
+    curl_exec($ch); curl_close($ch);
+  }catch(Throwable $e){ /* уведомление необязательно — ничего не роняем */ }
 }
 // Полное удаление лида вместе с комментариями и историей (только владелец — проверка на странице).
 function crm_delete_lead($id){ $db=crm_db(); $id=(int)$id;
