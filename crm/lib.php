@@ -6,7 +6,7 @@ define('CRM_DB_PATH', getenv('CRM_DB') ?: '/var/lib/pricepy-crm/leads.sqlite');
 // Вложения к комментариям (фото/скрины) — рядом с базой: вне веб-корня и вне git,
 // значит переживают автодеплой и недоступны напрямую по URL (отдаём только через att.php за авторизацией).
 define('CRM_UPLOAD_DIR', getenv('CRM_UPLOAD') ?: dirname(CRM_DB_PATH).'/uploads');
-define('CRM_SCHEMA_VERSION', 2); // версия схемы (PRAGMA user_version): миграции гоняются только когда БД отстаёт
+define('CRM_SCHEMA_VERSION', 3); // версия схемы (PRAGMA user_version): миграции гоняются только когда БД отстаёт
 date_default_timezone_set('Europe/Moscow'); // все даты/время и KPI «сегодня» — по Москве
 
 // ---- Справочники ----
@@ -117,6 +117,11 @@ function crm_migrate($db){ static $done=false; if($done) return; $done=true;
   // комментарии: колонка edited_at (для пометки «изменён» владельцем)
   $ccols = $db->query("PRAGMA table_info(comments)")->fetchAll(PDO::FETCH_COLUMN, 1);
   if($ccols && !in_array('edited_at',$ccols,true)){ $db->exec("ALTER TABLE comments ADD COLUMN edited_at TEXT"); }
+  // v3: авто-подача лидов операторам (доля потока + тумблер) и tg-чат оператора (для Этапа 3)
+  $ucols = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if($ucols && !in_array('feed_share',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN feed_share INTEGER DEFAULT 0"); }
+  if($ucols && !in_array('feed_active',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN feed_active INTEGER DEFAULT 0"); }
+  if($ucols && !in_array('tg_chat_id',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN tg_chat_id TEXT"); }
   // Перенос старой плоской воронки в двухполевую модель (идемпотентно — после переноса таких строк нет).
   $legacy = (int)$db->query("SELECT COUNT(*) FROM leads WHERE status IN('messaged','noanswer')")->fetchColumn();
   if($legacy){
@@ -146,7 +151,8 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
   $db->exec("CREATE TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, pass_hash TEXT,
-    name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT)");
+    name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT,
+    feed_share INTEGER DEFAULT 0, feed_active INTEGER DEFAULT 0, tg_chat_id TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS comments(
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT, edited_at TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS events(
@@ -307,6 +313,27 @@ function crm_insert_lead($data, $raw, $createdAt=null){
     ':ip'=>($_SERVER['REMOTE_ADDR']??''), ':ua'=>mb_substr($_SERVER['HTTP_USER_AGENT']??'',0,300), ':raw'=>$raw,
   ]);
   return crm_db()->lastInsertId();
+}
+// Авто-подача: распределить новый лид между операторами по их долям (feed_share, 0..100).
+// Взвешенный жребий БЕЗ общего состояния (нет счётчиков/курсоров → нет гонок в SQLite).
+// Остаток до 100% (r > суммы долей) — лид остаётся нераспределённым (ручной пул владельца).
+// Полностью fail-safe: любая ошибка глушится — распределение не должно влиять на приём заявки.
+function crm_autoassign_new_lead($leadId){
+  try{
+    $leadId=(int)$leadId; if($leadId<=0) return null;
+    $db=crm_db();
+    // кандидаты: активные операторы с включённой подачей и положительной долей
+    $cands=$db->query("SELECT id,name,feed_share FROM users WHERE role='operator' AND active=1 AND feed_active=1 AND feed_share>0 ORDER BY id")->fetchAll();
+    if(!$cands) return null;
+    $r=random_int(1,100); $cum=0; $winner=0; $wname='';
+    foreach($cands as $c){ $cum+=(int)$c['feed_share']; if($cum>100) $cum=100; if($r<=$cum){ $winner=(int)$c['id']; $wname=$c['name']; break; } }
+    if(!$winner) return null; // жребий попал в «остаток» — лид владельцу (нераспределённым)
+    // идемпотентно: назначаем только если ещё никто не назначен (ручное назначение не перетираем)
+    $upd=$db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id=? AND (assignee_id IS NULL OR assignee_id=0)");
+    $upd->execute([$winner,date('c'),$leadId]);
+    if($upd->rowCount()>0){ crm_event($leadId,0,'назначение',$wname.' (авто-подача)'); return $winner; }
+    return null;
+  }catch(Throwable $e){ return null; } // подача необязательна — заявку не трогаем
 }
 // Полное удаление лида вместе с комментариями и историей (только владелец — проверка на странице).
 function crm_delete_lead($id){ $db=crm_db(); $id=(int)$id;

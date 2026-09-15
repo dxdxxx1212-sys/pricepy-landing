@@ -98,7 +98,8 @@ if (!$ok) {
 //    (leads.log + Telegram уже отработали выше).
 try {
   require_once __DIR__ . '/../crm/lib.php';
-  crm_insert_lead($data, $raw);
+  $newId = crm_insert_lead($data, $raw);
+  crm_autoassign_new_lead($newId); // авто-подача лида оператору по долям (fail-safe внутри; не влияет на доставку)
 } catch (Throwable $e) {
   @file_put_contents($LOG_DIR . '/leads-errors.log', date('c') . ' | CRM_DB_FAIL(' . $e->getMessage() . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 }

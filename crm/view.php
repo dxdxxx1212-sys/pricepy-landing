@@ -172,7 +172,7 @@ if($reqs){ ?>
 <details style="margin-bottom:12px">
   <summary class="muted" style="cursor:pointer;font-size:13px;padding:4px 0">История изменений</summary>
   <div class="card" style="margin-top:8px">
-    <?php foreach($events as $e){ ?><div class="cmt" style="padding:7px 0"><span class="pill"><?=h($e['type'])?></span> <?=h($e['detail'])?> <span class="m"> — <?=h($e['un']?:'?')?>, <?=crm_dt($e['created_at'])?></span></div><?php } ?>
+    <?php foreach($events as $e){ ?><div class="cmt" style="padding:7px 0"><span class="pill"><?=h($e['type'])?></span> <?=h($e['detail'])?> <span class="m"> — <?=h($e['un']?:'система')?>, <?=crm_dt($e['created_at'])?></span></div><?php } ?>
     <?php if(!$events){ ?><div class="muted" style="font-size:14px">Действий ещё не было.</div><?php } ?>
   </div>
 </details>
