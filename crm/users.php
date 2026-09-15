@@ -31,9 +31,9 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
     if($role!=='operator'){ $err='Подача настраивается только для операторов'; }
     else{
       $share=max(0,min(100,(int)($_POST['share']??0)));      // доля потока 0..100
-      $active=isset($_POST['fa'])?1:0;                        // тумблер авто-подачи
+      $active=$share>0?1:0;                                   // подача включена, если доля > 0 (0 = выключено)
       $db->prepare("UPDATE users SET feed_share=?,feed_active=? WHERE id=?")->execute([$share,$active,$uid]);
-      $msg='Подача обновлена: '.$share.'%'.($active?'':' (выключена)');
+      $msg=$share>0?('Подача обновлена: '.$share.'%'):'Подача выключена';
     }
   }
 }
@@ -56,8 +56,7 @@ crm_head('Операторы'); ?>
       <td><?=$u['active']?'<span style="color:#5fd08a">активен</span>':'<span class="muted">отключён</span>'?></td>
       <td><?php if($u['role']==='operator'){ ?><form method="post" style="display:flex;align-items:center;gap:6px;margin:0">
           <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="feed"><input type="hidden" name="uid" value="<?=$u['id']?>">
-          <input type="number" name="share" min="0" max="100" value="<?=(int)($u['feed_share']??0)?>" style="width:62px;padding:6px 8px" title="Доля потока новых лидов, %">
-          <label style="display:inline-flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap" title="Включить/выключить авто-подачу этому оператору"><input type="checkbox" name="fa" value="1" <?=(int)($u['feed_active']??0)?'checked':''?>>вкл</label>
+          <input type="number" name="share" min="0" max="100" value="<?=(int)($u['feed_share']??0)?>" style="width:62px;padding:6px 8px" title="Доля потока новых лидов в % (0 = выключено)"><span class="muted" style="font-size:13px">%</span>
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Владелец получает нераспределённый остаток">—</span><?php } ?></td>
       <td class="right"><?php if($u['id']!==$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form><?php } ?></td>
