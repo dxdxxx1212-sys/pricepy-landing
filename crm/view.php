@@ -70,7 +70,7 @@ crm_head('Лид #'.$id); ?>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
 <?php if($msg){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($msg)?></div><?php } ?>
-<?php if($related){ ?><div style="background:#2a1e14;border:1px solid #ff8a5b;color:#ffbf94;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:13px">⚠ Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
+<?php if($related){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:13px">⚠ Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
 
 <!-- КОНТАКТ -->
 <div class="card">

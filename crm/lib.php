@@ -21,8 +21,21 @@ function crm_statuses(){ return [
   'lost' => 'Отказ',
 ];}
 function crm_status_color($s){ return [
-  'new'=>'#f5b301','work'=>'#3b82f6','sent'=>'#0ea5e9','won'=>'#1f9d55','lost'=>'#6b7280',
-][$s] ?? '#9aa2ab'; }
+  'new'=>'#eab308','work'=>'#3b82f6','sent'=>'#38bdf8','won'=>'#22a06b','lost'=>'#64748b',
+][$s] ?? '#64748b'; }
+// цвет текста на бейдже статуса (светлый фон → тёмный текст, насыщенный → белый)
+function crm_status_ink($s){ return in_array($s,['new','sent'],true) ? '#12181f' : '#fff'; }
+// Моно-SVG иконка (currentColor) вместо эмодзи — стабильный вид на всех ОС.
+function crm_icon($n,$cls='icn'){
+  $p=[
+    'phone'=>'<path d="M4 4.5c0 6 5.5 11.5 11.5 11.5l.6-3-3.6-1.2-1.4 1.4C8.6 11.7 8 11 6.3 8.3l1.4-1.4L6.5 3.3z"/>',
+    'person'=>'<circle cx="8" cy="5" r="3"/><path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>',
+    'clock'=>'<circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.5"/>',
+    'cal'=>'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',
+    'ext'=>'<path d="M6 3h7v7M13 3l-8 8"/>',
+  ];
+  return '<svg class="'.$cls.'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'.($p[$n]??'').'</svg>';
+}
 
 // Канал связи: как оператор реально достучался до клиента. '' = ещё не связывались.
 // g — группа (msg = в мессенджере, call = по телефону) для группировки в UI.
@@ -357,15 +370,21 @@ function crm_head($title){ $u=crm_user(); ?><!DOCTYPE html><html lang="ru"><head
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title><?=h($title)?> · CRM Восток Прицеп</title>
 <style>
-:root{--bg:#0f141a;--panel:#171e26;--line:#26313d;--ink:#e7edf3;--muted:#8a97a5;--acc:#f5b301;--acc2:#3b82f6}
+:root{--bg:#0f141a;--panel:#171e26;--line:#262f3a;--ink:#e7edf3;--muted:#93a0ae;--muted2:#aeb9c5;--acc:#f5b301;--acc2:#3b82f6;
+  --ph:#c9d3dd;                                   /* телефон/имя — заметнее */
+  --chip-bg:#1f2731;--chip-ink:#c4ccd6;--chip-line:#2a3540;  /* нейтральная плашка */
+  --alert:#f2843c;                               /* единый тон срочности */
+  --ok-bg:#173a24;--ok-ink:#8ff0b0;--warn-bg:#3a2417;--warn-ink:#f0a86a;--warn-line:#5a4433;--danger-bg:#3a1717;--danger-ink:#ffb0b0}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
 a{color:#9cc4ff;text-decoration:none}a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.icn{width:15px;height:15px;display:inline-block;vertical-align:-2px;flex:none}
 .top{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 18px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:10}
 .top .brand{font-weight:800;color:var(--acc)}.top .brand span{color:#fff}
 .top nav{display:flex;gap:16px}.top nav a{color:var(--muted);font-weight:600}.top nav a.on{color:#fff}
 .top .sp{flex:1}.top .me{color:var(--muted);font-size:13px}
 .wrap{max-width:1200px;margin:0 auto;padding:18px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
 .btn{display:inline-block;border:0;cursor:pointer;font-family:inherit;font-weight:700;border-radius:8px;background:var(--acc);color:#1a1a1a;padding:9px 16px;font-size:14px}
 .btn:hover{filter:brightness(1.05);text-decoration:none}.btn-sec{background:#2a3542;color:var(--ink)}.btn-b{background:var(--acc2);color:#fff}
 input,select,textarea{font-family:inherit;font-size:14px;background:#0f151c;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px 11px}
@@ -373,28 +392,34 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc)}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
 th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
 tr:hover td{background:#1b232c}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;color:#12181f}
-.pill{display:inline-block;padding:2px 8px;border-radius:6px;background:#232e39;color:var(--muted);font-size:12px;margin:1px}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#12181f}
+/* нейтральная плашка — каналы, «хочет», менеджер, типы событий */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);line-height:1.5}
+.chip.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:var(--warn-line)}
+.ch-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.mgr .icn{width:12px;height:12px;color:var(--muted)}
+.qa .icn{width:15px;height:15px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);font-size:12px;margin:1px}
 .muted{color:var(--muted)}.right{text-align:right}
 .grid2{display:grid;grid-template-columns:1fr 340px;gap:16px}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
-.kpi .k{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi .k{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 .kpi .k b{font-size:24px;display:block}.kpi .k span{color:var(--muted);font-size:12px}
 .dl{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
 .cmt{border-top:1px solid var(--line);padding:10px 0}.cmt .m{color:var(--muted);font-size:12px}
 .req{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qa{display:inline-block;padding:3px 7px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:#9cc4ff;margin-right:3px}
-.qa:hover{background:#1b232c;text-decoration:none}
-.want{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:transparent;color:var(--muted);border:1px solid var(--line)}
-.badge-o{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:transparent;border:1px solid currentColor}
-.lead-name{color:var(--ink)}.lead-name:hover{color:#fff;text-decoration:none}
-.newtab{display:inline-block;margin-left:6px;color:var(--muted);font-size:13px;line-height:18px;border:1px solid var(--line);border-radius:6px;padding:0 6px;vertical-align:middle}
-.newtab:hover{color:#9cc4ff;background:#1b232c;text-decoration:none}
-.cphone{color:var(--muted);cursor:pointer;border-bottom:1px dashed var(--line)}
-.cphone:hover{color:#9cc4ff}
-.mgr{display:inline-block;margin-top:6px;font-size:12px;color:#c3b6ef}
-.mgr-none{color:#8a97a5;padding:1px 7px;border:1px dashed var(--line);border-radius:6px}
+.qa{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:28px;padding:0 8px;border:1px solid var(--chip-line);border-radius:8px;font-size:12px;font-weight:600;color:var(--chip-ink);margin-right:4px;vertical-align:middle}
+.qa:hover{background:#1b232c;text-decoration:none;color:#fff}
+.qa.want-ch{border-color:var(--warn-line);color:var(--warn-ink)}   /* канал, который клиент выбрал */
+.want{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line)}
+.lead-name{color:#fff;font-weight:700}.lead-name:hover{color:#fff;text-decoration:none}
+.newtab{display:inline-block;margin-left:5px;color:#5a6777;font-size:13px;line-height:1;vertical-align:middle}
+.newtab:hover{color:#9cc4ff;text-decoration:none}
+.cphone{color:var(--ph);font-weight:500;cursor:pointer;border-bottom:1px dashed #3a4653}
+.cphone:hover{color:#fff}
+.mgr{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);border-radius:6px;padding:1px 8px}
+.mgr-none{display:inline-block;margin-top:6px;color:var(--muted);padding:1px 8px;border:1px dashed var(--line);border-radius:6px;font-size:12px}
 /* строка последнего комментария + превью вложения в списке лидов */
 .lc{display:flex;align-items:center;gap:8px;margin-top:8px}
 .lc-thumb{flex:none;width:40px;height:40px;border-radius:7px;overflow:hidden;border:1px solid var(--line);display:block;background:#0f151c}
