@@ -115,7 +115,7 @@ if($reqs){ ?>
   <form method="post" class="statusrow">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="status">
     <?php foreach($ST as $k=>$v){ $active=$L['status']===$k; $col=crm_status_color($k); ?>
-      <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
+      <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:'.crm_status_ink($k).';font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
     <?php } ?>
   </form>
 
