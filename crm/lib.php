@@ -214,9 +214,8 @@ function crm_process_lead_action($me,$id,$act){
   if($act==='status'){
     $ns=$_POST['status']??$L['status'];
     if(isset($ST[$ns])){
-      $assignee=$L['assignee_id'];
-      if(!$assignee && $ns!=='new') $assignee=$me['id'];
-      $db->prepare("UPDATE leads SET status=?,assignee_id=?,updated_at=? WHERE id=?")->execute([$ns,$assignee,date('c'),$id]);
+      // Ответственного НЕ трогаем: распределение лидов — только через явное назначение владельцем (owner-only ниже).
+      $db->prepare("UPDATE leads SET status=?,updated_at=? WHERE id=?")->execute([$ns,date('c'),$id]);
       if(in_array($ns,['won','lost'],true) && !empty($L['next_action_at'])){ $db->prepare("UPDATE leads SET next_action_at='' WHERE id=?")->execute([$id]); }
       if($ns!==$L['status']) crm_event($id,$me['id'],'статус',($ST[$L['status']]??$L['status']).' → '.($ST[$ns]??$ns));
     }
@@ -230,7 +229,7 @@ function crm_process_lead_action($me,$id,$act){
         $wasOn=in_array($nc,crm_contact_list($old),true);
         $db->prepare("UPDATE leads SET call_status=?,updated_at=? WHERE id=?")->execute([$new,date('c'),$id]);
         crm_event($id,$me['id'],'контакт',($wasOn?'убрано: ':'').crm_contact_label($nc));
-        if(!$wasOn && $L['status']==='new'){ $as=$L['assignee_id']?:$me['id']; $db->prepare("UPDATE leads SET status='work',assignee_id=? WHERE id=?")->execute([$as,$id]); crm_event($id,$me['id'],'статус','Новый → В работе'); }
+        if(!$wasOn && $L['status']==='new'){ $db->prepare("UPDATE leads SET status='work' WHERE id=?")->execute([$id]); crm_event($id,$me['id'],'статус','Новый → В работе'); } // статус двигаем, ответственного не присваиваем
         if(!$wasOn && $nc==='noanswer' && empty($L['next_action_at'])){ $t=date('c',strtotime('+2 hours')); $db->prepare("UPDATE leads SET next_action_at=? WHERE id=?")->execute([$t,$id]); crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($t)); }
       }
     }
@@ -243,6 +242,7 @@ function crm_process_lead_action($me,$id,$act){
     elseif($when==='custom'){ $cv=trim($_POST['dt']??''); $t=$cv?strtotime($cv):0; if($t) $ts=date('c',$t); }
     if($ts!==null){ $db->prepare("UPDATE leads SET next_action_at=?,updated_at=? WHERE id=?")->execute([$ts,date('c'),$id]); crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято'); }
   } elseif($act==='assign'){
+    if(($me['role']??'')!=='owner') return false;        // распределяет лидов только владелец
     $uid=$_POST['uid']??'';
     if($uid===''){ $db->prepare("UPDATE leads SET assignee_id=NULL,updated_at=? WHERE id=?")->execute([date('c'),$id]); if($L['assignee_id']) crm_event($id,$me['id'],'назначение','снято'); }
     else { $uid=(int)$uid; $chk=$db->prepare("SELECT name FROM users WHERE id=? AND active=1"); $chk->execute([$uid]); $nm=$chk->fetchColumn();
@@ -324,6 +324,11 @@ function crm_sess(){ if(session_status()!==PHP_SESSION_ACTIVE){ session_set_cook
 function crm_user(){ crm_sess(); if(empty($_SESSION['uid'])) return null; $s=crm_db()->prepare("SELECT * FROM users WHERE id=? AND active=1"); $s->execute([$_SESSION['uid']]); return $s->fetch() ?: null; }
 function crm_require(){ $u=crm_user(); if(!$u){ header('Location: login.php'); exit; } return $u; }
 function crm_require_owner(){ $u=crm_require(); if($u['role']!=='owner'){ http_response_code(403); exit('Только для владельца'); } return $u; }
+// Ограничение видимости лидов: владелец видит все, оператор — только назначенные ему.
+// Возвращает готовый SQL-фрагмент для WHERE (id приведён к int — безопасно для встраивания).
+function crm_lead_scope_sql($me){ return (($me['role']??'')==='owner') ? '1=1' : ('assignee_id='.(int)($me['id']??0)); }
+// Может ли пользователь открывать конкретный лид (для карточки/поп-апа/вложений).
+function crm_can_see_lead($me,$lead){ return (($me['role']??'')==='owner') || ((int)($lead['assignee_id']??0)===(int)($me['id']??0)); }
 function crm_login($login,$pass){ $s=crm_db()->prepare("SELECT * FROM users WHERE login=? COLLATE NOCASE AND active=1"); $s->execute([trim($login)]); $u=$s->fetch();
   if($u && password_verify($pass,$u['pass_hash'])){ crm_sess(); session_regenerate_id(true); $_SESSION['uid']=$u['id']; return true; } return false; }
 function crm_logout(){ crm_sess(); $_SESSION=[]; session_destroy(); }

@@ -2,11 +2,16 @@
 // Отдача вложения (фото/скрин комментария) — ТОЛЬКО авторизованным (внутри могут быть ПДн клиента).
 // Файлы лежат вне веб-корня (CRM_UPLOAD_DIR), путь берём из БД по id — пользовательский ввод в путь не попадает.
 require __DIR__.'/lib.php';
-crm_require();
+$me = crm_require();
 
 $id = (int)($_GET['id'] ?? 0);
 $s = crm_db()->prepare("SELECT * FROM attachments WHERE id=?"); $s->execute([$id]); $a = $s->fetch();
 if(!$a){ http_response_code(404); exit('Вложение не найдено'); }
+// оператор может открывать вложения только своих лидов (в них могут быть ПДн клиента)
+if($me['role']!=='owner'){
+  $lo=crm_db()->prepare("SELECT assignee_id FROM leads WHERE id=?"); $lo->execute([(int)$a['lead_id']]);
+  if((int)$lo->fetchColumn()!==(int)$me['id']){ http_response_code(403); exit('Нет доступа'); }
+}
 
 $full = CRM_UPLOAD_DIR.'/'.$a['path'];
 $real = realpath($full);

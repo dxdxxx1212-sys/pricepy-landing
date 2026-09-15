@@ -10,16 +10,22 @@ $fCall = $_GET['call'] ?? '';
 $fSource = $_GET['source'] ?? '';
 $fDue = isset($_GET['due']);
 $q = trim($_GET['q'] ?? '');
+$isOwner = ($me['role']==='owner');
 $fMine = isset($_GET['mine']);
 $fUnassigned = isset($_GET['unassigned']);
+$fAssignee = $isOwner ? trim($_GET['assignee'] ?? '') : ''; // '', 'none' или id оператора — только для владельца
 $tomorrow = date('c', strtotime('tomorrow')); // граница «на сегодня» = всё, что до начала завтра
-$where=[]; $args=[];
+$scope = crm_lead_scope_sql($me); // оператор видит только свои лиды (серверное ограничение, не только UI)
+$opList = $isOwner ? $db->query("SELECT id,name FROM users WHERE role='operator' ORDER BY name")->fetchAll() : [];
+$where=[$scope]; $args=[];
 if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
 if($fCall!==''){ $where[]="(','||call_status||',') LIKE ?"; $args[]='%,'.$fCall.',%'; } // членство в наборе каналов
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
 if($fDue){ $where[]="next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"; $args[]=$tomorrow; }
 if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
 if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
+if($fAssignee==='none'){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
+elseif($fAssignee!==''){ $where[]='assignee_id=?'; $args[]=(int)$fAssignee; }
 if($q!==''){
   $qd=preg_replace('/\D+/','',$q); // цифры номера — поиск по телефону в любом формате
   // убираем ведущий код страны (8/7 перед мобильной 9) — чтобы номер находился в любом формате (phone_norm = 7XXXXXXXXXX)
@@ -33,7 +39,7 @@ $per=100; $pages=max(1,(int)ceil($total/$per)); $page=max(1,min($pages,(int)($_G
 $order = $fDue ? 'next_action_at ASC' : 'created_at DESC, id DESC'; // по дате заявки (не по порядку добавления — иначе импорт «прыгает»)
 $st=$db->prepare("SELECT * FROM leads $wsql ORDER BY $order LIMIT $per OFFSET $off");
 $st->execute($args); $rows=$st->fetchAll();
-$maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads")->fetch()['m']; // для сигнала о новом лиде
+$maxId=(int)$db->query("SELECT COALESCE(MAX(id),0) m FROM leads WHERE $scope")->fetch()['m']; // для сигнала о новом лиде (в рамках видимости)
 
 // Для страницы: последний комментарий и последнее вложение по каждому лиду (одним запросом, без N+1).
 $lastCmt=[]; $lastAtt=[];
@@ -44,16 +50,16 @@ if($pageIds){ $in=implode(',',$pageIds);
 }
 
 // KPI — минимум для работы
-$k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new'")->fetch()['c'];
-$kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
-$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE (','||call_status||',') LIKE '%,noanswer,%'")->fetch()['c'];
-$k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won'")->fetch()['c'];
-$k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads")->fetch()['c'];
-$sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
+$k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new' AND ($scope)")->fetch()['c'];
+$kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost') AND ($scope)"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
+$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE (','||call_status||',') LIKE '%,noanswer,%' AND ($scope)")->fetch()['c'];
+$k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won' AND ($scope)")->fetch()['c'];
+$k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE $scope")->fetch()['c'];
+$sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' AND ($scope) ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
 
 // карта дублей по нормализованному телефону: phone_norm => [первый id, сколько всего]
 $dups=[];
-foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE phone_norm<>'' GROUP BY phone_norm HAVING c>1") as $d){
+foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE phone_norm<>'' AND ($scope) GROUP BY phone_norm HAVING c>1") as $d){
   $dups[$d['phone_norm']]=['mn'=>(int)$d['mn'],'c'=>(int)$d['c']];
 }
 
@@ -69,15 +75,16 @@ crm_head('Лиды'); ?>
 
 <?php $chipOn='background:var(--acc);color:#12181f;font-weight:700'; ?>
 <div class="filters" style="margin-bottom:8px">
-  <a class="pill" href="index.php" style="<?=(!$fMine&&!$fUnassigned)?$chipOn:''?>">Все лиды</a>
-  <a class="pill" href="?mine=1" style="<?=$fMine?$chipOn:''?>">Мои лиды</a>
-  <a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые</a>
+  <a class="pill" href="index.php" style="<?=(!$fMine&&!$fUnassigned&&$fAssignee==='')?$chipOn:''?>"><?=$isOwner?'Все лиды':'Мои лиды'?></a>
+  <?php if($isOwner){ ?><a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые<?=' · '.(int)$db->query("SELECT COUNT(*) c FROM leads WHERE (assignee_id IS NULL OR assignee_id=0)")->fetch()['c']?></a><?php } ?>
   <a class="pill" href="?due=1" style="<?=$fDue?$chipOn:''?>">На сегодня<?=$k_due?' · '.$k_due:''?></a>
 </div>
 
 <form class="filters" method="get">
   <?php if($fMine){ ?><input type="hidden" name="mine" value="1"><?php } ?>
   <?php if($fUnassigned){ ?><input type="hidden" name="unassigned" value="1"><?php } ?>
+  <?php if($isOwner){ ?><select name="assignee" onchange="this.form.submit()"><option value="">Все менеджеры</option><option value="none" <?=$fAssignee==='none'?'selected':''?>>— не распределён</option>
+    <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>" <?=$fAssignee===(string)$op['id']?'selected':''?>><?=h($op['name'])?></option><?php } ?></select><?php } ?>
   <select name="status" onchange="this.form.submit()"><option value="">Все статусы</option>
     <?php foreach($ST as $k=>$v){ ?><option value="<?=$k?>" <?=$fStatus===$k?'selected':''?>><?=h($v)?></option><?php } ?></select>
   <select name="call" onchange="this.form.submit()"><option value="">Любой канал</option>
@@ -86,7 +93,7 @@ crm_head('Лиды'); ?>
     <?php foreach($sources as $s){ ?><option value="<?=h($s)?>" <?=$fSource===$s?'selected':''?>><?=h($s)?></option><?php } ?></select>
   <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон (любой формат)" style="min-width:220px">
   <button class="btn btn-sec">Найти</button>
-  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
+  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
   <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
@@ -109,7 +116,7 @@ crm_head('Лиды'); ?>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ $want=crm_channel_norm($r['channel']); ?><a class="qa<?=$want==='phone'?' want-ch':''?>" href="tel:<?=$e164?>" title="Позвонить"><?=crm_icon('phone')?></a><a class="qa<?=$want==='whatsapp'?' want-ch':''?>" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa<?=$want==='telegram'?' want-ch':''?>" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:#6b7580;font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fDue)?'По этому фильтру лидов нет. ':'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.'?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>
 </div>
 

@@ -11,8 +11,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   if($act==='comment_edit' || $act==='comment_delete'){ crm_process_comment_ops($me,$act); } // правка/удаление — только владелец (проверка внутри)
 }
 
-$Lr=$db->prepare("SELECT id,name FROM leads WHERE id=?"); $Lr->execute([$id]); $L=$Lr->fetch();
+$Lr=$db->prepare("SELECT id,name,assignee_id FROM leads WHERE id=?"); $Lr->execute([$id]); $L=$Lr->fetch();
 if(!$L){ http_response_code(404); header('Content-Type: text/html; charset=UTF-8'); exit('Лид не найден'); }
+// оператор видит комментарии/фото только своих лидов
+if(!crm_can_see_lead($me,$L)){ http_response_code(403); header('Content-Type: text/html; charset=UTF-8'); exit('Нет доступа'); }
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC");
 $comments->execute([$id]); $comments=$comments->fetchAll();

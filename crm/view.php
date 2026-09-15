@@ -6,6 +6,8 @@ $ST = crm_statuses(); $users = crm_users_map();
 $id = (int)($_GET['id'] ?? 0);
 $s=$db->prepare("SELECT * FROM leads WHERE id=?"); $s->execute([$id]); $L=$s->fetch();
 if(!$L){ crm_head('Лид'); echo '<div class="card">Лид не найден. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
+// оператор может открывать только назначенные ему лиды (иначе — 403, ещё до обработки POST)
+if(!crm_can_see_lead($me,$L)){ http_response_code(403); crm_head('Лид'); echo '<div class="card">Этот лид назначен другому менеджеру. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
 $msg='';
 
 if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
@@ -25,7 +27,7 @@ if(isset($_GET['ok'])) $msg='Сохранено';
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
-$related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,status FROM leads WHERE phone_norm=? AND id<>? ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); }
+$related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,status FROM leads WHERE phone_norm=? AND id<>? AND (".crm_lead_scope_sql($me).") ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); } // «повтор» — только среди видимых пользователю лидов
 $dig=crm_phone_digits($L['contact']);
 $e164=crm_phone_e164($L['contact']); $digN=ltrim($e164,'+'); // +7XXXXXXXXXX и цифры для ссылок
 $ch=$L['channel'];
@@ -120,6 +122,7 @@ if($reqs){ ?>
   </form>
 
   <div class="grouplbl" style="margin-top:16px">Ответственный<?=$L['assignee_id']?'':' — не назначен'?>:</div>
+  <?php if($me['role']==='owner'){ ?>
   <form method="post" class="statusrow">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="assign">
     <?php foreach($activeUsers as $au){ $active=(int)$L['assignee_id']===(int)$au['id']; ?>
@@ -127,6 +130,7 @@ if($reqs){ ?>
     <?php } ?>
     <?php if($L['assignee_id']){ ?><button name="uid" value="" class="clr" title="снять ответственного">× снять</button><?php } ?>
   </form>
+  <?php }else{ $an=(int)$L['assignee_id']; ?><div style="font-size:15px"><?=$an&&isset($users[$an])?h($users[$an]):'—'?></div><?php } ?>
 </div>
 
 <!-- НАПОМИНАНИЕ (следующий контакт) — чтобы лид не потерялся -->
