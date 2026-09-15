@@ -405,8 +405,6 @@ tr:hover td{background:#1b232c}
 .cmt-col .lc{cursor:pointer;margin-top:0}
 .cmt-col .lc:hover .lc-txt{color:#c9d3dd}
 .cmt-col .lc-txt{max-width:200px}
-.lc-empty{display:inline-block;cursor:pointer;color:#6b7580;font-size:12px;border:1px dashed var(--line);border-radius:6px;padding:2px 8px}
-.lc-empty:hover{color:#9cc4ff;border-color:#3a4553}
 /* карточка комментария: инструменты владельца, форма правки, сетка фото */
 .att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
@@ -427,18 +425,6 @@ tr:hover td{background:#1b232c}
 .hist-head{font-size:16px;margin:0 0 6px;padding-right:26px}
 .hist-sec{margin-top:16px}
 .hist-lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
-/* быстрые действия в поп-апе */
-.hist-quick{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
-.hq-contacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.hq-lbl{color:var(--muted);font-size:12px;margin:10px 0 6px}
-.hq-form{display:flex;flex-wrap:wrap;gap:7px;margin:0}
-.hist-quick .spill{font-family:inherit;font-size:13px;padding:8px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted);text-decoration:none}
-.hist-quick a.spill{color:#9cc4ff}
-.hist-quick .spill:hover{filter:brightness(1.25)}
-.hist-quick .spill.on{background:var(--acc);color:#12181f;font-weight:800;border-color:var(--acc)}
-.hist-quick .hq-clr{color:#e0796b;border-style:dashed}
-.hq-comment{margin-top:12px;gap:8px}
-.hq-comment textarea{flex:1 1 100%;background:#0f151c;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px;font-family:inherit;font-size:14px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
 #crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
