@@ -461,6 +461,49 @@ function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM us
 
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
+// Возраст лида словами: в списке важно «насколько протух», а не точная минута.
+// Точная дата остаётся в title и в карточке.
+function crm_ago($iso){
+  $t=strtotime((string)$iso); if(!$t) return '—';
+  $d=time()-$t; if($d<0) $d=0;
+  if($d<3600)  return 'только что';
+  if($d<86400){ $hh=(int)floor($d/3600); return $hh.' ч назад'; }
+  $days=(int)floor($d/86400);
+  if($days===1) return 'вчера';
+  if($days<7)   return $days.' дн назад';
+  if($days<31){ $w=(int)floor($days/7); return $w.' нед назад'; }
+  if($days<365){ $m=(int)floor($days/30); return $m.' мес назад'; }
+  return date('d.m.Y',$t);
+}
+// Кнопки связи для строки списка. Канал, который клиент выбрал сам (поле channel),
+// идёт ПЕРВЫМ и залит цветом канала — он же заменяет прежнюю плашку «хочет …».
+// Канал, которым уже связывались (call_status), помечается галочкой.
+// МАКС не имеет ссылки на чат — копируем номер и открываем max.ru (как в карточке).
+function crm_contact_buttons($lead){
+  $dig=crm_phone_digits($lead['contact']??''); if($dig==='') return '<span class="muted">—</span>';
+  $e164=crm_phone_e164($lead['contact']??''); $d=ltrim($e164,'+');
+  $want=crm_channel_norm($lead['channel']??'');
+  $used=crm_contact_list($lead['call_status']??'');
+  $cj=h(json_encode($e164, JSON_UNESCAPED_UNICODE));
+  $B=[
+    'phone'   =>['k'=>'called','t'=>'Позвонить',                        'lbl'=>crm_icon('phone'),'href'=>'tel:'.$e164,             'blank'=>false,'js'=>''],
+    'whatsapp'=>['k'=>'wa',    't'=>'WhatsApp',                         'lbl'=>'WA',             'href'=>'https://wa.me/'.$d,      'blank'=>true, 'js'=>''],
+    'telegram'=>['k'=>'tg',    't'=>'Telegram',                         'lbl'=>'TG',             'href'=>'tg://resolve?phone='.$d, 'blank'=>false,'js'=>''],
+    'max'     =>['k'=>'max',   't'=>'МАКС — скопирует номер и откроет max.ru','lbl'=>'МАКС',     'href'=>'https://max.ru/',        'blank'=>true, 'js'=>'crmCopy('.$cj.');'],
+  ];
+  $order=array_keys($B);
+  if($want!=='' && isset($B[$want])){ array_unshift($order,$want); $order=array_values(array_unique($order)); }
+  $out='';
+  foreach($order as $ch){
+    $b=$B[$ch]; $prim=($ch===$want); $done=in_array($b['k'],$used,true);
+    $cls='qa'.($prim?' prim':'').($done?' done':'');
+    $st=$prim?(' style="background:'.crm_channel_color($ch).';border-color:'.crm_channel_color($ch).';color:#12181f"'):'';
+    $tt=$b['t'].($prim?' · клиент выбрал этот способ':'').($done?' · уже связывались':'');
+    $out.='<a class="'.$cls.'"'.$st.' href="'.h($b['href']).'"'.($b['blank']?' target="_blank" rel="noopener"':'')
+        .' onclick="'.$b['js'].'" title="'.h($tt).'">'.($done?crm_icon('check','icn ok'):'').$b['lbl'].'</a>';
+  }
+  return $out;
+}
 function crm_phone_digits($c){ return preg_replace('/\D+/','',$c); }
 // Канонический ключ телефона для дедупа/поиска/связки: РФ-номер → 7XXXXXXXXXX (8→7, 10-значный 9XX→7 9XX).
 // Ник/не-телефон — как цифры (обычно ''). Совпадает по логике с crm_phone_e164 (только без «+»).
@@ -523,40 +566,46 @@ tr:hover td{background:#1b232c}
 /* нейтральная плашка — каналы, «хочет», менеджер, типы событий */
 .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);line-height:1.5}
 .chip.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:var(--warn-line)}
-.ch-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 .mgr .icn{width:12px;height:12px;color:var(--muted)}
 .qa .icn{width:15px;height:15px}
+.cbcol{width:34px;text-align:center;vertical-align:middle}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);font-size:12px;margin:1px}
 .muted{color:var(--muted)}.right{text-align:right}
 .grid2{display:grid;grid-template-columns:1fr 340px;gap:16px}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
-.kpi .k{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
-.kpi .k b{font-size:24px;display:block}.kpi .k span{color:var(--muted);font-size:12px}
 .dl{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
 .cmt{border-top:1px solid var(--line);padding:10px 0}.cmt .m{color:var(--muted);font-size:12px}
-.req{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qa{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:28px;padding:0 8px;border:1px solid var(--chip-line);border-radius:8px;font-size:12px;font-weight:600;color:var(--chip-ink);margin-right:4px;vertical-align:middle}
+/* «Запрос и последнее»: что нужно клиенту + последний коммент. Обрезаем каждую строку отдельно. */
+.req{max-width:360px}
+.req>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qa{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:30px;height:28px;padding:0 8px;border:1px solid var(--chip-line);border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);margin-right:4px;vertical-align:middle}
 .qa:hover{background:#1b232c;text-decoration:none;color:#fff}
-.qa.want-ch{border-color:var(--warn-line);color:var(--warn-ink)}   /* канал, который клиент выбрал */
-.want{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line)}
+/* канал, который клиент выбрал сам — залит цветом канала, стоит первым (заменил плашку «хочет …») */
+.qa.prim{font-weight:800;padding:0 11px}
+.qa.prim:hover{filter:brightness(1.08);color:#12181f}
+/* канал, которым уже связывались */
+.qa.done{border-color:#2f6b45;color:#7fd3a1}
+.qa .icn.ok{width:12px;height:12px;stroke-width:2.4}
+/* ряд очередей вместо KPI-плиток: одна навигация вместо трёх параллельных */
+.segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-size:14px;font-weight:600}
+.seg:hover{text-decoration:none;color:var(--ink);border-color:#37424f}
+.seg b{font-size:15px;color:var(--muted2);font-weight:800}
+.seg.on{background:var(--acc);border-color:var(--acc);color:#12181f}
+.seg.on b{color:#12181f}
+.seg.alert{border-color:var(--alert)}.seg.alert b{color:var(--alert)}
+.seg.alert.on{background:var(--alert);border-color:var(--alert);color:#12181f}.seg.alert.on b{color:#12181f}
 .lead-name{color:#fff;font-weight:700}.lead-name:hover{color:#fff;text-decoration:none}
-.newtab{display:inline-block;margin-left:5px;color:#5a6777;font-size:13px;line-height:1;vertical-align:middle}
-.newtab:hover{color:#9cc4ff;text-decoration:none}
 .cphone{color:var(--ph);font-weight:500;cursor:pointer;border-bottom:1px dashed #3a4653}
 .cphone:hover{color:#fff}
 .mgr{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);border-radius:6px;padding:1px 8px}
 .mgr-none{display:inline-block;margin-top:6px;color:var(--muted);padding:1px 8px;border:1px dashed var(--line);border-radius:6px;font-size:12px}
-/* строка последнего комментария + превью вложения в списке лидов */
-.lc{display:flex;align-items:center;gap:8px;margin-top:8px}
-.lc-thumb{flex:none;width:40px;height:40px;border-radius:7px;overflow:hidden;border:1px solid var(--line);display:block;background:#0f151c}
-.lc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.lc-txt{color:var(--muted);font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:270px}
-.lc-more{color:#7f8a96;font-size:11px}
-/* колонка «Коммент» в списке: клик открывает поп-ап */
-.cmt-col .lc{cursor:pointer;margin-top:0}
-.cmt-col .lc:hover .lc-txt{color:#c9d3dd}
-.cmt-col .lc-txt{max-width:200px}
+/* последний комментарий в списке: клик открывает поп-ап с комментариями и фото */
+.lc{display:flex;align-items:center;gap:7px;margin-top:5px;cursor:pointer;min-width:0}
+.lc:hover .lc-txt{color:#c9d3dd}
+.lc-txt{color:var(--muted2);font-size:12.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lc-att{flex:none;display:inline-flex;align-items:center;gap:3px;color:var(--muted);font-size:11.5px;font-weight:700}
+.lc-att .icn{width:13px;height:13px}
 /* карточка комментария: инструменты владельца, форма правки, сетка фото */
 .att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .att-th{display:block;width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0f151c}
@@ -598,17 +647,27 @@ tr:hover td{background:#1b232c}
   .filters input[name=q]{flex:1 1 100%;min-width:0}
   .filters .btn{flex:1 1 100%}
   table.leads thead{display:none}
-  table.leads,table.leads tbody,table.leads tr,table.leads td{display:block;width:100%}
-  table.leads tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:8px 12px;background:var(--panel)}
+  table.leads,table.leads tbody,table.leads td{display:block;width:100%}
+  table.leads tr{display:flex;flex-direction:column;width:100%;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:8px 12px;background:var(--panel)}
   table.leads tr:hover td{background:transparent}
   table.leads td{border:0;padding:5px 0}
-  .req{max-width:none;white-space:normal}
-  .lc-txt{max-width:none}
+  table.leads td.qacol{order:1;padding-top:9px}   /* кнопки связи — последними, под большой палец */
+  /* без шапки таблицы подписей нет: запрос и коммент переносим, а не режем многоточием */
+  .req{max-width:none}
+  .req>div{white-space:normal;overflow:visible}
+  .lc-txt{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   /* крупнее для пальца: кнопки связи ≥44px по высоте (переопределяем фикс. height:28px) */
-  .qa{min-height:44px;height:auto;padding:0 14px;font-size:14px;margin-right:7px}
+  .qa{min-height:44px;height:auto;padding:0 14px;font-size:14px;margin:0 7px 7px 0}
   .qa .icn{width:18px;height:18px}
-  .newtab{padding:6px 11px;font-size:15px;line-height:22px}
+  .qa .icn.ok{width:14px;height:14px}
   .cphone{padding:8px 0;display:inline-block}
+  /* очереди — одной прокручиваемой лентой, чтобы не занимать три ряда */
+  .segs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -12px 12px;padding:0 12px 4px;scrollbar-width:none}
+  .segs::-webkit-scrollbar{display:none}
+  .seg{flex:none}
+  /* массовую выдачу владелец делает только с компьютера — на телефоне не занимаем место */
+  .cbcol{display:none!important}
+  #bulkbar{display:none!important}
 }
 </style></head><body>
 <div class="top"><span class="brand">Восток<span>Прицеп</span> · CRM</span>
