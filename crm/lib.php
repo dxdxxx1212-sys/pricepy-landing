@@ -36,6 +36,12 @@ function crm_icon($n,$cls='icn'){
     'clock'=>'<circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.4 1.5"/>',
     'cal'=>'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',
     'ext'=>'<path d="M6 3h7v7M13 3l-8 8"/>',
+    'copy'=>'<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H3.5A1.5 1.5 0 0 0 2 4v5.5A1.5 1.5 0 0 0 3.5 11H5"/>',
+    'attach'=>'<path d="M12.5 7.2 7 12.7a3 3 0 0 1-4.2-4.2l5.7-5.7a2 2 0 0 1 2.8 2.8l-5.6 5.6a1 1 0 0 1-1.4-1.4l5-5"/>',
+    'warn'=>'<path d="M8 2.6 14.6 13.4H1.4z"/><path d="M8 6.6v3.1M8 11.5v.1"/>',
+    'star'=>'<path d="M8 2.2l1.7 3.6 3.9.5-2.9 2.7.7 3.9L8 11.1 4.6 12.9l.7-3.9L2.4 6.3l3.9-.5z"/>',
+    'check'=>'<path d="M3 8.4l3.1 3.1L13 4.8"/>',
+    'bell'=>'<path d="M5 7a3 3 0 0 1 6 0c0 3 1.3 3.8 1.6 4.5H3.4C3.7 10.8 5 10 5 7z"/><path d="M6.6 13a1.5 1.5 0 0 0 2.8 0"/>',
   ];
   return '<svg class="'.$cls.'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'.($p[$n]??'').'</svg>';
 }
@@ -589,10 +595,11 @@ tr:hover td{background:#1b232c}
   table.leads td{border:0;padding:5px 0}
   .req{max-width:none;white-space:normal}
   .lc-txt{max-width:none}
-  /* крупнее для пальца: быстрые действия и «открыть в новой вкладке» */
-  .qa{padding:9px 13px;font-size:14px;margin-right:7px}
-  .newtab{padding:3px 11px;font-size:15px;line-height:22px}
-  .cphone{padding:2px 0;display:inline-block}
+  /* крупнее для пальца: кнопки связи ≥44px по высоте (переопределяем фикс. height:28px) */
+  .qa{min-height:44px;height:auto;padding:0 14px;font-size:14px;margin-right:7px}
+  .qa .icn{width:18px;height:18px}
+  .newtab{padding:6px 11px;font-size:15px;line-height:22px}
+  .cphone{padding:8px 0;display:inline-block}
 }
 </style></head><body>
 <div class="top"><span class="brand">Восток<span>Прицеп</span> · CRM</span>

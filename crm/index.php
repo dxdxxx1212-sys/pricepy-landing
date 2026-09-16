@@ -108,8 +108,8 @@ crm_head('Лиды'); ?>
 <?php if($isOwner){ ?>
 <form id="bulkForm" method="post">
 <input type="hidden" name="csrf" value="<?=h(crm_csrf())?>"><input type="hidden" name="act" value="bulk_assign">
-<div id="bulkbar" style="display:none;position:sticky;top:56px;z-index:9;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:10px;box-shadow:0 4px 16px rgba(0,0,0,.35)">
-  <b>Выбрано: <span id="bulkn">0</span></b><span class="muted">передать →</span>
+<div id="bulkbar" style="display:none;position:sticky;top:56px;z-index:9;align-items:center;gap:12px;flex-wrap:wrap;background:#1b232c;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.28)">
+  <b style="font-size:16px">Выбрано <span id="bulkn" style="color:var(--acc)">0</span></b><span class="muted">передать →</span>
   <select name="uid" id="bulkuid" required style="min-width:170px"><option value="">— выберите оператора —</option>
     <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>"><?=h($op['name'])?></option><?php } ?>
     <option value="unassign">— снять назначение —</option>
@@ -136,7 +136,7 @@ crm_head('Лиды'); ?>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
   <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и фото"><?php if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ $want=crm_channel_norm($r['channel']); ?><a class="qa<?=$want==='phone'?' want-ch':''?>" href="tel:<?=$e164?>" title="Позвонить"><?=crm_icon('phone')?></a><a class="qa<?=$want==='whatsapp'?' want-ch':''?>" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa<?=$want==='telegram'?' want-ch':''?>" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
-  <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:#6b7580;font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
+  <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:var(--muted);font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
 <?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?8:7?>" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>
@@ -174,7 +174,7 @@ document.getElementById('bulkForm').addEventListener('submit',function(e){
 </div>
 <?php } ?>
 
-<div id="newlead" onclick="location.reload()" style="display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;background:var(--acc);color:#12181f;font-weight:700;padding:10px 16px;border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer">🔔 <span id="newleadn">0</span> новых — обновить</div>
+<div id="newlead" onclick="location.reload()" style="display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;background:var(--acc);color:#12181f;font-weight:700;padding:10px 16px;border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer"><?=crm_icon('bell')?> <span id="newleadn">0</span> новых — обновить</div>
 <script>
 (function(){ var base=<?=$maxId?>, title=document.title;
   setInterval(function(){

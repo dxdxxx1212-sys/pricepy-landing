@@ -72,7 +72,7 @@ crm_head('Лид #'.$id); ?>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
 <?php if($msg){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($msg)?></div><?php } ?>
-<?php if($related){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:13px">⚠ Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
+<?php if($related){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:13px"><?=crm_icon('warn')?> Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
 
 <!-- КОНТАКТ -->
 <div class="card">
@@ -85,11 +85,11 @@ crm_head('Лид #'.$id); ?>
     $cj = h(json_encode($e164 ?: $L['contact'], JSON_UNESCAPED_UNICODE)); // копируем номер в +7XXXXXXXXXX (для МАКС), ник — как есть
   ?>
   <div class="statusrow" style="margin-top:12px">
-    <?php if($dig){ ?><a class="spill" href="tel:<?=$e164?>">📞 Позвонить</a><?php } ?>
+    <?php if($dig){ ?><a class="spill" href="tel:<?=$e164?>"><?=crm_icon('phone')?> Позвонить</a><?php } ?>
     <?php if($waUrl){ ?><a class="spill" href="<?=$waUrl?>" target="_blank" rel="noopener"<?=$hl('whatsapp')?>>WhatsApp</a><?php } ?>
     <?php if($tgUrl){ ?><a class="spill" href="<?=h($tgUrl)?>" target="_blank" rel="noopener"<?=$hl('telegram')?>>Telegram</a><?php } ?>
     <a class="spill" href="https://max.ru/" target="_blank" rel="noopener" onclick="crmCopy(<?=$cj?>)"<?=$hl('max')?> title="Откроет МАКС и скопирует номер — вставьте в поиск">МАКС</a>
-    <button type="button" class="spill" onclick="crmCopy(<?=$cj?>);this.textContent='Скопировано ✓'">⧉ Копировать номер</button>
+    <button type="button" class="spill" onclick="crmCopy(<?=$cj?>);this.textContent='Скопировано ✓'"><?=crm_icon('copy')?> Копировать номер</button>
   </div>
 </div>
 
@@ -110,7 +110,7 @@ if($reqs){ ?>
   <form method="post" class="statusrow" style="margin-bottom:16px">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="contact">
     <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=in_array($k,$ccList,true); $col=crm_contact_color($k); ?>
-      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?> title="<?=$active?'нажми, чтобы убрать':'нажми, чтобы отметить'?>"><?=$active?'✓ ':''?><?=h($v['l'])?></button>
+      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?> title="<?=$active?'нажми, чтобы убрать':'нажми, чтобы отметить'?>"><?=$active?crm_icon('check').' ':''?><?=h($v['l'])?></button>
     <?php } if($ccList){ ?><button name="contact" value="" class="clr" title="сбросить все каналы">× сбросить всё</button><?php } ?>
   </form>
   <div class="grouplbl">Статус сделки — нажми:</div>
@@ -126,7 +126,7 @@ if($reqs){ ?>
   <form method="post" class="statusrow">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="assign">
     <?php foreach($activeUsers as $au){ $active=(int)$L['assignee_id']===(int)$au['id']; ?>
-      <button name="uid" value="<?=$au['id']?>" class="spill"<?=$active?' style="background:#8b5cf6;color:#12181f;font-weight:800;border-color:#8b5cf6"':''?>><?=h($au['name'])?><?=$au['role']==='owner'?' ★':''?></button>
+      <button name="uid" value="<?=$au['id']?>" class="spill"<?=$active?' style="background:#8b5cf6;color:#12181f;font-weight:800;border-color:#8b5cf6"':''?>><?=h($au['name'])?><?=$au['role']==='owner'?' '.crm_icon('star'):''?></button>
     <?php } ?>
     <?php if($L['assignee_id']){ ?><button name="uid" value="" class="clr" title="снять ответственного">× снять</button><?php } ?>
   </form>
@@ -137,7 +137,7 @@ if($reqs){ ?>
 <?php $na=$L['next_action_at']; $naTs=$na?strtotime($na):0; $overdue=$naTs && $naTs<time(); ?>
 <div class="card">
   <div class="grouplbl">Следующий контакт:</div>
-  <?php if($na){ ?><div class="remind-now <?=$overdue?'remind-over':'remind-set'?>"><?=$overdue?'⏰ Просрочено: ':'📅 Напомнить: '?><?=crm_dt($na)?><?=$overdue?' — пора связаться':''?></div><?php } ?>
+  <?php if($na){ ?><div class="remind-now <?=$overdue?'remind-over':'remind-set'?>"><?=$overdue?crm_icon('clock').' Просрочено: ':crm_icon('cal').' Напомнить: '?><?=crm_dt($na)?><?=$overdue?' — пора связаться':''?></div><?php } ?>
   <form method="post" class="statusrow">
     <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="remind">
     <button name="when" value="eve" class="spill">Сегодня вечером</button>
@@ -158,7 +158,7 @@ if($reqs){ ?>
     <input type="file" name="att[]" id="cmtFiles" accept="image/*" multiple hidden>
     <div id="cmtPrev" class="att-prev" hidden></div>
     <div class="att-bar">
-      <button type="button" class="att-add" id="cmtAdd">📎 Прикрепить фото / скрин</button>
+      <button type="button" class="att-add" id="cmtAdd"><?=crm_icon('attach')?> Прикрепить фото / скрин</button>
       <span class="att-hint">перетащите сюда или вставьте скрин Ctrl+V</span>
       <span style="flex:1"></span>
       <button class="btn btn-b">Добавить</button>
