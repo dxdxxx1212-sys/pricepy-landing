@@ -44,6 +44,20 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       if($tg!=='' && !preg_match('/^-?\d{5,20}$/',$tg)){ $err='chat_id — это число (у групп с «−»), 5–20 цифр. Узнать через @userinfobot.'; }
       else{ $db->prepare("UPDATE users SET tg_chat_id=? WHERE id=?")->execute([$tg,$uid]); $msg=$tg!==''?'Telegram привязан к оператору':'Telegram отвязан'; }
     }
+  } elseif($act==='delete'){
+    $uid=(int)$_POST['uid'];
+    if($uid===$me['id']){ $err='Нельзя удалить самого себя'; }
+    else{
+      $t=$db->prepare("SELECT name,role FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
+      $owners=(int)$db->query("SELECT COUNT(*) c FROM users WHERE role='owner'")->fetch()['c'];
+      if(!$t){ $err='Пользователь не найден'; }
+      elseif($t['role']==='owner' && $owners<=1){ $err='Нельзя удалить последнего владельца'; }
+      else{
+        $db->prepare("UPDATE leads SET assignee_id=NULL WHERE assignee_id=?")->execute([$uid]); // его лиды — в «Нераспределённые»
+        $db->prepare("DELETE FROM users WHERE id=?")->execute([$uid]);
+        $msg='Пользователь удалён, его лиды сняты с назначения (в «Нераспределённые»)';
+      }
+    }
   }
 }
 $list=$db->query("SELECT * FROM users ORDER BY id")->fetchAll();
@@ -74,7 +88,8 @@ crm_head('Операторы'); ?>
           <input type="text" name="tg" value="<?=h($u['tg_chat_id']??'')?>" placeholder="chat_id" style="width:118px;padding:6px 8px" inputmode="numeric" title="Telegram chat_id оператора — узнать через @userinfobot">
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Уведомления идут в общий канал владельца">—</span><?php } ?></td>
-      <td class="right"><?php if($u['id']!==$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form><?php } ?></td>
+      <td class="right" style="white-space:nowrap"><?php if($u['id']!==$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
+        <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm('Удалить <?=h($u['name'])?> навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="delete"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
     </tr><?php } ?></tbody></table>
   </div>
   <div class="card">

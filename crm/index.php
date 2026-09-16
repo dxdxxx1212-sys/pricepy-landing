@@ -108,7 +108,7 @@ crm_head('Лиды'); ?>
 <?php if($isOwner){ ?>
 <form id="bulkForm" method="post">
 <input type="hidden" name="csrf" value="<?=h(crm_csrf())?>"><input type="hidden" name="act" value="bulk_assign">
-<div id="bulkbar" hidden style="position:sticky;top:56px;z-index:9;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:10px">
+<div id="bulkbar" style="display:none;position:sticky;top:56px;z-index:9;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:10px;box-shadow:0 4px 16px rgba(0,0,0,.35)">
   <b>Выбрано: <span id="bulkn">0</span></b><span class="muted">передать →</span>
   <select name="uid" id="bulkuid" required style="min-width:170px"><option value="">— выберите оператора —</option>
     <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>"><?=h($op['name'])?></option><?php } ?>
@@ -116,6 +116,7 @@ crm_head('Лиды'); ?>
   </select>
   <button class="btn" type="submit">Передать</button>
   <button type="button" class="btn btn-sec" onclick="bulkClear()">Отмена</button>
+  <span class="muted" style="font-size:12px">Shift+клик — выбрать диапазон</span>
 </div>
 <?php } ?>
 <div class="card" style="padding:0;overflow-x:auto">
@@ -124,7 +125,7 @@ crm_head('Лиды'); ?>
 <tbody>
 <?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $digN=ltrim($e164,'+'); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
-  <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkUpd()"></td><?php } ?>
+  <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkClick(this,event)"></td><?php } ?>
   <td>
     <a href="view.php?id=<?=$r['id']?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$r['id']?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="chip warn" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
     <br><?php if($dig){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
@@ -142,13 +143,19 @@ crm_head('Лиды'); ?>
 </div>
 <?php if($isOwner){ ?></form>
 <script>
+var bulkLast=-1;
 function bulkUpd(){ var cbs=document.querySelectorAll('.bulkcb'), sel=0;
   cbs.forEach(function(c){ if(c.checked) sel++; });
   document.getElementById('bulkn').textContent=sel;
-  document.getElementById('bulkbar').hidden = sel===0;
+  document.getElementById('bulkbar').style.display = sel===0 ? 'none' : 'flex';
   var all=document.getElementById('bulkall'); if(all){ all.checked = sel>0 && sel===cbs.length; all.indeterminate = sel>0 && sel<cbs.length; } }
-function bulkAll(box){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=box.checked; }); bulkUpd(); }
-function bulkClear(){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=false; }); var a=document.getElementById('bulkall'); if(a){a.checked=false;a.indeterminate=false;} bulkUpd(); }
+// клик по галочке: с Shift — выделить весь диапазон от прошлой отмеченной до текущей
+function bulkClick(cb,e){ var cbs=Array.prototype.slice.call(document.querySelectorAll('.bulkcb')), idx=cbs.indexOf(cb);
+  if(e && e.shiftKey && bulkLast>-1 && idx>-1){ var a=Math.min(bulkLast,idx), b=Math.max(bulkLast,idx);
+    for(var i=a;i<=b;i++){ cbs[i].checked=cb.checked; } }
+  bulkLast=idx; bulkUpd(); }
+function bulkAll(box){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=box.checked; }); bulkLast=-1; bulkUpd(); }
+function bulkClear(){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=false; }); var a=document.getElementById('bulkall'); if(a){a.checked=false;a.indeterminate=false;} bulkLast=-1; bulkUpd(); }
 document.getElementById('bulkForm').addEventListener('submit',function(e){
   var uid=document.getElementById('bulkuid');
   var sel=document.querySelectorAll('.bulkcb:checked').length;
