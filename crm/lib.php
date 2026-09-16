@@ -489,9 +489,10 @@ function crm_phone_fmt($c){
 
 // ---- Вёрстка ----
 function crm_head($title){ $u=crm_user();
-  // Заголовки безопасности панели. headers_sent() — страховка: если что-то уже вывелось, просто пропускаем.
-  // no-referrer важен: в URL карточки есть id лида, а из неё уходят ссылки на wa.me / t.me / max.ru.
-  if(!headers_sent()){ header('X-Frame-Options: SAMEORIGIN'); header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: no-referrer'); }
+  // X-Frame-Options (DENY) и nosniff уже ставит nginx на весь поддомен — здесь не дублируем,
+  // иначе в ответе два разных X-Frame-Options. Добавляем только то, чего у nginx нет:
+  // no-referrer — в URL карточки есть id лида, а из неё уходят ссылки на wa.me / t.me / max.ru.
+  if(!headers_sent()){ header('Referrer-Policy: no-referrer'); }
   ?><!DOCTYPE html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title><?=h($title)?> · CRM Восток Прицеп</title>
