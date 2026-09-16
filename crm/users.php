@@ -13,7 +13,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       catch(Throwable $e){ $err='Такой логин уже есть'; } }
   } elseif($act==='toggle'){
     $uid=(int)$_POST['uid'];
-    if($uid===$me['id']){ $err='Нельзя менять свой статус'; }
+    if($uid===(int)$me['id']){ $err='Нельзя менять свой статус'; }
     else{
       $t=$db->prepare("SELECT role,active FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
       $owners=(int)$db->query("SELECT COUNT(*) c FROM users WHERE role='owner' AND active=1")->fetch()['c'];
@@ -46,7 +46,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
     }
   } elseif($act==='delete'){
     $uid=(int)$_POST['uid'];
-    if($uid===$me['id']){ $err='Нельзя удалить самого себя'; }
+    if($uid===(int)$me['id']){ $err='Нельзя удалить самого себя'; }
     else{
       $t=$db->prepare("SELECT name,role FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
       $owners=(int)$db->query("SELECT COUNT(*) c FROM users WHERE role='owner'")->fetch()['c'];
@@ -59,16 +59,23 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       }
     }
   }
-}
+  // PRG: результат кладём во флеш-сообщение и редиректим на себя.
+  // Без этого F5 повторял действие — например, «отключить» → лиды сняты с назначения → F5 →
+  // оператор снова включён, а лиды уже потеряны. Теперь обновление страницы безопасно.
+  $_SESSION['users_flash']=['msg'=>$msg,'err'=>$err];
+  header('Location: users.php'); exit;
+} elseif($_SERVER['REQUEST_METHOD']==='POST'){ $err='Сессия истекла — обновите страницу и повторите.'; }
+if(!empty($_SESSION['users_flash'])){ $msg=(string)($_SESSION['users_flash']['msg']??''); $err=(string)($_SESSION['users_flash']['err']??''); unset($_SESSION['users_flash']); }
 $list=$db->query("SELECT * FROM users ORDER BY id")->fetchAll();
 // сколько потока уходит операторам автоматически (сумма долей активных операторов с включённой подачей, потолок 100)
-$feedSum=0; foreach($list as $u){ if($u['role']==='operator' && $u['active'] && (int)($u['feed_active']??0)===1) $feedSum+=(int)($u['feed_share']??0); }
-$feedSum=min(100,$feedSum); $manual=100-$feedSum;
+$feedRaw=0; foreach($list as $u){ if($u['role']==='operator' && $u['active'] && (int)($u['feed_active']??0)===1) $feedRaw+=(int)($u['feed_share']??0); }
+$feedSum=min(100,$feedRaw); $manual=100-$feedSum;
 $csrf=h(crm_csrf());
 crm_head('Операторы'); ?>
 <div class="card" style="margin-bottom:14px">
   <div style="font-weight:700;margin-bottom:4px">Авто-подача новых лидов</div>
   <div style="font-size:14px;color:var(--muted2)">Из каждых 100 заявок с сайта: <b style="color:var(--ink)"><?=$feedSum?>%</b> уходит операторам автоматически по долям ниже, <b style="color:var(--ink)"><?=$manual?>%</b> остаётся вам в «Нераспределённых» (раздаёте вручную). Меняется в лайве — действует со следующей заявки.</div>
+  <?php if($feedRaw>100){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:8px 11px;border-radius:8px;margin-top:10px;font-size:13px"><?=crm_icon('warn')?> Сумма долей <?=$feedRaw?>% — больше 100. Лиды всё равно раздаются, но нижние в списке получат меньше, чем вы поставили. Приведите сумму к 100% или меньше.</div><?php } ?>
   <div style="font-size:13px;color:var(--muted);margin-top:8px">Личный Telegram: оператор жмёт <b>Start</b> у вашего бота (иначе Telegram не даст боту написать первым), узнаёт свой числовой <b>chat_id</b> (напр. через @userinfobot) — впишите в колонку «Telegram». Тогда назначенные ему лиды падают в личку.</div>
 </div>
 <div class="grid2">
@@ -88,7 +95,7 @@ crm_head('Операторы'); ?>
           <input type="text" name="tg" value="<?=h($u['tg_chat_id']??'')?>" placeholder="chat_id" style="width:118px;padding:6px 8px" inputmode="numeric" title="Telegram chat_id оператора — узнать через @userinfobot">
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Уведомления идут в общий канал владельца">—</span><?php } ?></td>
-      <td class="right" style="white-space:nowrap"><?php if($u['id']!==$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
+      <td class="right" style="white-space:nowrap"><?php if((int)$u['id']!==(int)$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
         <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm('Удалить <?=h($u['name'])?> навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="delete"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
     </tr><?php } ?></tbody></table>
   </div>

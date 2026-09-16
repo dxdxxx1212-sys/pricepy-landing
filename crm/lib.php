@@ -158,6 +158,8 @@ function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
     next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT)");
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)");
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
+  // оператор в каждом запросе фильтрует по assignee_id — без индекса это полный скан таблицы
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_assignee ON leads(assignee_id)");
   $db->exec("CREATE TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, pass_hash TEXT,
     name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT,
@@ -451,7 +453,9 @@ function crm_login_fail(){ $db=crm_db(); $db->exec("CREATE TABLE IF NOT EXISTS l
   $db->prepare("INSERT INTO login_fails(ip,ts) VALUES(?,?)")->execute([$_SERVER['REMOTE_ADDR']??'', time()]);
   $db->prepare("DELETE FROM login_fails WHERE ts < ?")->execute([time()-86400]); } // чистим старше суток, чтобы не рос
 function crm_csrf(){ crm_sess(); if(empty($_SESSION['csrf'])) $_SESSION['csrf']=bin2hex(random_bytes(16)); return $_SESSION['csrf']; }
-function crm_csrf_ok(){ crm_sess(); return isset($_POST['csrf']) && hash_equals($_SESSION['csrf']??'',$_POST['csrf']); }
+// Проверка CSRF. Токен из формы приводим к строке: если прислать csrf[]=x (массив),
+// hash_equals бросил бы TypeError и страница падала бы 500-й вместо честного отказа.
+function crm_csrf_ok(){ crm_sess(); $t=$_POST['csrf']??''; return is_string($t) && $t!=='' && hash_equals((string)($_SESSION['csrf']??''),$t); }
 function crm_event($lead_id,$user_id,$type,$detail=''){ $s=crm_db()->prepare("INSERT INTO events(lead_id,user_id,type,detail,created_at) VALUES(?,?,?,?,?)"); $s->execute([$lead_id,$user_id,$type,$detail,date('c')]); }
 function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM users") as $r){ $m[$r['id']]=$r['name']; } return $m; }
 
@@ -484,7 +488,11 @@ function crm_phone_fmt($c){
 }
 
 // ---- Вёрстка ----
-function crm_head($title){ $u=crm_user(); ?><!DOCTYPE html><html lang="ru"><head>
+function crm_head($title){ $u=crm_user();
+  // Заголовки безопасности панели. headers_sent() — страховка: если что-то уже вывелось, просто пропускаем.
+  // no-referrer важен: в URL карточки есть id лида, а из неё уходят ссылки на wa.me / t.me / max.ru.
+  if(!headers_sent()){ header('X-Frame-Options: SAMEORIGIN'); header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: no-referrer'); }
+  ?><!DOCTYPE html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title><?=h($title)?> · CRM Восток Прицеп</title>
 <style>

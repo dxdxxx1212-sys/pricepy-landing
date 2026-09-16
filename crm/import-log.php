@@ -52,7 +52,9 @@ foreach ($files as $log) {
     if (!crm_valid_contact($contact)) { $junk++; $junkList[] = ($name?:'(без имени)')." | ".$contact; continue; } // тест/мусор
 
     $t = strtotime($ts); $ca = $t ? date('c', $t) : date('c');
-    $phone = crm_phone_digits($contact);
+    // ключ дедупа должен совпадать с тем, что реально лежит в колонке phone_norm (8XXX… → 7XXX…),
+    // иначе повторный запуск импорта заводил дубли для номеров, записанных через «8».
+    $phone = crm_phone_norm($contact);
     $key = $ca.'|'.$phone;
     if (isset($seen[$key])) { $dupes++; continue; }                  // дубль внутри логов
     $seen[$key] = 1;

@@ -5,9 +5,12 @@ $db = crm_db();
 $ST = crm_statuses(); $users = crm_users_map();
 
 // Массовая передача лидов оператору (только владелец). PRG: обрабатываем и редиректим на тот же фильтр.
-if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok() && ($_POST['act']??'')==='bulk_assign'){
-  $n = ($me['role']==='owner') ? crm_bulk_assign($me, $_POST['ids']??[], $_POST['uid']??'') : 0;
-  $qs=$_GET; $qs['bulk']=$n; header('Location: index.php?'.http_build_query($qs)); exit;
+if($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['act']??'')==='bulk_assign'){
+  $qs=$_GET;
+  // протухшая сессия не должна молча «съедать» передачу — говорим об этом прямо
+  if(!crm_csrf_ok()){ $qs['bulk']='csrf'; }
+  else { $qs['bulk'] = ($me['role']==='owner') ? crm_bulk_assign($me, $_POST['ids']??[], $_POST['uid']??'') : 0; }
+  header('Location: index.php?'.http_build_query($qs)); exit;
 }
 
 // фильтры
@@ -71,7 +74,10 @@ foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE p
 
 crm_head('Лиды'); ?>
 <?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
-<?php if(isset($_GET['bulk'])){ $bn=(int)$_GET['bulk']; ?><div style="background:<?=$bn?'#173a24;color:#8ff0b0':'#3a2417;color:#f0a86a'?>;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=$bn?('Передано '.$bn.' '.crm_plural_lead($bn).'.'):'Ничего не передано — лиды не выбраны или назначение не изменилось.'?></div><?php } ?>
+<?php if(isset($_GET['bulk'])){ $bulkRaw=is_scalar($_GET['bulk'])?(string)$_GET['bulk']:''; $bn=(int)$bulkRaw;
+  $bulkTxt = $bulkRaw==='csrf' ? 'Передача не выполнена: сессия истекла. Обновите страницу (F5) и повторите.'
+           : ($bn ? ('Передано '.$bn.' '.crm_plural_lead($bn).'.') : 'Ничего не передано — лиды не выбраны или назначение не изменилось.'); ?>
+<div style="background:<?=$bn?'#173a24;color:#8ff0b0':'#3a2417;color:#f0a86a'?>;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($bulkTxt)?></div><?php } ?>
 <div class="kpi">
   <a class="k" href="?due=1" style="text-decoration:none;border-color:<?=$k_due?'var(--alert)':'var(--line)'?>"><b style="color:<?=$k_due?'var(--alert)':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
   <a class="k" href="?status=new" style="text-decoration:none;border-color:<?=$k_new?'var(--acc)':'var(--line)'?>"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
