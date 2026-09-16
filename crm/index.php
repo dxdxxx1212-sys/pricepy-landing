@@ -4,6 +4,12 @@ $me = crm_require();
 $db = crm_db();
 $ST = crm_statuses(); $users = crm_users_map();
 
+// Массовая передача лидов оператору (только владелец). PRG: обрабатываем и редиректим на тот же фильтр.
+if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok() && ($_POST['act']??'')==='bulk_assign'){
+  $n = ($me['role']==='owner') ? crm_bulk_assign($me, $_POST['ids']??[], $_POST['uid']??'') : 0;
+  $qs=$_GET; $qs['bulk']=$n; header('Location: index.php?'.http_build_query($qs)); exit;
+}
+
 // фильтры
 $fStatus = $_GET['status'] ?? '';
 $fCall = $_GET['call'] ?? '';
@@ -65,6 +71,7 @@ foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE p
 
 crm_head('Лиды'); ?>
 <?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
+<?php if(isset($_GET['bulk'])){ $bn=(int)$_GET['bulk']; ?><div style="background:<?=$bn?'#173a24;color:#8ff0b0':'#3a2417;color:#f0a86a'?>;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=$bn?('Передано '.$bn.' '.crm_plural_lead($bn).'.'):'Ничего не передано — лиды не выбраны или назначение не изменилось.'?></div><?php } ?>
 <div class="kpi">
   <a class="k" href="?due=1" style="text-decoration:none;border-color:<?=$k_due?'var(--alert)':'var(--line)'?>"><b style="color:<?=$k_due?'var(--alert)':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
   <a class="k" href="?status=new" style="text-decoration:none;border-color:<?=$k_new?'var(--acc)':'var(--line)'?>"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
@@ -98,12 +105,26 @@ crm_head('Лиды'); ?>
   <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
 
+<?php if($isOwner){ ?>
+<form id="bulkForm" method="post">
+<input type="hidden" name="csrf" value="<?=h(crm_csrf())?>"><input type="hidden" name="act" value="bulk_assign">
+<div id="bulkbar" hidden style="position:sticky;top:56px;z-index:9;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:10px">
+  <b>Выбрано: <span id="bulkn">0</span></b><span class="muted">передать →</span>
+  <select name="uid" id="bulkuid" required style="min-width:170px"><option value="">— выберите оператора —</option>
+    <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>"><?=h($op['name'])?></option><?php } ?>
+    <option value="unassign">— снять назначение —</option>
+  </select>
+  <button class="btn" type="submit">Передать</button>
+  <button type="button" class="btn btn-sec" onclick="bulkClear()">Отмена</button>
+</div>
+<?php } ?>
 <div class="card" style="padding:0;overflow-x:auto">
 <table class="leads">
-<thead><tr><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Связаться</th><th>Когда</th></tr></thead>
+<thead><tr><?php if($isOwner){ ?><th style="width:34px;text-align:center"><input type="checkbox" id="bulkall" title="Выбрать все на странице" onclick="bulkAll(this)"></th><?php } ?><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Связаться</th><th>Когда</th></tr></thead>
 <tbody>
 <?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $digN=ltrim($e164,'+'); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
+  <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkUpd()"></td><?php } ?>
   <td>
     <a href="view.php?id=<?=$r['id']?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$r['id']?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="chip warn" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
     <br><?php if($dig){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
@@ -116,9 +137,27 @@ crm_head('Лиды'); ?>
   <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ $want=crm_channel_norm($r['channel']); ?><a class="qa<?=$want==='phone'?' want-ch':''?>" href="tel:<?=$e164?>" title="Позвонить"><?=crm_icon('phone')?></a><a class="qa<?=$want==='whatsapp'?' want-ch':''?>" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa<?=$want==='telegram'?' want-ch':''?>" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:#6b7580;font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="7" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?8:7?>" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>
 </div>
+<?php if($isOwner){ ?></form>
+<script>
+function bulkUpd(){ var cbs=document.querySelectorAll('.bulkcb'), sel=0;
+  cbs.forEach(function(c){ if(c.checked) sel++; });
+  document.getElementById('bulkn').textContent=sel;
+  document.getElementById('bulkbar').hidden = sel===0;
+  var all=document.getElementById('bulkall'); if(all){ all.checked = sel>0 && sel===cbs.length; all.indeterminate = sel>0 && sel<cbs.length; } }
+function bulkAll(box){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=box.checked; }); bulkUpd(); }
+function bulkClear(){ document.querySelectorAll('.bulkcb').forEach(function(c){ c.checked=false; }); var a=document.getElementById('bulkall'); if(a){a.checked=false;a.indeterminate=false;} bulkUpd(); }
+document.getElementById('bulkForm').addEventListener('submit',function(e){
+  var uid=document.getElementById('bulkuid');
+  var sel=document.querySelectorAll('.bulkcb:checked').length;
+  if(sel===0){ e.preventDefault(); return; }
+  if(!uid.value){ e.preventDefault(); if(window.crmToast)crmToast('Выберите оператора'); uid.focus(); return; }
+  var who = uid.options[uid.selectedIndex].text;
+  if(!confirm('Передать '+sel+' лид(ов): '+who+'?')){ e.preventDefault(); } });
+</script>
+<?php } ?>
 
 <?php if($pages>1){ $qs=$_GET; ?>
 <div class="filters" style="justify-content:center;margin-top:6px">

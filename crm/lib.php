@@ -338,34 +338,18 @@ function crm_autoassign_new_lead($leadId){
     return null;
   }catch(Throwable $e){ return null; } // подача необязательна — заявку не трогаем
 }
-// Уведомление оператору в его личный Telegram при назначении лида (авто или вручную).
-// Идёт через тот же Cloudflare Worker (прямой api.telegram.org с РФ-сервера закрыт), ветка op_notify.
-// Тихо не делает ничего, если у оператора не задан tg_chat_id. Полностью fail-safe:
-// доставка заявки/работа UI от этого не зависят.
-function crm_notify_operator($uid,$leadId){
+// Низкоуровневая отправка готового HTML-текста в Telegram-чат через тот же Cloudflare Worker
+// (ветка op_notify; прямой api.telegram.org с РФ-сервера закрыт). Полностью fail-safe.
+function crm_tg_send($chatId,$text){
   try{
-    $uid=(int)$uid; $leadId=(int)$leadId; if($uid<=0||$leadId<=0) return;
-    $db=crm_db();
-    $u=$db->prepare("SELECT name,tg_chat_id FROM users WHERE id=? AND active=1"); $u->execute([$uid]); $u=$u->fetch();
-    if(!$u || trim((string)$u['tg_chat_id'])===''){ return; } // нет привязанного чата — выходим тихо
-    $l=$db->prepare("SELECT * FROM leads WHERE id=?"); $l->execute([$leadId]); $L=$l->fetch();
-    if(!$L) return;
-    // секрет для воркера — из api/config.php (вне git); включаем в область функции
-    // секрет для воркера. В пути приёма заявки api/lead.php он уже подключён на верхнем уровне
-    // (глобальная $LEAD_SECRET) — берём оттуда, без повторного include. Иначе (ручное назначение
-    // из view.php) config.php ещё не подключён — подключаем впервые (без риска двойного include).
+    $chatId=trim((string)$chatId); if($chatId===''||$text==='') return;
+    // секрет для воркера. В приёме заявки (api/lead.php) он уже подключён на верхнем уровне
+    // (глобальная $LEAD_SECRET) — берём оттуда без повторного include. Иначе (панель CRM)
+    // config.php ещё не подключён — подключаем впервые.
     $secret='';
     if(isset($GLOBALS['LEAD_SECRET'])){ $secret=(string)$GLOBALS['LEAD_SECRET']; }
     else { $cfg=__DIR__.'/../api/config.php'; if(is_file($cfg)){ include $cfg; if(isset($LEAD_SECRET)) $secret=(string)$LEAD_SECRET; } }
-    $esc=function($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
-    $req=array_filter([$L['use_'],$L['type'],$L['capacity'],$L['budget'],$L['items']]);
-    $phone=crm_phone_e164($L['contact']) ?: $L['contact'];
-    $text="🔔 <b>Вам назначен лид</b>\n"
-        ."Имя: ".$esc($L['name']?:'—')."\n"
-        ."Телефон: <code>".$esc($phone)."</code>\n"
-        .($req ? ("Запрос: ".$esc(implode(' · ',$req))."\n") : '')
-        ."\n".CRM_BASE_URL."/view.php?id=".$leadId;
-    $payload=json_encode(['op_notify'=>['chat_id'=>(string)$u['tg_chat_id'],'text'=>$text]], JSON_UNESCAPED_UNICODE);
+    $payload=json_encode(['op_notify'=>['chat_id'=>$chatId,'text'=>$text]], JSON_UNESCAPED_UNICODE);
     $ch=curl_init(CRM_WORKER_URL);
     curl_setopt_array($ch,[
       CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true,
@@ -374,6 +358,62 @@ function crm_notify_operator($uid,$leadId){
     ]);
     curl_exec($ch); curl_close($ch);
   }catch(Throwable $e){ /* уведомление необязательно — ничего не роняем */ }
+}
+// «лид / лида / лидов» по числу
+function crm_plural_lead($n){ $n=abs((int)$n)%100; $d=$n%10; if($n>10&&$n<20) return 'лидов'; if($d===1) return 'лид'; if($d>=2&&$d<=4) return 'лида'; return 'лидов'; }
+// Уведомление оператору в его личный Telegram об ОДНОМ назначенном лиде (авто или вручную).
+// Тихо не делает ничего, если у оператора не задан tg_chat_id. Fail-safe.
+function crm_notify_operator($uid,$leadId){
+  try{
+    $uid=(int)$uid; $leadId=(int)$leadId; if($uid<=0||$leadId<=0) return;
+    $db=crm_db();
+    $u=$db->prepare("SELECT tg_chat_id FROM users WHERE id=? AND active=1"); $u->execute([$uid]); $chat=$u->fetchColumn();
+    if(trim((string)$chat)==='') return; // нет привязанного чата — выходим тихо
+    $l=$db->prepare("SELECT * FROM leads WHERE id=?"); $l->execute([$leadId]); $L=$l->fetch();
+    if(!$L) return;
+    $esc=function($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
+    $req=array_filter([$L['use_'],$L['type'],$L['capacity'],$L['budget'],$L['items']]);
+    $phone=crm_phone_e164($L['contact']) ?: $L['contact'];
+    $text="🔔 <b>Вам назначен лид</b>\n"
+        ."Имя: ".$esc($L['name']?:'—')."\n"
+        ."Телефон: <code>".$esc($phone)."</code>\n"
+        .($req ? ("Запрос: ".$esc(implode(' · ',$req))."\n") : '')
+        ."\n".CRM_BASE_URL."/view.php?id=".$leadId;
+    crm_tg_send($chat,$text);
+  }catch(Throwable $e){ /* fail-safe */ }
+}
+// Массовая передача лидов оператору (или снятие назначения при $uid пустом). ТОЛЬКО владелец.
+// Возвращает число реально изменённых лидов. Оператору шлётся ОДНО суммарное уведомление.
+function crm_bulk_assign($me,$ids,$uid){
+  if(($me['role']??'')!=='owner') return 0;
+  $db=crm_db();
+  $ids=array_values(array_unique(array_filter(array_map('intval',(array)$ids), function($x){ return $x>0; })));
+  if(!$ids) return 0;
+  if(count($ids)>500) $ids=array_slice($ids,0,500); // предохранитель
+  $uid=trim((string)$uid);
+  if($uid===''){ return 0; }                          // оператор не выбран — ничего не трогаем (защита от случайного снятия)
+  $target=($uid==='unassign')?0:(int)$uid;            // явное снятие — только через пункт «снять назначение»
+  $tname=''; $chat='';
+  if($target>0){ $chk=$db->prepare("SELECT name,tg_chat_id FROM users WHERE id=? AND active=1"); $chk->execute([$target]); $t=$chk->fetch();
+    if(!$t) return 0; $tname=$t['name']; $chat=(string)$t['tg_chat_id']; } // цель — только активный пользователь
+  $in=implode(',',array_fill(0,count($ids),'?'));
+  // берём только реально существующие лиды, у которых назначение МЕНЯЕТСЯ (чтобы не мусорить историю)
+  $sel=$db->prepare("SELECT id FROM leads WHERE id IN($in) AND COALESCE(assignee_id,0)<>?"); $sel->execute(array_merge($ids,[$target]));
+  $changed=array_map('intval',$sel->fetchAll(PDO::FETCH_COLUMN));
+  if(!$changed) return 0;
+  $now=date('c'); $cin=implode(',',array_fill(0,count($changed),'?'));
+  $detail=$target>0?($tname.' (массово)'):'снято (массово)';
+  // атомарно: назначение + события одной транзакцией (и быстрее при пачке до 500)
+  try{
+    $db->beginTransaction();
+    $db->prepare("UPDATE leads SET assignee_id=?,updated_at=? WHERE id IN($cin)")->execute(array_merge([$target>0?$target:null,$now],$changed));
+    $ev=$db->prepare("INSERT INTO events(lead_id,user_id,type,detail,created_at) VALUES(?,?,?,?,?)");
+    foreach($changed as $lid){ $ev->execute([$lid,$me['id'],'назначение',$detail,$now]); }
+    $db->commit();
+  }catch(Throwable $e){ if($db->inTransaction()) $db->rollBack(); return 0; }
+  if($target>0 && trim($chat)!==''){ $n=count($changed); // суммарное уведомление — после commit
+    crm_tg_send($chat, "🔔 <b>Вам передано ".$n." ".crm_plural_lead($n)."</b>\n".CRM_BASE_URL."/index.php"); }
+  return count($changed);
 }
 // Полное удаление лида вместе с комментариями и историей (только владелец — проверка на странице).
 function crm_delete_lead($id){ $db=crm_db(); $id=(int)$id;
