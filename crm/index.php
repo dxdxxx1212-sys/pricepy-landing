@@ -127,9 +127,9 @@ crm_head('Лиды'); ?>
 <?php } ?>
 <div class="card" style="padding:0;overflow-x:auto">
 <table class="leads">
-<thead><tr><?php if($isOwner){ ?><th style="width:34px;text-align:center"><input type="checkbox" id="bulkall" title="Выбрать все на странице" onclick="bulkAll(this)"></th><?php } ?><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Связаться</th><th>Когда</th></tr></thead>
+<thead><tr><?php if($isOwner){ ?><th style="width:34px;text-align:center"><input type="checkbox" id="bulkall" title="Выбрать все на странице" onclick="bulkAll(this)"></th><?php } ?><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Когда</th></tr></thead>
 <tbody>
-<?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $digN=ltrim($e164,'+'); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
+<?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
   <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkClick(this,event)"></td><?php } ?>
   <td>
@@ -141,10 +141,9 @@ crm_head('Лиды'); ?>
   <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ $warn=($ck==='noanswer'); ?><span class="chip<?=$warn?' warn':''?>" style="margin:1px 3px 1px 0"><?php if(!$warn){ ?><span class="ch-dot" style="background:<?=crm_contact_color($ck)?>"></span><?php } ?><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
   <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и фото"><?php if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
-  <td style="white-space:nowrap" onclick="event.stopPropagation()"><?php if($dig){ $want=crm_channel_norm($r['channel']); ?><a class="qa<?=$want==='phone'?' want-ch':''?>" href="tel:<?=$e164?>" title="Позвонить"><?=crm_icon('phone')?></a><a class="qa<?=$want==='whatsapp'?' want-ch':''?>" href="https://wa.me/<?=$digN?>" target="_blank" rel="noopener" title="WhatsApp">WA</a><a class="qa<?=$want==='telegram'?' want-ch':''?>" href="tg://resolve?phone=<?=$digN?>" title="Telegram">TG</a><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:var(--muted);font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?8:7?>" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?7:6?>" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>
 </div>
 <?php if($isOwner){ ?></form>
