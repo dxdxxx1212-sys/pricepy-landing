@@ -52,7 +52,6 @@ function crm_contact_color($c){ return [
 // С клиентом могут связаться в нескольких каналах (созвон + перевели в мессенджер),
 // поэтому call_status хранит НЕСКОЛЬКО ключей через запятую: "called,max". '' = ещё не связывались.
 function crm_contact_list($cs){ $out=[]; foreach(explode(',',(string)$cs) as $k){ $k=trim($k); if($k!==''&&!in_array($k,$out,true)) $out[]=$k; } return $out; }
-function crm_contact_labels($cs){ return array_map('crm_contact_label', crm_contact_list($cs)); }
 // Включить/выключить канал в наборе. Правила: «Дозвонился»/«Не дозвонился» — взаимоисключающие;
 // «Нет в мессенджере» несовместимо с конкретным мессенджером (wa/tg/max) и наоборот.
 function crm_contact_toggle($cs,$k){

@@ -4,7 +4,7 @@ $me = crm_require();
 $db = crm_db();
 $ST = crm_statuses(); $users = crm_users_map();
 $id = (int)($_GET['id'] ?? 0);
-$s=$db->prepare("SELECT * FROM leads WHERE id=?"); $s->execute([$id]); $L=$s->fetch();
+$L=crm_lead_get($id);
 if(!$L){ crm_head('Лид'); echo '<div class="card">Лид не найден. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
 // оператор может открывать только назначенные ему лиды (иначе — 403, ещё до обработки POST)
 if(!crm_can_see_lead($me,$L)){ http_response_code(403); crm_head('Лид'); echo '<div class="card">Этот лид назначен другому менеджеру. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
@@ -28,8 +28,7 @@ if(isset($_GET['ok'])) $msg='Сохранено';
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
 $related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,status FROM leads WHERE phone_norm=? AND id<>? AND (".crm_lead_scope_sql($me).") ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); } // «повтор» — только среди видимых пользователю лидов
-$dig=crm_phone_digits($L['contact']);
-$e164=crm_phone_e164($L['contact']); $digN=ltrim($e164,'+'); // +7XXXXXXXXXX и цифры для ссылок
+$e164=crm_phone_e164($L['contact']); $digN=ltrim($e164,'+'); // +7XXXXXXXXXX и цифры для ссылок ('' — номера нет, ник)
 $ch=$L['channel'];
 $csrf=h(crm_csrf());
 $activeUsers=$db->query("SELECT id,name,role FROM users WHERE active=1 ORDER BY role='owner' DESC, id")->fetchAll();
@@ -71,8 +70,8 @@ crm_head('Лид #'.$id); ?>
 </style>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
-<?php if($msg){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($msg)?></div><?php } ?>
-<?php if($related){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:13px"><?=crm_icon('warn')?> Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
+<?=crm_flash('ok',$msg)?>
+<?php if($related){ ?><div class="flash warn"><?=crm_icon('warn')?> Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
 
 <!-- КОНТАКТ -->
 <div class="card">
@@ -85,7 +84,7 @@ crm_head('Лид #'.$id); ?>
     $cj = h(json_encode($e164 ?: $L['contact'], JSON_UNESCAPED_UNICODE)); // копируем номер в +7XXXXXXXXXX (для МАКС), ник — как есть
   ?>
   <div class="statusrow" style="margin-top:12px">
-    <?php if($dig){ ?><a class="spill" href="tel:<?=$e164?>"><?=crm_icon('phone')?> Позвонить</a><?php } ?>
+    <?php if($e164!==''){ ?><a class="spill" href="tel:<?=$e164?>"><?=crm_icon('phone')?> Позвонить</a><?php } ?>
     <?php if($waUrl){ ?><a class="spill" href="<?=$waUrl?>" target="_blank" rel="noopener"<?=$hl('whatsapp')?>>WhatsApp</a><?php } ?>
     <?php if($tgUrl){ ?><a class="spill" href="<?=h($tgUrl)?>" target="_blank" rel="noopener"<?=$hl('telegram')?>>Telegram</a><?php } ?>
     <a class="spill" href="https://max.ru/" target="_blank" rel="noopener" onclick="crmCopy(<?=$cj?>)"<?=$hl('max')?> title="Откроет МАКС и скопирует номер — вставьте в поиск">МАКС</a>

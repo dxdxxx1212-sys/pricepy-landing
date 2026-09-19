@@ -9,10 +9,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
     $login=trim($_POST['login']??''); $name=trim($_POST['name']??'')?:$login; $pass=$_POST['pass']??''; $role=($_POST['role']??'operator')==='owner'?'owner':'operator';
     if(mb_strlen($login)<3||mb_strlen($pass)<10){ $err='Логин ≥3 и пароль ≥10 символов'; }
     else{ try{ $db->prepare("INSERT INTO users(login,pass_hash,name,role,active,created_at) VALUES(?,?,?,?,1,?)")
-      ->execute([$login,password_hash($pass,PASSWORD_DEFAULT),$name,$role,date('c')]); $msg='Пользователь добавлен'; }
+      ->execute([$login,password_hash($pass,PASSWORD_DEFAULT),$name,$role,crm_now()]); $msg='Пользователь добавлен'; }
       catch(Throwable $e){ $err='Такой логин уже есть'; } }
   } elseif($act==='toggle'){
-    $uid=(int)$_POST['uid'];
+    $uid=(int)($_POST['uid']??0);
     if($uid===(int)$me['id']){ $err='Нельзя менять свой статус'; }
     else{
       $t=$db->prepare("SELECT role,active FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
@@ -26,7 +26,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       }
     }
   } elseif($act==='feed'){
-    $uid=(int)$_POST['uid'];
+    $uid=(int)($_POST['uid']??0);
     $t=$db->prepare("SELECT role FROM users WHERE id=?"); $t->execute([$uid]); $role=$t->fetchColumn();
     if($role!=='operator'){ $err='Подача настраивается только для операторов'; }
     else{
@@ -36,7 +36,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       $msg=$share>0?('Подача обновлена: '.$share.'%'):'Подача выключена';
     }
   } elseif($act==='tg'){
-    $uid=(int)$_POST['uid'];
+    $uid=(int)($_POST['uid']??0);
     $t=$db->prepare("SELECT role FROM users WHERE id=?"); $t->execute([$uid]); $role=$t->fetchColumn();
     if($role!=='operator'){ $err='Telegram задаётся только операторам'; }
     else{
@@ -45,7 +45,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
       else{ $db->prepare("UPDATE users SET tg_chat_id=? WHERE id=?")->execute([$tg,$uid]); $msg=$tg!==''?'Telegram привязан к оператору':'Telegram отвязан'; }
     }
   } elseif($act==='delete'){
-    $uid=(int)$_POST['uid'];
+    $uid=(int)($_POST['uid']??0);
     if($uid===(int)$me['id']){ $err='Нельзя удалить самого себя'; }
     else{
       $t=$db->prepare("SELECT name,role FROM users WHERE id=?"); $t->execute([$uid]); $t=$t->fetch();
@@ -64,8 +64,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   // оператор снова включён, а лиды уже потеряны. Теперь обновление страницы безопасно.
   $_SESSION['users_flash']=['msg'=>$msg,'err'=>$err];
   header('Location: users.php'); exit;
-} elseif($_SERVER['REQUEST_METHOD']==='POST'){ $err='Сессия истекла — обновите страницу и повторите.'; }
+}
 if(!empty($_SESSION['users_flash'])){ $msg=(string)($_SESSION['users_flash']['msg']??''); $err=(string)($_SESSION['users_flash']['err']??''); unset($_SESSION['users_flash']); }
+// POST без валидного CSRF: сообщение об истёкшей сессии важнее залежавшегося флеша
+if($_SERVER['REQUEST_METHOD']==='POST' && !crm_csrf_ok()){ $err='Сессия истекла — обновите страницу и повторите.'; }
 $list=$db->query("SELECT * FROM users ORDER BY id")->fetchAll();
 // сколько потока уходит операторам автоматически (сумма долей активных операторов с включённой подачей, потолок 100)
 $feedRaw=0; foreach($list as $u){ if($u['role']==='operator' && $u['active'] && (int)($u['feed_active']??0)===1) $feedRaw+=(int)($u['feed_share']??0); }
@@ -75,7 +77,7 @@ crm_head('Операторы'); ?>
 <div class="card" style="margin-bottom:14px">
   <div style="font-weight:700;margin-bottom:4px">Авто-подача новых лидов</div>
   <div style="font-size:14px;color:var(--muted2)">Из каждых 100 заявок с сайта: <b style="color:var(--ink)"><?=$feedSum?>%</b> уходит операторам автоматически по долям ниже, <b style="color:var(--ink)"><?=$manual?>%</b> остаётся вам в «Нераспределённых» (раздаёте вручную). Меняется в лайве — действует со следующей заявки.</div>
-  <?php if($feedRaw>100){ ?><div style="background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);padding:8px 11px;border-radius:8px;margin-top:10px;font-size:13px"><?=crm_icon('warn')?> Сумма долей <?=$feedRaw?>% — больше 100. Лиды всё равно раздаются, но нижние в списке получат меньше, чем вы поставили. Приведите сумму к 100% или меньше.</div><?php } ?>
+  <?php if($feedRaw>100){ ?><div class="flash warn" style="margin:10px 0 0"><?=crm_icon('warn')?> Сумма долей <?=$feedRaw?>% — больше 100. Лиды всё равно раздаются, но нижние в списке получат меньше, чем вы поставили. Приведите сумму к 100% или меньше.</div><?php } ?>
   <div style="font-size:13px;color:var(--muted);margin-top:8px">Личный Telegram: оператор жмёт <b>Start</b> у вашего бота (иначе Telegram не даст боту написать первым), узнаёт свой числовой <b>chat_id</b> (напр. через @userinfobot) — впишите в колонку «Telegram». Тогда назначенные ему лиды падают в личку.</div>
 </div>
 <div class="grid2">
@@ -101,8 +103,7 @@ crm_head('Операторы'); ?>
   </div>
   <div class="card">
     <h3 style="margin:0 0 10px">Добавить оператора</h3>
-    <?php if($err){ ?><div style="background:#3a1d1d;color:#ffb4b4;padding:8px 11px;border-radius:8px;margin-bottom:10px;font-size:13px"><?=h($err)?></div><?php } ?>
-    <?php if($msg){ ?><div style="background:#173a24;color:#8ff0b0;padding:8px 11px;border-radius:8px;margin-bottom:10px;font-size:13px"><?=h($msg)?></div><?php } ?>
+    <?=crm_flash('err',$err)?><?=crm_flash('ok',$msg)?>
     <form method="post">
       <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="add">
       <div style="margin-bottom:9px"><input name="name" placeholder="Имя" style="width:100%"></div>

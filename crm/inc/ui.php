@@ -1,9 +1,11 @@
 <?php
 // Модуль библиотеки CRM. Подключается только через crm/lib.php — прямой вызов по URL отдаёт 403.
 if(!defined('CRM_LIB')){ http_response_code(403); exit; }
-// ---- Вёрстка ----
+// ---- Вёрстка: шапка/подвал страницы, общие фрагменты ----
 // Версия статики для сброса кэша браузера: mtime файла меняется при каждом деплое (git reset), этого достаточно.
 function crm_asset_v($name){ return (int)@filemtime(__DIR__.'/../assets/'.$name); }
+// Плашка-сообщение: $kind = ok | warn | err. Пустой текст — ничего не выводит.
+function crm_flash($kind,$text){ return $text==='' ? '' : '<div class="flash '.$kind.'">'.h($text).'</div>'; }
 function crm_head($title){ $u=crm_user();
   // X-Frame-Options (DENY) и nosniff уже ставит nginx на весь поддомен — здесь не дублируем,
   // иначе в ответе два разных X-Frame-Options. Добавляем только то, чего у nginx нет:
@@ -18,9 +20,3 @@ function crm_head($title){ $u=crm_user();
 <span class="sp"></span><span class="me"><?=h($u['name'])?> · <?=$u['role']==='owner'?'владелец':'оператор'?></span> <a href="logout.php" class="muted">выйти</a><?php } ?>
 </div><div class="wrap"><?php }
 function crm_foot(){ ?></div><div id="crmtoast"></div><script src="assets/crm.js?v=<?=crm_asset_v('crm.js')?>"></script></body></html><?php }
-
-function crm_events_list_html($events){
-  if(!$events) return '<div class="muted" style="font-size:14px">Действий ещё не было.</div>';
-  $h=''; foreach($events as $e){ $h.='<div class="cmt" style="padding:7px 0"><span class="pill">'.h($e['type']).'</span> '.h($e['detail']).' <span class="m"> — '.h($e['un']?:'?').', '.crm_dt($e['created_at']).'</span></div>'; }
-  return $h;
-}

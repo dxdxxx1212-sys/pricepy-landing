@@ -4,6 +4,8 @@ if(!defined('CRM_LIB')){ http_response_code(403); exit; }
 // ---- Вложения ----
 function crm_att_types(){ return ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','image/gif'=>'gif']; }
 function crm_upload_dir(){ if(!is_dir(CRM_UPLOAD_DIR)) @mkdir(CRM_UPLOAD_DIR,0770,true); return CRM_UPLOAD_DIR; }
+// Удалить файлы вложений с диска по списку относительных путей (записи в БД удаляет вызывающий).
+function crm_att_unlink($paths){ foreach($paths as $p){ if($p){ $full=CRM_UPLOAD_DIR.'/'.$p; if(is_file($full)) @unlink($full); } } }
 // Сохранить одну картинку из $_FILES-элемента ['name','tmp_name','error','size',...]. Вернёт id или null.
 function crm_attach_save($lead_id,$comment_id,$user_id,$f){
   if(!is_array($f) || (int)($f['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) return null;
@@ -20,7 +22,7 @@ function crm_attach_save($lead_id,$comment_id,$user_id,$f){
   @chmod($full,0640);
   $orig = mb_substr(preg_replace('/[\r\n\t]/',' ',(string)($f['name']??'')),0,160);
   $st=crm_db()->prepare("INSERT INTO attachments(lead_id,comment_id,user_id,path,orig_name,mime,size,created_at) VALUES(?,?,?,?,?,?,?,?)");
-  $st->execute([(int)$lead_id,(int)$comment_id,(int)$user_id,$rel,$orig,$mime,(int)$f['size'],date('c')]);
+  $st->execute([(int)$lead_id,(int)$comment_id,(int)$user_id,$rel,$orig,$mime,(int)$f['size'],crm_now()]);
   return (int)crm_db()->lastInsertId();
 }
 function crm_comment_attachments($comment_id){ $s=crm_db()->prepare("SELECT * FROM attachments WHERE comment_id=? ORDER BY id"); $s->execute([(int)$comment_id]); return $s->fetchAll(); }
@@ -28,7 +30,7 @@ function crm_comment_get($cid){ $s=crm_db()->prepare("SELECT * FROM comments WHE
 // Удалить комментарий вместе с прикреплёнными файлами (с диска) и их записями.
 function crm_comment_delete($cid){ $db=crm_db(); $cid=(int)$cid;
   $att=$db->prepare("SELECT path FROM attachments WHERE comment_id=?"); $att->execute([$cid]);
-  foreach($att->fetchAll(PDO::FETCH_COLUMN) as $p){ if($p){ $full=CRM_UPLOAD_DIR.'/'.$p; if(is_file($full)) @unlink($full); } }
+  crm_att_unlink($att->fetchAll(PDO::FETCH_COLUMN));
   $db->prepare("DELETE FROM attachments WHERE comment_id=?")->execute([$cid]);
   $db->prepare("DELETE FROM comments WHERE id=?")->execute([$cid]);
 }
@@ -40,7 +42,7 @@ function crm_process_comment_ops($me,$act){
   if($act==='comment_delete'){ crm_comment_delete($cid); crm_event((int)$c['lead_id'],$me['id'],'комментарий','удалён'); return (int)$c['lead_id']; }
   if($act==='comment_edit'){
     $body=trim($_POST['body']??'');
-    crm_db()->prepare("UPDATE comments SET body=?,edited_at=? WHERE id=?")->execute([$body,date('c'),$cid]);
+    crm_db()->prepare("UPDATE comments SET body=?,edited_at=? WHERE id=?")->execute([$body,crm_now(),$cid]);
     crm_event((int)$c['lead_id'],$me['id'],'комментарий','изменён');
     return (int)$c['lead_id'];
   }

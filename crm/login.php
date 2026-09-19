@@ -12,7 +12,7 @@ crm_head('Вход'); ?>
 <div style="max-width:340px;margin:8vh auto 0">
   <div class="card">
     <h2 style="margin:0 0 14px">Вход в CRM</h2>
-    <?php if($err){ ?><div style="background:#3a1d1d;color:#ffb4b4;padding:9px 12px;border-radius:8px;margin-bottom:12px;font-size:14px"><?=h($err)?></div><?php } ?>
+    <?=crm_flash('err',$err)?>
     <form method="post">
       <input type="hidden" name="csrf" value="<?=h(crm_csrf())?>">
       <div style="margin-bottom:10px"><input name="login" placeholder="Логин" style="width:100%" autofocus autocapitalize="off" autocorrect="off" autocomplete="username" spellcheck="false"></div>

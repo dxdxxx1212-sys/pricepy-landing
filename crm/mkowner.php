@@ -17,6 +17,6 @@ if(mb_strlen($p1)<10){ exit("✗ Пароль минимум 10 символов
 if($p1!==$p2){ exit("✗ Пароли не совпадают\n"); }
 try{
   crm_db()->prepare("INSERT INTO users(login,pass_hash,name,role,active,created_at) VALUES(?,?,?,?,1,?)")
-    ->execute([$login, password_hash($p1,PASSWORD_DEFAULT), $name, $role, date('c')]);
+    ->execute([$login, password_hash($p1,PASSWORD_DEFAULT), $name, $role, crm_now()]);
   fwrite(STDOUT,"✅ Пользователь «$login» ($role) создан. Заходи: https://crm.восток-прицеп.рф/\n");
 }catch(Throwable $e){ exit("✗ Ошибка (возможно, такой логин уже есть)\n"); }

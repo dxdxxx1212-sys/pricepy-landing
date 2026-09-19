@@ -22,15 +22,6 @@ $files = [];
 foreach ($candidates as $p) { if (is_file($p) && !in_array(realpath($p), array_map('realpath',$files), true)) $files[] = $p; }
 if (!$files) { fwrite(STDERR, "leads.log не найден. Искал: ".implode(', ', $candidates)."\n"); exit(1); }
 
-// Похоже ли contact на настоящий контакт (иначе — тест/мусор, не тащим).
-function crm_valid_contact($contact){
-  $d = preg_replace('/\D+/', '', (string)$contact);
-  if (preg_match('/^[78]9\d{9}$/', $d)) return true;             // 8/7 9XX XXXXXXX (11 цифр)
-  if (preg_match('/^9\d{9}$/', $d)) return true;                 // 9XX XXXXXXX без кода (10 цифр)
-  if (preg_match('/@[A-Za-z0-9_]{4,}/u', (string)$contact)) return true; // телеграм-ник @name
-  return false;
-}
-
 if ($dry) echo "=== РЕЖИМ ПРЕДПРОСМОТРА: ничего не записывается ===\n";
 $db = crm_db();
 $check = $db->prepare("SELECT 1 FROM leads WHERE created_at=? AND phone_norm=? LIMIT 1");
@@ -49,9 +40,9 @@ foreach ($files as $log) {
     $name = trim((string)($data['name'] ?? ''));
     $contact = trim((string)($data['contact'] ?? ''));
     if ($name === '' && mb_strlen($contact) < 4) { $empty++; continue; } // пусто
-    if (!crm_valid_contact($contact)) { $junk++; $junkList[] = ($name?:'(без имени)')." | ".$contact; continue; } // тест/мусор
+    if (!crm_contact_plausible($contact)) { $junk++; $junkList[] = ($name?:'(без имени)')." | ".$contact; continue; } // тест/мусор
 
-    $t = strtotime($ts); $ca = $t ? date('c', $t) : date('c');
+    $t = strtotime($ts); $ca = $t ? date('c', $t) : crm_now();
     // ключ дедупа должен совпадать с тем, что реально лежит в колонке phone_norm (8XXX… → 7XXX…),
     // иначе повторный запуск импорта заводил дубли для номеров, записанных через «8».
     $phone = crm_phone_norm($contact);

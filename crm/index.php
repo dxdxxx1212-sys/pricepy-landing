@@ -20,9 +20,9 @@ $fSource = $_GET['source'] ?? '';
 $fDue = isset($_GET['due']);
 $q = trim($_GET['q'] ?? '');
 $isOwner = ($me['role']==='owner');
-$fMine = isset($_GET['mine']);
 $fUnassigned = isset($_GET['unassigned']);
 $fAssignee = $isOwner ? trim($_GET['assignee'] ?? '') : ''; // '', 'none' или id оператора — только для владельца
+$hasFilter = $fStatus||$fCall||$fSource||$q||$fUnassigned||$fAssignee!==''||$fDue;
 $tomorrow = date('c', strtotime('tomorrow')); // граница «на сегодня» = всё, что до начала завтра
 $scope = crm_lead_scope_sql($me); // оператор видит только свои лиды (серверное ограничение, не только UI)
 $opList = $isOwner ? $db->query("SELECT id,name FROM users WHERE role='operator' ORDER BY name")->fetchAll() : [];
@@ -31,7 +31,6 @@ if($fStatus!==''){ $where[]='status=?'; $args[]=$fStatus; }
 if($fCall!==''){ $where[]="(','||call_status||',') LIKE ?"; $args[]='%,'.$fCall.',%'; } // членство в наборе каналов
 if($fSource!==''){ $where[]='source=?'; $args[]=$fSource; }
 if($fDue){ $where[]="next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')"; $args[]=$tomorrow; }
-if($fMine){ $where[]='assignee_id=?'; $args[]=(int)$me['id']; }
 if($fUnassigned){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
 if($fAssignee==='none'){ $where[]='(assignee_id IS NULL OR assignee_id=0)'; }
 elseif($fAssignee!==''){ $where[]='assignee_id=?'; $args[]=(int)$fAssignee; }
@@ -58,12 +57,13 @@ if($pageIds){ $in=implode(',',$pageIds);
   foreach($db->query("SELECT a.lead_id, a.id FROM attachments a JOIN (SELECT lead_id, MAX(id) mid FROM attachments WHERE lead_id IN($in) GROUP BY lead_id) m ON m.mid=a.id") as $r){ $lastAtt[(int)$r['lead_id']]=(int)$r['id']; }
 }
 
-// KPI — минимум для работы
-$k_new      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='new' AND ($scope)")->fetch()['c'];
-$kd=$db->prepare("SELECT COUNT(*) c FROM leads WHERE next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost') AND ($scope)"); $kd->execute([$tomorrow]); $k_due=(int)$kd->fetch()['c'];
-$k_noanswer = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE (','||call_status||',') LIKE '%,noanswer,%' AND ($scope)")->fetch()['c'];
-$k_won      = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE status='won' AND ($scope)")->fetch()['c'];
-$k_total    = (int)$db->query("SELECT COUNT(*) c FROM leads WHERE $scope")->fetch()['c'];
+// KPI — минимум для работы, одним проходом по видимым лидам (SUM(условие) в SQLite = число строк, где оно истинно)
+$kq=$db->prepare("SELECT COUNT(*) total, SUM(status='new') new_, SUM(status='won') won,
+  SUM(next_action_at<>'' AND next_action_at<? AND status NOT IN('won','lost')) due,
+  SUM((','||call_status||',') LIKE '%,noanswer,%') noanswer,
+  SUM(assignee_id IS NULL OR assignee_id=0) unassigned FROM leads WHERE $scope");
+$kq->execute([$tomorrow]); $K=$kq->fetch();
+$k_total=(int)$K['total']; $k_new=(int)$K['new_']; $k_won=(int)$K['won']; $k_due=(int)$K['due']; $k_noanswer=(int)$K['noanswer']; $k_unassigned=(int)$K['unassigned'];
 $sources = $db->query("SELECT DISTINCT source FROM leads WHERE source<>'' AND ($scope) ORDER BY source")->fetchAll(PDO::FETCH_COLUMN);
 
 // карта дублей по нормализованному телефону: phone_norm => [первый id, сколько всего]
@@ -73,11 +73,11 @@ foreach($db->query("SELECT phone_norm, MIN(id) mn, COUNT(*) c FROM leads WHERE p
 }
 
 crm_head('Лиды'); ?>
-<?php if(isset($_GET['deleted'])){ ?><div style="background:#173a24;color:#8ff0b0;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px">Лид удалён.</div><?php } ?>
+<?php if(isset($_GET['deleted'])) echo crm_flash('ok','Лид удалён.'); ?>
 <?php if(isset($_GET['bulk'])){ $bulkRaw=is_scalar($_GET['bulk'])?(string)$_GET['bulk']:''; $bn=(int)$bulkRaw;
   $bulkTxt = $bulkRaw==='csrf' ? 'Передача не выполнена: сессия истекла. Обновите страницу (F5) и повторите.'
            : ($bn ? ('Передано '.$bn.' '.crm_plural_lead($bn).'.') : 'Ничего не передано — лиды не выбраны или назначение не изменилось.'); ?>
-<div style="background:<?=$bn?'#173a24;color:#8ff0b0':'#3a2417;color:#f0a86a'?>;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px"><?=h($bulkTxt)?></div><?php } ?>
+<?=crm_flash($bn?'ok':'warn',$bulkTxt)?><?php } ?>
 <div class="kpi">
   <a class="k" href="?due=1" style="text-decoration:none;border-color:<?=$k_due?'var(--alert)':'var(--line)'?>"><b style="color:<?=$k_due?'var(--alert)':'#5fd08a'?>"><?=$k_due?></b><span>на сегодня</span></a>
   <a class="k" href="?status=new" style="text-decoration:none;border-color:<?=$k_new?'var(--acc)':'var(--line)'?>"><b style="color:var(--acc)"><?=$k_new?></b><span>новых</span></a>
@@ -88,13 +88,12 @@ crm_head('Лиды'); ?>
 
 <?php $chipOn='background:var(--acc);color:#12181f;font-weight:700'; ?>
 <div class="filters" style="margin-bottom:8px">
-  <a class="pill" href="index.php" style="<?=(!$fMine&&!$fUnassigned&&$fAssignee==='')?$chipOn:''?>"><?=$isOwner?'Все лиды':'Мои лиды'?></a>
-  <?php if($isOwner){ ?><a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые<?=' · '.(int)$db->query("SELECT COUNT(*) c FROM leads WHERE (assignee_id IS NULL OR assignee_id=0)")->fetch()['c']?></a><?php } ?>
+  <a class="pill" href="index.php" style="<?=(!$fUnassigned&&$fAssignee==='')?$chipOn:''?>"><?=$isOwner?'Все лиды':'Мои лиды'?></a>
+  <?php if($isOwner){ ?><a class="pill" href="?unassigned=1" style="<?=$fUnassigned?$chipOn:''?>">Нераспределённые · <?=$k_unassigned?></a><?php } ?>
   <a class="pill" href="?due=1" style="<?=$fDue?$chipOn:''?>">На сегодня<?=$k_due?' · '.$k_due:''?></a>
 </div>
 
 <form class="filters" method="get">
-  <?php if($fMine){ ?><input type="hidden" name="mine" value="1"><?php } ?>
   <?php if($fUnassigned){ ?><input type="hidden" name="unassigned" value="1"><?php } ?>
   <?php if($isOwner){ ?><select name="assignee" onchange="this.form.submit()"><option value="">Все менеджеры</option><option value="none" <?=$fAssignee==='none'?'selected':''?>>— не распределён</option>
     <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>" <?=$fAssignee===(string)$op['id']?'selected':''?>><?=h($op['name'])?></option><?php } ?></select><?php } ?>
@@ -106,7 +105,7 @@ crm_head('Лиды'); ?>
     <?php foreach($sources as $s){ ?><option value="<?=h($s)?>" <?=$fSource===$s?'selected':''?>><?=h($s)?></option><?php } ?></select>
   <input name="q" value="<?=h($q)?>" placeholder="Поиск: имя или телефон (любой формат)" style="min-width:220px">
   <button class="btn btn-sec">Найти</button>
-  <?php if($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
+  <?php if($hasFilter){ ?><a href="index.php" class="muted">сбросить</a><?php } ?>
   <span class="sp" style="flex:1"></span>
   <span class="muted"><?=$total?> шт.<?=$pages>1?' · стр. '.$page.'/'.$pages:''?></span>
 </form>
@@ -129,12 +128,12 @@ crm_head('Лиды'); ?>
 <table class="leads">
 <thead><tr><?php if($isOwner){ ?><th style="width:34px;text-align:center"><input type="checkbox" id="bulkall" title="Выбрать все на странице" onclick="bulkAll(this)"></th><?php } ?><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Когда</th></tr></thead>
 <tbody>
-<?php foreach($rows as $r){ $dig=crm_phone_digits($r['contact']); $e164=crm_phone_e164($r['contact']); $req=array_filter([$r['use_'],$r['type'],$r['capacity'],$r['budget'],$r['items']]); $reqs=implode(' · ',$req); ?>
+<?php foreach($rows as $r){ $e164=crm_phone_e164($r['contact']); $reqs=crm_lead_request_summary($r); ?>
 <tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
   <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkClick(this,event)"></td><?php } ?>
   <td>
     <a href="view.php?id=<?=$r['id']?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$r['id']?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="chip warn" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
-    <br><?php if($dig){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
+    <br><?php if($e164!==''){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе"><span class="ch-dot" style="background:<?=crm_channel_color($r['channel'])?>"></span>хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
@@ -143,7 +142,7 @@ crm_head('Лиды'); ?>
   <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и фото"><?php if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
   <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:var(--muted);font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
-<?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?7:6?>" class="muted" style="padding:24px;text-align:center"><?=($fStatus||$fCall||$fSource||$q||$fMine||$fUnassigned||$fAssignee!==''||$fDue)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
+<?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?7:6?>" class="muted" style="padding:24px;text-align:center"><?=($hasFilter)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>
 </div>
 <?php if($isOwner){ ?></form>
@@ -206,7 +205,7 @@ function openHist(id){ var m=document.getElementById('histModal'), b=document.ge
 function closeHist(){ document.getElementById('histModal').hidden=true; document.body.style.overflow='';
   if(histChanged){ histChanged=false; location.reload(); } }   // применились действия — обновляем список
 document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !document.getElementById('histModal').hidden) closeHist(); });
-// любые действия в поп-апе (канал/статус/перезвон/назначение/коммент, правка/удаление) — через fetch, затем перерисовать фрагмент
+// правка/удаление комментария в поп-апе (владелец) — через fetch, затем перерисовать фрагмент
 document.getElementById('histBody').addEventListener('submit',function(e){
   var f=e.target.closest && e.target.closest('form'); if(!f) return;
   if(e.defaultPrevented) return;              // отмена подтверждения удаления

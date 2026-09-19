@@ -5,21 +5,21 @@ require __DIR__.'/lib.php';
 $me = crm_require();
 $db = crm_db();
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+header('Content-Type: text/html; charset=UTF-8');
+
+$L=crm_lead_get($id);
+if(!$L){ http_response_code(404); exit('Лид не найден'); }
+// оператор видит комментарии/фото только своих лидов — проверяем ДО любых действий
+if(!crm_can_see_lead($me,$L)){ http_response_code(403); exit('Нет доступа'); }
 
 if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
   $act=$_POST['act']??'';
   if($act==='comment_edit' || $act==='comment_delete'){ crm_process_comment_ops($me,$act); } // правка/удаление — только владелец (проверка внутри)
 }
 
-$Lr=$db->prepare("SELECT id,name,assignee_id FROM leads WHERE id=?"); $Lr->execute([$id]); $L=$Lr->fetch();
-if(!$L){ http_response_code(404); header('Content-Type: text/html; charset=UTF-8'); exit('Лид не найден'); }
-// оператор видит комментарии/фото только своих лидов
-if(!crm_can_see_lead($me,$L)){ http_response_code(403); header('Content-Type: text/html; charset=UTF-8'); exit('Нет доступа'); }
-
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC");
 $comments->execute([$id]); $comments=$comments->fetchAll();
 $csrf=h(crm_csrf()); $canManage=($me['role']==='owner');
-header('Content-Type: text/html; charset=UTF-8');
 ?>
 <div class="hist-head"><b><?=h($L['name']?:('Лид #'.$id))?></b> · <a href="view.php?id=<?=$id?>">открыть карточку →</a></div>
 <div class="hist-sec">

@@ -27,9 +27,14 @@ tr:hover td{background:#1b232c}
 .chip.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:var(--warn-line)}
 .ch-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 .mgr .icn{width:12px;height:12px;color:var(--muted)}
-.qa .icn{width:15px;height:15px}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);font-size:12px;margin:1px}
 .muted{color:var(--muted)}.right{text-align:right}
+/* плашки-сообщения: результат действия (ok), предупреждение (warn), ошибка (err) */
+.flash{padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:14px}
+.flash.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.flash.warn{background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-line)}
+.flash.err{background:var(--danger-bg);color:var(--danger-ink)}
+.flash .icn{vertical-align:-3px}
 .grid2{display:grid;grid-template-columns:1fr 340px;gap:16px}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
@@ -38,9 +43,6 @@ tr:hover td{background:#1b232c}
 .dl{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:14px}.dl dt{color:var(--muted)}.dl dd{margin:0}
 .cmt{border-top:1px solid var(--line);padding:10px 0}.cmt .m{color:var(--muted);font-size:12px}
 .req{max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qa{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:28px;padding:0 8px;border:1px solid var(--chip-line);border-radius:8px;font-size:12px;font-weight:600;color:var(--chip-ink);margin-right:4px;vertical-align:middle}
-.qa:hover{background:#1b232c;text-decoration:none;color:#fff}
-.qa.want-ch{border-color:var(--warn-line);color:var(--warn-ink)}   /* канал, который клиент выбрал */
 .want{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line)}
 .lead-name{color:#fff;font-weight:700}.lead-name:hover{color:#fff;text-decoration:none}
 .newtab{display:inline-block;margin-left:5px;color:#5a6777;font-size:13px;line-height:1;vertical-align:middle}
@@ -106,9 +108,6 @@ tr:hover td{background:#1b232c}
   table.leads td{border:0;padding:5px 0}
   .req{max-width:none;white-space:normal}
   .lc-txt{max-width:none}
-  /* крупнее для пальца: кнопки связи ≥44px по высоте (переопределяем фикс. height:28px) */
-  .qa{min-height:44px;height:auto;padding:0 14px;font-size:14px;margin-right:7px}
-  .qa .icn{width:18px;height:18px}
   .newtab{padding:6px 11px;font-size:15px;line-height:22px}
   .cphone{padding:8px 0;display:inline-block}
 }
