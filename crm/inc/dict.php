@@ -89,3 +89,16 @@ function crm_channel_label($ch){
 function crm_channel_color($ch){
   return ['whatsapp'=>'#22c55e','telegram'=>'#0ea5e9','max'=>'#8b5cf6','phone'=>'#9aa2ab'][crm_channel_norm($ch)] ?? '#9aa2ab';
 }
+// HTML-плашки набора каналов связи для списка лидов («WhatsApp», «Не дозвонился»…). Пусто → «—».
+function crm_contact_chips_html($cs){
+  $ccl=crm_contact_list($cs);
+  if(!$ccl) return '<span class="muted">—</span>';
+  $h='';
+  foreach($ccl as $ck){
+    $warn=($ck==='noanswer');
+    $h.='<span class="chip'.($warn?' warn':'').'" style="margin:1px 3px 1px 0">'
+       .($warn?'':'<span class="ch-dot" style="background:'.crm_contact_color($ck).'"></span>')
+       .h(crm_contact_label($ck)).'</span>';
+  }
+  return $h;
+}

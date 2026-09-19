@@ -72,7 +72,6 @@ $list=$db->query("SELECT * FROM users ORDER BY id")->fetchAll();
 // сколько потока уходит операторам автоматически (сумма долей активных операторов с включённой подачей, потолок 100)
 $feedRaw=0; foreach($list as $u){ if($u['role']==='operator' && $u['active'] && (int)($u['feed_active']??0)===1) $feedRaw+=(int)($u['feed_share']??0); }
 $feedSum=min(100,$feedRaw); $manual=100-$feedSum;
-$csrf=h(crm_csrf());
 crm_head('Операторы'); ?>
 <div class="card" style="margin-bottom:14px">
   <div style="font-weight:700;margin-bottom:4px">Авто-подача новых лидов</div>
@@ -88,24 +87,24 @@ crm_head('Операторы'); ?>
       <td><?=$u['role']==='owner'?'владелец':'оператор'?></td>
       <td><?=$u['active']?'<span style="color:#5fd08a">активен</span>':'<span class="muted">отключён</span>'?></td>
       <td><?php if($u['role']==='operator'){ ?><form method="post" style="display:flex;align-items:center;gap:6px;margin:0">
-          <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="feed"><input type="hidden" name="uid" value="<?=$u['id']?>">
+          <?=crm_act_fields('feed',['uid'=>$u['id']])?>
           <input type="number" name="share" min="0" max="100" value="<?=(int)($u['feed_share']??0)?>" style="width:62px;padding:6px 8px" title="Доля потока новых лидов в % (0 = выключено)"><span class="muted" style="font-size:13px">%</span>
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Владелец получает нераспределённый остаток">—</span><?php } ?></td>
       <td><?php if($u['role']==='operator'){ ?><form method="post" style="display:flex;align-items:center;gap:6px;margin:0">
-          <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="tg"><input type="hidden" name="uid" value="<?=$u['id']?>">
+          <?=crm_act_fields('tg',['uid'=>$u['id']])?>
           <input type="text" name="tg" value="<?=h($u['tg_chat_id']??'')?>" placeholder="chat_id" style="width:118px;padding:6px 8px" inputmode="numeric" title="Telegram chat_id оператора — узнать через @userinfobot">
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Уведомления идут в общий канал владельца">—</span><?php } ?></td>
-      <td class="right" style="white-space:nowrap"><?php if((int)$u['id']!==(int)$me['id']){ ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="toggle"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
-        <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm('Удалить <?=h($u['name'])?> навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')"><input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="delete"><input type="hidden" name="uid" value="<?=$u['id']?>"><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
+      <td class="right" style="white-space:nowrap"><?php if((int)$u['id']!==(int)$me['id']){ /* себя не отключить и не удалить */ ?><form method="post" style="display:inline"><?=crm_act_fields('toggle',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
+        <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm('Удалить <?=h($u['name'])?> навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')"><?=crm_act_fields('delete',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
     </tr><?php } ?></tbody></table>
   </div>
   <div class="card">
     <h3 style="margin:0 0 10px">Добавить оператора</h3>
     <?=crm_flash('err',$err)?><?=crm_flash('ok',$msg)?>
     <form method="post">
-      <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="add">
+      <?=crm_act_fields('add')?>
       <div style="margin-bottom:9px"><input name="name" placeholder="Имя" style="width:100%"></div>
       <div style="margin-bottom:9px"><input name="login" placeholder="Логин (латиницей, без пробелов)" style="width:100%" required autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <div style="margin-bottom:9px"><input name="pass" type="password" placeholder="Пароль (≥10)" style="width:100%" required></div>

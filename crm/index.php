@@ -112,7 +112,7 @@ crm_head('Лиды'); ?>
 
 <?php if($isOwner){ ?>
 <form id="bulkForm" method="post">
-<input type="hidden" name="csrf" value="<?=h(crm_csrf())?>"><input type="hidden" name="act" value="bulk_assign">
+<?=crm_act_fields('bulk_assign')?>
 <div id="bulkbar" style="display:none;position:sticky;top:56px;z-index:9;align-items:center;gap:12px;flex-wrap:wrap;background:#1b232c;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.28)">
   <b style="font-size:16px">Выбрано <span id="bulkn" style="color:var(--acc)">0</span></b><span class="muted">передать →</span>
   <select name="uid" id="bulkuid" required style="min-width:170px"><option value="">— выберите оператора —</option>
@@ -128,19 +128,32 @@ crm_head('Лиды'); ?>
 <table class="leads">
 <thead><tr><?php if($isOwner){ ?><th style="width:34px;text-align:center"><input type="checkbox" id="bulkall" title="Выбрать все на странице" onclick="bulkAll(this)"></th><?php } ?><th>Клиент</th><th>Запрос</th><th>Связь</th><th>Статус</th><th>Коммент</th><th>Когда</th></tr></thead>
 <tbody>
-<?php foreach($rows as $r){ $e164=crm_phone_e164($r['contact']); $reqs=crm_lead_request_summary($r); ?>
-<tr onclick="location='view.php?id=<?=$r['id']?>'" style="cursor:pointer">
-  <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$r['id']?>" onclick="bulkClick(this,event)"></td><?php } ?>
+<?php foreach($rows as $r){
+  $id=(int)$r['id']; $e164=crm_phone_e164($r['contact']); $reqs=crm_lead_request_summary($r);
+  $isDup = isset($dups[$r['phone_norm']]) && $id!=$dups[$r['phone_norm']]['mn'];   // «повтор» — есть более ранняя заявка с этим номером
+  $aid=(int)$r['assignee_id']; $mgr = ($aid && isset($users[$aid])) ? $users[$aid] : '';
+  $lc=$lastCmt[$id]??''; $la=$lastAtt[$id]??0;                                     // последний коммент / последнее фото
+  $na=$r['next_action_at']; $over = $na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true);
+?>
+<tr onclick="location='view.php?id=<?=$id?>'" style="cursor:pointer">
+  <?php if($isOwner){ ?><td style="text-align:center;vertical-align:middle" onclick="event.stopPropagation()"><input type="checkbox" class="bulkcb" name="ids[]" value="<?=$id?>" onclick="bulkClick(this,event)"></td><?php } ?>
   <td>
-    <a href="view.php?id=<?=$r['id']?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$r['id']?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php if(isset($dups[$r['phone_norm']]) && $r['id']!=$dups[$r['phone_norm']]['mn']){ ?> <span class="chip warn" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
-    <br><?php if($e164!==''){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
+    <a href="view.php?id=<?=$id?>" class="lead-name" onclick="event.stopPropagation()"><b><?=h($r['name']?:'—')?></b></a><a href="view.php?id=<?=$id?>" target="_blank" rel="noopener" class="newtab" onclick="event.stopPropagation()" title="Открыть лид в новой вкладке">↗</a><?php
+      if($isDup){ ?> <span class="chip warn" title="Этот номер уже обращался — есть более ранняя заявка">повтор</span><?php } ?>
+    <br><?php if($e164!==''){ ?><span class="cphone" data-c="<?=$e164?>" onclick="event.stopPropagation();crmCopy(this)" title="Нажмите, чтобы скопировать номер"><?=h(crm_phone_fmt($r['contact']))?></span><?php }
+         else{ ?><span class="muted"><?=h(crm_phone_fmt($r['contact']))?></span><?php } ?>
     <?php if($r['channel']){ ?> <span class="want" title="Способ связи, который клиент выбрал в квизе"><span class="ch-dot" style="background:<?=crm_channel_color($r['channel'])?>"></span>хочет <?=h(crm_channel_label($r['channel']))?></span><?php } ?>
   </td>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
-  <td><?php $ccl=crm_contact_list($r['call_status']); if($ccl){ foreach($ccl as $ck){ $warn=($ck==='noanswer'); ?><span class="chip<?=$warn?' warn':''?>" style="margin:1px 3px 1px 0"><?php if(!$warn){ ?><span class="ch-dot" style="background:<?=crm_contact_color($ck)?>"></span><?php } ?><?=h(crm_contact_label($ck))?></span><?php } }else{ ?><span class="muted">—</span><?php } ?></td>
-  <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php $aid=(int)$r['assignee_id']; if($aid && isset($users[$aid])){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($users[$aid])?></span><?php }else{ ?><br><span class="mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
-  <td class="cmt-col"><?php $lc=$lastCmt[$r['id']]??''; $la=$lastAtt[$r['id']]??0; if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$r['id']?>)" title="Открыть комментарии и фото"><?php if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php } ?><?php if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }else{ ?><span class="muted">—</span><?php } ?></td>
-  <td style="white-space:nowrap"><?php $na=$r['next_action_at']; $over=$na && strtotime($na)<time() && !in_array($r['status'],['won','lost'],true); if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:var(--muted);font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
+  <td><?=crm_contact_chips_html($r['call_status'])?></td>
+  <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php
+      if($mgr!==''){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($mgr)?></span><?php }
+      else{ ?><br><span class="mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
+  <td class="cmt-col"><?php if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$id?>)" title="Открыть комментарии и фото"><?php
+      if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php }
+      if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }
+      else{ ?><span class="muted">—</span><?php } ?></td>
+  <td style="white-space:nowrap"><?php if($na){ ?><span style="color:<?=$over?'var(--alert)':'#5fd08a'?>;font-weight:600"><?=crm_icon($over?'clock':'cal')?> <?=crm_dt($na)?></span><br><?php } ?><span style="color:var(--muted);font-size:12px">заявка <?=crm_dt($r['created_at'])?></span></td>
 </tr>
 <?php } if(!$rows){ ?><tr><td colspan="<?=$isOwner?7:6?>" class="muted" style="padding:24px;text-align:center"><?=($hasFilter)?'По этому фильтру лидов нет. ':($isOwner?'Лидов пока нет. Как только придёт заявка с сайта — появится здесь.':'Вам пока не назначено ни одного лида. Как только владелец распределит — они появятся здесь.')?></td></tr><?php } ?>
 </tbody></table>

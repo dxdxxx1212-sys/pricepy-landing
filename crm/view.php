@@ -30,7 +30,6 @@ $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.
 $related=[]; if(!empty($L['phone_norm'])){ $rs=$db->prepare("SELECT id,status FROM leads WHERE phone_norm=? AND id<>? AND (".crm_lead_scope_sql($me).") ORDER BY id DESC LIMIT 20"); $rs->execute([$L['phone_norm'],$id]); $related=$rs->fetchAll(); } // «повтор» — только среди видимых пользователю лидов
 $e164=crm_phone_e164($L['contact']); $digN=ltrim($e164,'+'); // +7XXXXXXXXXX и цифры для ссылок ('' — номера нет, ник)
 $ch=$L['channel'];
-$csrf=h(crm_csrf());
 $activeUsers=$db->query("SELECT id,name,role FROM users WHERE active=1 ORDER BY role='owner' DESC, id")->fetchAll();
 crm_head('Лид #'.$id); ?>
 <style>
@@ -71,7 +70,8 @@ crm_head('Лид #'.$id); ?>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
 <?=crm_flash('ok',$msg)?>
-<?php if($related){ ?><div class="flash warn"><?=crm_icon('warn')?> Повторный клиент — ещё <?=count($related)?> заявк<?=count($related)==1?'а':(count($related)<5?'и':'')?>: <?php foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
+<?php if($related){ $n=count($related); ?><div class="flash warn"><?=crm_icon('warn')?> Повторный клиент — ещё <?=$n?> заявк<?=$n==1?'а':($n<5?'и':'')?>: <?php
+    foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
 
 <!-- КОНТАКТ -->
 <div class="card">
@@ -107,14 +107,18 @@ if($reqs){ ?>
 <div class="card">
   <div class="grouplbl">Как связались — можно отметить несколько:</div>
   <form method="post" class="statusrow" style="margin-bottom:16px">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="contact">
-    <?php $lastG=''; foreach($C as $k=>$v){ if($v['g']!==$lastG){ if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php } $active=in_array($k,$ccList,true); $col=crm_contact_color($k); ?>
-      <button name="contact" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''?> title="<?=$active?'нажми, чтобы убрать':'нажми, чтобы отметить'?>"><?=$active?crm_icon('check').' ':''?><?=h($v['l'])?></button>
+    <?=crm_act_fields('contact')?>
+    <?php $lastG=''; foreach($C as $k=>$v){
+      if($v['g']!==$lastG){ // подпись группы: «В мессенджере» / «По телефону», группы — с новой строки
+        if($lastG!=='') echo '<span class="rowbreak"></span>'; $lastG=$v['g']; ?><span class="gtag"><?=$v['g']==='msg'?'В мессенджере':'По телефону'?></span><?php }
+      $active=in_array($k,$ccList,true); $col=crm_contact_color($k);
+      $style=$active?' style="background:'.$col.';color:#12181f;font-weight:800;border-color:'.$col.'"':''; ?>
+      <button name="contact" value="<?=$k?>" class="spill"<?=$style?> title="<?=$active?'нажми, чтобы убрать':'нажми, чтобы отметить'?>"><?=$active?crm_icon('check').' ':''?><?=h($v['l'])?></button>
     <?php } if($ccList){ ?><button name="contact" value="" class="clr" title="сбросить все каналы">× сбросить всё</button><?php } ?>
   </form>
   <div class="grouplbl">Статус сделки — нажми:</div>
   <form method="post" class="statusrow">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="status">
+    <?=crm_act_fields('status')?>
     <?php foreach($ST as $k=>$v){ $active=$L['status']===$k; $col=crm_status_color($k); ?>
       <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:'.crm_status_ink($k).';font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
     <?php } ?>
@@ -123,7 +127,7 @@ if($reqs){ ?>
   <div class="grouplbl" style="margin-top:16px">Ответственный<?=$L['assignee_id']?'':' — не назначен'?>:</div>
   <?php if($me['role']==='owner'){ ?>
   <form method="post" class="statusrow">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="assign">
+    <?=crm_act_fields('assign')?>
     <?php foreach($activeUsers as $au){ $active=(int)$L['assignee_id']===(int)$au['id']; ?>
       <button name="uid" value="<?=$au['id']?>" class="spill"<?=$active?' style="background:#8b5cf6;color:#12181f;font-weight:800;border-color:#8b5cf6"':''?>><?=h($au['name'])?><?=$au['role']==='owner'?' '.crm_icon('star'):''?></button>
     <?php } ?>
@@ -138,7 +142,7 @@ if($reqs){ ?>
   <div class="grouplbl">Следующий контакт:</div>
   <?php if($na){ ?><div class="remind-now <?=$overdue?'remind-over':'remind-set'?>"><?=$overdue?crm_icon('clock').' Просрочено: ':crm_icon('cal').' Напомнить: '?><?=crm_dt($na)?><?=$overdue?' — пора связаться':''?></div><?php } ?>
   <form method="post" class="statusrow">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="remind">
+    <?=crm_act_fields('remind')?>
     <button name="when" value="eve" class="spill">Сегодня вечером</button>
     <button name="when" value="tom" class="spill">Завтра</button>
     <button name="when" value="d3" class="spill">Через 3 дня</button>
@@ -152,7 +156,7 @@ if($reqs){ ?>
 <div class="card">
   <h3 style="margin:0 0 10px">Комментарии</h3>
   <form method="post" enctype="multipart/form-data" style="margin-bottom:8px" id="cmtForm">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="comment">
+    <?=crm_act_fields('comment')?>
     <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V"></textarea>
     <input type="file" name="att[]" id="cmtFiles" accept="image/*" multiple hidden>
     <div id="cmtPrev" class="att-prev" hidden></div>
@@ -163,7 +167,7 @@ if($reqs){ ?>
       <button class="btn btn-b">Добавить</button>
     </div>
   </form>
-  <?php $canManage=($me['role']==='owner'); foreach($comments as $c){ echo crm_comment_card_html($c, crm_comment_attachments($c['id']), $canManage, $csrf); } ?>
+  <?php $canManage=($me['role']==='owner'); foreach($comments as $c){ echo crm_comment_card_html($c, crm_comment_attachments($c['id']), $canManage); } ?>
   <?php if(!$comments){ ?><div class="muted" style="font-size:14px">Пока нет комментариев.</div><?php } ?>
 </div>
 
@@ -180,7 +184,7 @@ if($reqs){ ?>
   <span>ID <?=$L['id']?> · <?=crm_dt($L['created_at'])?> · IP <?=h($L['ip']?:'—')?></span>
   <?php if($me['role']==='owner'){ ?>
   <form method="post" onsubmit="return confirm('Удалить лид #<?=$id?> навсегда? Вместе с комментариями и историей.')" style="margin:0">
-    <input type="hidden" name="csrf" value="<?=$csrf?>"><input type="hidden" name="act" value="delete">
+    <?=crm_act_fields('delete')?>
     <button style="background:none;border:0;color:#c0392b;cursor:pointer;padding:0;font:inherit;font-size:12px;text-decoration:underline">удалить лид</button>
   </form>
   <?php } ?>

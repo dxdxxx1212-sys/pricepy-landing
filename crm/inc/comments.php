@@ -49,7 +49,7 @@ function crm_process_comment_ops($me,$act){
   return null;
 }
 // HTML одной карточки комментария (общий для карточки лида и поп-апа). $canManage — показать правку/удаление (владелец).
-function crm_comment_card_html($c,$atts,$canManage,$csrf){
+function crm_comment_card_html($c,$atts,$canManage){
   $h='<div class="cmt" data-cid="'.(int)$c['id'].'"><div class="cmt-view">';
   if(($c['body']??'')!=='') $h.='<div class="cmt-body">'.nl2br(h($c['body'])).'</div>';
   if($atts){ $h.='<div class="att-grid">'; foreach($atts as $a){ $h.='<a class="att-th" href="att.php?id='.(int)$a['id'].'" target="_blank" rel="noopener" title="Открыть в полном размере"><img src="att.php?id='.(int)$a['id'].'" loading="lazy" alt=""></a>'; } $h.='</div>'; }
@@ -58,13 +58,13 @@ function crm_comment_card_html($c,$atts,$canManage,$csrf){
     $h.='<div class="cmt-tools">'
       .'<button type="button" class="cmt-edit-btn">изменить</button>'
       .'<form method="post" class="cmt-act cmt-del" onsubmit="return confirm(\'Удалить комментарий? Вместе с прикреплёнными фото.\')" style="display:inline">'
-      .'<input type="hidden" name="csrf" value="'.$csrf.'"><input type="hidden" name="act" value="comment_delete"><input type="hidden" name="cid" value="'.(int)$c['id'].'">'
+      .crm_act_fields('comment_delete',['cid'=>(int)$c['id']])
       .'<button type="submit" class="cmt-del-btn">удалить</button></form></div>';
   }
   $h.='</div>'; // .cmt-view
   if($canManage){
     $h.='<form method="post" class="cmt-act cmt-editform" style="display:none">'
-      .'<input type="hidden" name="csrf" value="'.$csrf.'"><input type="hidden" name="act" value="comment_edit"><input type="hidden" name="cid" value="'.(int)$c['id'].'">'
+      .crm_act_fields('comment_edit',['cid'=>(int)$c['id']])
       .'<textarea name="body" rows="3" style="width:100%">'.h($c['body']).'</textarea>'
       .'<div style="margin-top:6px"><button type="submit" class="btn btn-b">Сохранить</button> <button type="button" class="cmt-cancel clr">отмена</button></div></form>';
   }

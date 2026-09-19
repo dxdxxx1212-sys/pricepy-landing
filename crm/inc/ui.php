@@ -6,6 +6,12 @@ if(!defined('CRM_LIB')){ http_response_code(403); exit; }
 function crm_asset_v($name){ return (int)@filemtime(__DIR__.'/../assets/'.$name); }
 // Плашка-сообщение: $kind = ok | warn | err. Пустой текст — ничего не выводит.
 function crm_flash($kind,$text){ return $text==='' ? '' : '<div class="flash '.$kind.'">'.h($text).'</div>'; }
+// Скрытые поля формы-действия: csrf + act (+ произвольные name=>value). Экранирует всё само.
+function crm_act_fields($act,$extra=[]){
+  $h='<input type="hidden" name="csrf" value="'.h(crm_csrf()).'"><input type="hidden" name="act" value="'.h($act).'">';
+  foreach($extra as $k=>$v) $h.='<input type="hidden" name="'.h($k).'" value="'.h($v).'">';
+  return $h;
+}
 function crm_head($title){ $u=crm_user();
   // X-Frame-Options (DENY) и nosniff уже ставит nginx на весь поддомен — здесь не дублируем,
   // иначе в ответе два разных X-Frame-Options. Добавляем только то, чего у nginx нет:

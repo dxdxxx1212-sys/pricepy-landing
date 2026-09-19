@@ -19,11 +19,11 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC");
 $comments->execute([$id]); $comments=$comments->fetchAll();
-$csrf=h(crm_csrf()); $canManage=($me['role']==='owner');
+$canManage=($me['role']==='owner');
 ?>
 <div class="hist-head"><b><?=h($L['name']?:('Лид #'.$id))?></b> · <a href="view.php?id=<?=$id?>">открыть карточку →</a></div>
 <div class="hist-sec">
   <div class="hist-lbl">💬 Комментарии и фото</div>
   <?php if(!$comments){ ?><div class="muted" style="font-size:14px">Комментариев и фото пока нет. <a href="view.php?id=<?=$id?>">Добавить в карточке →</a></div><?php }
-    foreach($comments as $c){ echo crm_comment_card_html($c, crm_comment_attachments($c['id']), $canManage, $csrf); } ?>
+    foreach($comments as $c){ echo crm_comment_card_html($c, crm_comment_attachments($c['id']), $canManage); } ?>
 </div>
