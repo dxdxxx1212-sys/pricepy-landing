@@ -1,0 +1,76 @@
+<?php
+// Модуль библиотеки CRM. Подключается только через crm/lib.php — прямой вызов по URL отдаёт 403.
+if(!defined('CRM_LIB')){ http_response_code(403); exit; }
+// ---- База ----
+function crm_db(){
+  static $db=null;
+  if($db) return $db;
+  $db = new PDO('sqlite:'.CRM_DB_PATH);
+  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+  $db->exec('PRAGMA journal_mode=WAL;');
+  $db->exec('PRAGMA busy_timeout=3000;');
+  crm_init_schema($db);
+  crm_migrate($db);
+  return $db;
+}
+// Лёгкие миграции для баз, созданных до появления колонок (ALTER + бэкофилл).
+function crm_migrate($db){ static $done=false; if($done) return; $done=true;
+  $ver = (int)$db->query("PRAGMA user_version")->fetchColumn();
+  if($ver >= CRM_SCHEMA_VERSION) return; // схема актуальна — тяжёлые проверки/бэкофиллы не гоняем на каждый запрос
+  $cols = $db->query("PRAGMA table_info(leads)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
+  if(!in_array('call_status',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN call_status TEXT DEFAULT ''"); }
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)");
+  // комментарии: колонка edited_at (для пометки «изменён» владельцем)
+  $ccols = $db->query("PRAGMA table_info(comments)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if($ccols && !in_array('edited_at',$ccols,true)){ $db->exec("ALTER TABLE comments ADD COLUMN edited_at TEXT"); }
+  // v3: авто-подача лидов операторам (доля потока + тумблер) и tg-чат оператора (для Этапа 3)
+  $ucols = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+  if($ucols && !in_array('feed_share',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN feed_share INTEGER DEFAULT 0"); }
+  if($ucols && !in_array('feed_active',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN feed_active INTEGER DEFAULT 0"); }
+  if($ucols && !in_array('tg_chat_id',$ucols,true)){ $db->exec("ALTER TABLE users ADD COLUMN tg_chat_id TEXT"); }
+  // Перенос старой плоской воронки в двухполевую модель (идемпотентно — после переноса таких строк нет).
+  $legacy = (int)$db->query("SELECT COUNT(*) FROM leads WHERE status IN('messaged','noanswer')")->fetchColumn();
+  if($legacy){
+    // «Не дозвонился» был этапом → теперь это канал связи, а сделка остаётся «в работе».
+    $db->exec("UPDATE leads SET call_status='noanswer', status='work' WHERE status='noanswer'");
+    // «Написал в мессенджере» → канал = мессенджер, который клиент выбрал в квизе (если знаем), иначе WhatsApp.
+    $db->exec("UPDATE leads SET call_status=CASE channel WHEN 'telegram' THEN 'tg' WHEN 'max' THEN 'max' ELSE 'wa' END, status='work' WHERE status='messaged'");
+  }
+  // Пересчитать нормализованный телефон для ВСЕХ строк (канонизация 8→7, 10-значный 9XX→7 9XX) —
+  // чтобы дедуп/поиск/«повторный клиент» ловили один номер в любом формате.
+  $need = $db->query("SELECT id,contact FROM leads WHERE contact<>''")->fetchAll();
+  if($need){ $up=$db->prepare("UPDATE leads SET phone_norm=? WHERE id=?");
+    foreach($need as $r){ $up->execute([crm_phone_norm($r['contact']), $r['id']]); } }
+  $db->exec("PRAGMA user_version=".CRM_SCHEMA_VERSION);
+}
+function crm_init_schema($db){ static $done=false; if($done) return; $done=true;
+  $db->exec("CREATE TABLE IF NOT EXISTS leads(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, source TEXT,
+    name TEXT, contact TEXT, channel TEXT,
+    use_ TEXT, capacity TEXT, type TEXT, budget TEXT, timing TEXT,
+    utm_source TEXT, utm_medium TEXT, utm_campaign TEXT, utm_content TEXT, utm_term TEXT,
+    gclid TEXT, yclid TEXT, items TEXT, phone_norm TEXT,
+    ip TEXT, ua TEXT, raw TEXT,
+    status TEXT DEFAULT 'new', call_status TEXT DEFAULT '', assignee_id INTEGER,
+    next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
+  // оператор в каждом запросе фильтрует по assignee_id — без индекса это полный скан таблицы
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_assignee ON leads(assignee_id)");
+  $db->exec("CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, pass_hash TEXT,
+    name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT,
+    feed_share INTEGER DEFAULT 0, feed_active INTEGER DEFAULT 0, tg_chat_id TEXT)");
+  $db->exec("CREATE TABLE IF NOT EXISTS comments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT, edited_at TEXT)");
+  $db->exec("CREATE TABLE IF NOT EXISTS events(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, type TEXT, detail TEXT, created_at TEXT)");
+  // Вложения к комментариям (фото/скрины). path — имя файла внутри CRM_UPLOAD_DIR (генерим сами, не из ввода).
+  $db->exec("CREATE TABLE IF NOT EXISTS attachments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, comment_id INTEGER, user_id INTEGER,
+    path TEXT, orig_name TEXT, mime TEXT, size INTEGER, created_at TEXT)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_att_lead ON attachments(lead_id)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_att_comment ON attachments(comment_id)");
+}
