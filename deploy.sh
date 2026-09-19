@@ -56,6 +56,8 @@ server {
 
     # не отдавать .git и прочие скрытые файлы
     location ~ /\. { deny all; }
+    # PHP исполняется только через location = /api/lead; исходники, config.php и логи — не отдавать как файлы
+    location ~* \.(log|sh|md|php|phtml|phar|inc)\$ { deny all; }
 }
 NGINX
 ln -sf /etc/nginx/sites-available/pricepy /etc/nginx/sites-enabled/pricepy

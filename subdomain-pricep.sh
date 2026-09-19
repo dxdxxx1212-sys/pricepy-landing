@@ -28,7 +28,7 @@ server {
     root ${WWW};
 
     # не отдавать наружу логи заявок (ПДн), базы и скрипты
-    location ~* \.(log|sqlite|sqlite-wal|sqlite-shm|sh|md)\$ { deny all; }
+    location ~* \.(log|sqlite|sqlite-wal|sqlite-shm|sh|md|php|phtml|phar|inc)\$ { deny all; }   # PHP исполняется только через location = /api/lead; остальное — не отдавать как файлы
     location ~ /\. { deny all; }
 
     location = / { try_files /v3.html =404; }
