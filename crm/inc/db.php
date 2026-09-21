@@ -30,7 +30,7 @@ function crm_init_schema($db){
     ip TEXT, ua TEXT, raw TEXT,
     status TEXT DEFAULT 'new', call_status TEXT DEFAULT '', assignee_id INTEGER,
     next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT,
-    work_at TEXT, work_by INTEGER)");   // когда и кто впервые взял лид в работу (первый выход из «Новый»)
+    work_at TEXT, work_by INTEGER, status_at TEXT)"); // work_*: когда/кто впервые взял лид в работу (первый выход из «Новый»); status_at: когда поставлен текущий статус
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)");
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
   // оператор в каждом запросе фильтрует по assignee_id — без индекса это полный скан таблицы
@@ -67,6 +67,11 @@ function crm_migrate($db){
       work_at=(SELECT e.created_at FROM events e WHERE e.lead_id=leads.id AND e.type='статус' AND e.detail LIKE 'Новый → %' ORDER BY e.id LIMIT 1),
       work_by=(SELECT e.user_id   FROM events e WHERE e.lead_id=leads.id AND e.type='статус' AND e.detail LIKE 'Новый → %' ORDER BY e.id LIMIT 1)
       WHERE status<>'new'");
+  }
+  // v6: когда поставлен текущий статус. Старым лидам — из истории: последнее событие «… → …».
+  if(!in_array('status_at',$cols,true)){
+    $db->exec("ALTER TABLE leads ADD COLUMN status_at TEXT");
+    $db->exec("UPDATE leads SET status_at=(SELECT e.created_at FROM events e WHERE e.lead_id=leads.id AND e.type='статус' ORDER BY e.id DESC LIMIT 1) WHERE status<>'new'");
   }
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)"); // индекс здесь, а не в init: у старой базы колонка появляется только строкой выше
   // комментарии: колонка edited_at (для пометки «изменён» владельцем)

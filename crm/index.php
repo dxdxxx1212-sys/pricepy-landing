@@ -147,7 +147,8 @@ crm_head('Лиды'); ?>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
   <td><?=crm_contact_chips_html($r['call_status'])?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php
-      if($r['work_at'] && $r['status']!=='new'){ $wb=(int)$r['work_by']; $wbn=$users[$wb]??''; ?><span class="took" title="В работе с <?=crm_dt($r['work_at'])?><?=$wbn!==''?' — '.h($wbn):''?>">с <?=crm_dt_short($r['work_at'])?><?=($wbn!==''&&$wb!==$aid)?' · '.h($wbn):''?></span><?php }
+      if($since=crm_status_since($r,$users)){ [$sl,$sd,$sw]=$since; // в строке имя взявшего — только если он не текущий ответственный (тот и так ниже)
+        ?><span class="took" title="<?=h(crm_ucfirst($sl))?> <?=crm_dt($sd)?><?=$sw!==''?' — '.h($sw):''?>"><?=h($sl)?> <?=crm_dt_short($sd)?><?=($sw!==''&&(int)$r['work_by']!==$aid)?' · '.h($sw):''?></span><?php }
       if($mgr!==''){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($mgr)?></span><?php }
       else{ ?><br><span class="mgr-none" title="Лид пока никому не назначен">не назначен</span><?php } ?></td>
   <td class="cmt-col"><?php if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$id?>)" title="Открыть комментарии и фото"><?php

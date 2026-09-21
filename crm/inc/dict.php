@@ -12,6 +12,16 @@ function crm_statuses(){ return [
   'won'  => 'Продажа',
   'lost' => 'Отказ',
 ];}
+// Строка под бейджем статуса: когда поставлен ТЕКУЩИЙ статус (status_at). Вернули в «Новый» и снова
+// взяли — дата обновится. Имя взявшего (work_by) показываем только если это то самое первое взятие.
+// Возвращает [подпись, iso-дата, имя-или-''] или null (для «Новый» и когда даты нет).
+function crm_status_since($L,$users=[]){
+  $s=$L['status']??'new';
+  $lbl=['work'=>'в работе с','sent'=>'подборка','won'=>'продажа','lost'=>'отказ'][$s] ?? null;
+  if($lbl===null || empty($L['status_at'])) return null;
+  $who=($s==='work' && !empty($L['work_at']) && $L['work_at']===$L['status_at']) ? ($users[(int)$L['work_by']]??'') : '';
+  return [$lbl,$L['status_at'],$who];
+}
 function crm_status_color($s){ return [
   'new'=>'#eab308','work'=>'#3b82f6','sent'=>'#38bdf8','won'=>'#22a06b','lost'=>'#64748b',
 ][$s] ?? '#64748b'; }
