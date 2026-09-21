@@ -50,6 +50,7 @@ tr:hover td{background:#1b232c}
 .cphone{color:var(--ph);font-weight:500;cursor:pointer;border-bottom:1px dashed #3a4653}
 .cphone:hover{color:#fff}
 .mgr{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;background:var(--chip-bg);color:var(--chip-ink);border:1px solid var(--chip-line);border-radius:6px;padding:1px 8px}
+.took{display:block;margin-top:5px;font-size:12px;color:var(--muted);white-space:nowrap}
 .mgr-none{display:inline-block;margin-top:6px;color:var(--muted);padding:1px 8px;border:1px dashed var(--line);border-radius:6px;font-size:12px}
 /* строка последнего комментария + превью вложения в списке лидов */
 .lc{display:flex;align-items:center;gap:8px;margin-top:8px}

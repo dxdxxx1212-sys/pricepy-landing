@@ -29,7 +29,8 @@ function crm_init_schema($db){
     gclid TEXT, yclid TEXT, items TEXT, phone_norm TEXT,
     ip TEXT, ua TEXT, raw TEXT,
     status TEXT DEFAULT 'new', call_status TEXT DEFAULT '', assignee_id INTEGER,
-    next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT)");
+    next_action_at TEXT, sale_amount TEXT, model TEXT, reject_reason TEXT, updated_at TEXT,
+    work_at TEXT, work_by INTEGER)");   // когда и кто впервые взял лид в работу (первый выход из «Новый»)
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)");
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
   // оператор в каждом запросе фильтрует по assignee_id — без индекса это полный скан таблицы
@@ -58,6 +59,15 @@ function crm_migrate($db){
   $cols = $db->query("PRAGMA table_info(leads)")->fetchAll(PDO::FETCH_COLUMN, 1);
   if(!in_array('phone_norm',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN phone_norm TEXT"); }
   if(!in_array('call_status',$cols,true)){ $db->exec("ALTER TABLE leads ADD COLUMN call_status TEXT DEFAULT ''"); }
+  // v5: когда/кто взял лид в работу. Старым лидам — из истории: первое событие «Новый → …».
+  if(!in_array('work_at',$cols,true)){
+    $db->exec("ALTER TABLE leads ADD COLUMN work_at TEXT");
+    $db->exec("ALTER TABLE leads ADD COLUMN work_by INTEGER");
+    $db->exec("UPDATE leads SET
+      work_at=(SELECT e.created_at FROM events e WHERE e.lead_id=leads.id AND e.type='статус' AND e.detail LIKE 'Новый → %' ORDER BY e.id LIMIT 1),
+      work_by=(SELECT e.user_id   FROM events e WHERE e.lead_id=leads.id AND e.type='статус' AND e.detail LIKE 'Новый → %' ORDER BY e.id LIMIT 1)
+      WHERE status<>'new'");
+  }
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone_norm)"); // индекс здесь, а не в init: у старой базы колонка появляется только строкой выше
   // комментарии: колонка edited_at (для пометки «изменён» владельцем)
   $ccols = $db->query("PRAGMA table_info(comments)")->fetchAll(PDO::FETCH_COLUMN, 1);

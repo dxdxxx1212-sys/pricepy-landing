@@ -6,6 +6,7 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 // Текущий момент в формате хранения (ISO 8601 с зоной) — единый для created_at/updated_at/событий.
 function crm_now(){ return date('c'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
+function crm_dt_short($iso){ $t=$iso?strtotime($iso):0; return $t? date('d.m H:i',$t):'—'; } // без года — для тесных мест в списке
 // Канонический ключ телефона для дедупа/поиска/связки: РФ-номер → 7XXXXXXXXXX (8→7, 10-значный 9XX→7 9XX).
 // Ник/не-телефон — как цифры (обычно ''). Единственное место, где разбирается формат номера.
 function crm_phone_norm($c){

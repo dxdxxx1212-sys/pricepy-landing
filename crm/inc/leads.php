@@ -30,6 +30,7 @@ function crm_process_lead_action($me,$id,$act){
     if(!isset($ST[$ns])) return true;
     // Ответственного НЕ трогаем: распределение лидов — только через явное назначение владельцем.
     $upd=['status'=>$ns];
+    if($L['status']==='new' && $ns!=='new' && empty($L['work_at'])){ $upd['work_at']=crm_now(); $upd['work_by']=$me['id']; } // взял в работу
     if(in_array($ns,['won','lost'],true) && !empty($L['next_action_at'])) $upd['next_action_at']=''; // сделка закрыта — напоминание не нужно
     crm_lead_update($id,$upd);
     if($ns!==$L['status']) crm_event($id,$me['id'],'статус',($ST[$L['status']]??$L['status']).' → '.($ST[$ns]??$ns));
@@ -44,7 +45,7 @@ function crm_process_lead_action($me,$id,$act){
         $upd=['call_status'=>$new];
         // первый контакт двигает сделку из «Новый» в «В работе» (ответственного не присваивает)
         $toWork = !$wasOn && $L['status']==='new';
-        if($toWork) $upd['status']='work';
+        if($toWork){ $upd['status']='work'; if(empty($L['work_at'])){ $upd['work_at']=crm_now(); $upd['work_by']=$me['id']; } }
         // «не дозвонился» без напоминания — ставим перезвон через 2 часа
         $autoRemind = !$wasOn && $nc==='noanswer' && empty($L['next_action_at']);
         if($autoRemind) $upd['next_action_at']=date('c',strtotime('+2 hours'));

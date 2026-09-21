@@ -147,8 +147,9 @@ crm_head('Лиды'); ?>
   <td class="muted req" title="<?=h($reqs)?>"><?=h($reqs)?></td>
   <td><?=crm_contact_chips_html($r['call_status'])?></td>
   <td><span class="badge" style="background:<?=crm_status_color($r['status'])?>;color:<?=crm_status_ink($r['status'])?>"><?=h($ST[$r['status']]??$r['status'])?></span><?php
+      if($r['work_at'] && $r['status']!=='new'){ $wb=(int)$r['work_by']; $wbn=$users[$wb]??''; ?><span class="took" title="В работе с <?=crm_dt($r['work_at'])?><?=$wbn!==''?' — '.h($wbn):''?>">с <?=crm_dt_short($r['work_at'])?><?=($wbn!==''&&$wb!==$aid)?' · '.h($wbn):''?></span><?php }
       if($mgr!==''){ ?><br><span class="mgr" title="Менеджер, который взял лид"><?=crm_icon('person')?><?=h($mgr)?></span><?php }
-      else{ ?><br><span class="mgr-none" title="Лид пока никто не взял">не взят</span><?php } ?></td>
+      else{ ?><br><span class="mgr-none" title="Лид пока никому не назначен">не назначен</span><?php } ?></td>
   <td class="cmt-col"><?php if($lc!==''||$la){ ?><div class="lc" onclick="event.stopPropagation();openHist(<?=$id?>)" title="Открыть комментарии и фото"><?php
       if($lc!==''){ ?><span class="lc-txt"><?=h(mb_strimwidth(preg_replace('/\s+/u',' ',$lc),0,60,'…','UTF-8'))?></span><?php }
       if($la){ ?><span class="lc-thumb"><img src="att.php?id=<?=$la?>" loading="lazy" alt=""></span><?php } ?></div><?php }

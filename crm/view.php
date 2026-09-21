@@ -123,6 +123,7 @@ if($reqs){ ?>
       <button name="status" value="<?=$k?>" class="spill"<?=$active?' style="background:'.$col.';color:'.crm_status_ink($k).';font-weight:800;border-color:'.$col.'"':''?>><?=h($v)?></button>
     <?php } ?>
   </form>
+  <?php if($L['work_at'] && $L['status']!=='new'){ ?><div class="took" style="margin-top:6px">В работе с <?=crm_dt($L['work_at'])?><?=isset($users[(int)$L['work_by']])?' · '.h($users[(int)$L['work_by']]):''?></div><?php } ?>
 
   <div class="grouplbl" style="margin-top:16px">Ответственный<?=$L['assignee_id']?'':' — не назначен'?>:</div>
   <?php if($me['role']==='owner'){ ?>
