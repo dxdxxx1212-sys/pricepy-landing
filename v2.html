@@ -39,7 +39,7 @@ _tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 <style>
 :root{
   --bg:#eef2f4; --card:#fff; --ink:#17222e; --muted:#5d6b77; --line:#e3e9ee;
-  --accent:#f6871f; --accent-d:#e2760c; --green:#2b8a3e; --radius:18px;
+  --accent:#f6871f; --accent-d:#e2760c; --green:#2b8a3e; --radius:18px; --sale:#b5560a;
   --shadow:0 10px 34px rgba(23,34,46,.10);
 }
 *{box-sizing:border-box}
@@ -72,6 +72,14 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 .hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,22,30,.66),rgba(15,22,30,.86))}
 .hero-inner{position:relative;z-index:1;color:#fff}
 .hero-badge{display:inline-block;border:1px solid rgba(255,255,255,.45);border-radius:30px;padding:8px 18px;font-size:13px;font-weight:800;letter-spacing:.5px;color:#fff;margin-bottom:20px;text-transform:uppercase}
+.hero-badge.sale{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;
+  background:#fff;border:0;border-radius:12px;padding:9px 15px;color:var(--ink);font-size:14px;font-weight:700;
+  line-height:1.35;letter-spacing:0;text-transform:none;text-align:center;max-width:100%;
+  box-shadow:0 4px 16px rgba(0,0,0,.28);margin-bottom:18px}
+.hero-badge.sale b{color:var(--sale);font-weight:900;font-size:17px;white-space:nowrap}
+.hero-badge.sale .on{font-weight:700}
+.hero-badge.sale i{flex-basis:100%;font-style:normal;color:var(--muted);font-weight:700;font-size:13px}
+.sale-terms{opacity:.7;margin-top:8px;font-size:12px;line-height:1.45}
 .hero h1{font-size:52px;line-height:1.04;margin:0 0 18px;letter-spacing:-1px;font-weight:900;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.45)}
 .hero h1 span{color:var(--accent)}
 .hero p{font-size:19px;color:#e6ebef;margin:0 auto 26px;max-width:560px}
@@ -157,7 +165,11 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 .pop-sec{padding:6px 0 44px}
 .pop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .pcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
-.pph{height:150px;background:#eef3f5 center/cover no-repeat}
+.pph{position:relative;height:150px;background:#eef3f5 center/cover no-repeat}
+.psale{position:absolute;left:8px;top:8px;background:var(--sale);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;letter-spacing:.2px}
+.pprices{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.pold{font-size:13px;font-weight:600;color:var(--muted);text-decoration:line-through}
+.pprice.now{color:var(--sale)}
 .pcb{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .pkind{font-size:12px;color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:.3px}
 .pnm{font-size:15px;font-weight:700;line-height:1.3;flex:1}
@@ -165,7 +177,8 @@ header{background:#fff;border-bottom:1px solid var(--line)}
 .pprice{font-size:18px;font-weight:800;white-space:nowrap}
 .pbtn{border:0;background:var(--accent);color:#fff;font-weight:700;border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;font-family:inherit}
 .pbtn:hover{background:var(--accent-d)}
-@media(max-width:640px){ .pop-grid{grid-template-columns:1fr 1fr;gap:10px} .pph{height:120px} .pnm{font-size:14px} .pprice{font-size:16px} .pbot{flex-direction:column;align-items:stretch;gap:8px} .pbtn{width:100%;text-align:center;padding:10px 8px} }
+@media(max-width:640px){ .pop-grid{grid-template-columns:1fr 1fr;gap:10px} .pph{height:120px} .pnm{font-size:14px} .pprice{font-size:16px} .pbot{flex-direction:column;align-items:stretch;gap:8px} .pbtn{width:100%;text-align:center;padding:10px 8px}
+  .pprices{gap:0;flex-direction:column-reverse;align-items:flex-start} .pold{font-size:12px} .psale{font-size:11px;padding:3px 7px} }
 footer{background:#17222e;color:#aeb9c2;padding:28px 0;font-size:13px;margin-top:10px}
 footer a{color:#cfd9e0}
 footer .docs{margin:8px 0}
@@ -183,6 +196,8 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
 
 @media(max-width:560px){
   body{font-size:17px}
+  .hero-badge.sale{font-size:13px;padding:8px 13px;gap:6px;margin-bottom:14px}
+  .hero-badge.sale b{font-size:16px}
   .hd-phone{display:none}
   .hero{padding:34px 0 26px}
   .hero h1{font-size:33px}
@@ -190,6 +205,10 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
   .hero-btns .btn{width:100%}
   .qbody h2{font-size:21px}
   .opts.photos{grid-template-columns:1fr 1fr}
+}
+@media(max-width:360px){
+  .hero-badge.sale{gap:3px;padding:7px 10px;border-radius:10px;font-size:12.5px}
+  .hero-badge.sale b{font-size:15px}
 }
 </style>
 </head>
@@ -206,7 +225,8 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
 <section class="hero">
   <div class="hero-bg"></div>
   <div class="wrap hero-inner">
-    <div class="hero-badge">★ Прицепы для дела — прямые поставки</div>
+    <!-- АКЦИЯ. Срок — в SALE_UNTIL внизу файла; после этой даты все data-sale скрываются сами. -->
+    <div class="hero-badge sale" data-sale><b>Скидка до 25%</b><span class="on">на прицепы в наличии</span><i>до 30 сентября</i></div>
     <h1>ПРИЦЕПЫ<br><span>ОТ ПРЯМОГО ПОСТАВЩИКА</span></h1>
     <p>Прямые поставки — честная цена, ПТС и документы. Подберите свой вариант за 1 минуту.</p>
     <div class="hero-btns">
@@ -269,6 +289,7 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
       <a data-doc="consent">Согласие на обработку данных</a>
       <a data-doc="offer">Публичная оферта</a>
     </div>
+    <div class="sale-terms" data-sale>Скидка до 25% действует по 30 сентября 2026 г. на отдельные модели прицепов в наличии на складе — они отмечены на сайте плашкой со скидкой. Полный перечень моделей и размер скидки — у менеджера по телефону +7 (495) 487-38-38. Не суммируется с другими скидками. Организатор — ИП Зырин В.В., ИНН 644154970400.</div>
     <div style="opacity:.7;margin-top:6px">Сайт носит информационный характер и не является публичной офертой. © 2026 Восток Прицеп.</div>
   </div>
 </footer>
@@ -389,20 +410,35 @@ const REVIEWS=[
  {img:'reviews/6.jpg',ini:'ДЛ',name:'Дмитрий Л.',city:'Липецк',text:'Искал недорогой надёжный прицеп. Прошёл подбор, прислали варианты с ценами — выбрал за вечер. Всё честно.'},
 ];
 const POPULAR=[
- {img:'images/17.jpg',kind:'Бортовой',name:'Прицеп Титан 3015-03',price:60660},
+ {img:'images/17.jpg',kind:'Бортовой',name:'Прицеп Титан 3015-03',price:60660,sale:true},
  {img:'images/18.jpg',kind:'С тентом',name:'Трейлер 829450 3,0×1,5',price:70275},
  {img:'images/29.jpg',kind:'Бортовой',name:'Крепыш 2.5 Плюс',price:63375},
- {img:'images/21.jpg',kind:'Двухосный',name:'Славич 255Д двухосный',price:72900},
+ {img:'images/21.jpg',kind:'Двухосный',name:'Славич 255Д двухосный',price:72900,sale:true},
  {img:'images/23.jpg',kind:'С тентом',name:'ALASKA Скала 3.5',price:92800},
- {img:'images/24.jpg',kind:'С крышкой',name:'МЗСА 817701.026',price:136140},
+ {img:'images/24.jpg',kind:'С крышкой',name:'МЗСА 817701.026',price:136140,sale:true},
 ];
+// sale:true — модель участвует в акции: price это цена СО скидкой, обычная цена считается от неё.
+const SALE_OFF=0.25;
 const money=n=>n.toLocaleString('ru-RU')+' ₽';
 function renderPopular(){
-  $('#popGrid').innerHTML=POPULAR.map(p=>'<div class="pcard"><div class="pph" style="background-image:url(\''+p.img+'\')"></div><div class="pcb"><div class="pkind">'+esc(p.kind)+'</div><div class="pnm">'+esc(p.name)+'</div><div class="pbot"><span class="pprice">'+money(p.price)+'</span><button class="pbtn" data-start>Подобрать →</button></div></div></div>').join('');
+  const on=SALE_ON();
+  $('#popGrid').innerHTML=POPULAR.map(p=>{
+    const sale=on && p.sale, old=sale?Math.round(p.price/(1-SALE_OFF)):0;
+    return '<div class="pcard"><div class="pph" style="background-image:url(\''+p.img+'\')">'+(sale?'<span class="psale">−'+(SALE_OFF*100)+'%</span>':'')+'</div>'+
+      '<div class="pcb"><div class="pkind">'+esc(p.kind)+'</div><div class="pnm">'+esc(p.name)+'</div>'+
+      '<div class="pbot"><span class="pprices">'+(sale?'<s class="pold">'+money(old)+'</s>':'')+'<span class="pprice'+(sale?' now':'')+'">'+money(p.price)+'</span></span>'+
+      '<button class="pbtn" data-start>Подобрать →</button></div></div></div>';
+  }).join('');
 }
 function renderReviews(){
   $('#revRow').innerHTML=REVIEWS.map(r=>'<div class="rev"><div class="rimg" style="background-image:url(\''+r.img+'\')"></div><div class="rbody"><div class="stars">★★★★★</div><p class="rtext">'+esc(r.text)+'</p><div class="rwho"><div class="rav">'+r.ini+'</div><div><b>'+esc(r.name)+'</b><span>'+esc(r.city)+'</span></div></div></div></div>').join('');
 }
+// Акция: одна дата на весь лендинг. Прошла — все элементы data-sale убираются,
+// чтобы на сайте не висело просроченное «до 30 сентября».
+const SALE_UNTIL='2026-09-30';
+function SALE_ON(){ return new Date() <= new Date(SALE_UNTIL+'T23:59:59+03:00'); }
+if(!SALE_ON()) document.querySelectorAll('[data-sale]').forEach(e=>e.remove());
+
 renderReviews();
 renderPopular();
 render();
