@@ -18,6 +18,7 @@ $real = realpath($full);
 // защита от выхода за пределы каталога вложений
 if($real===false || strpos($real, realpath(CRM_UPLOAD_DIR).DIRECTORY_SEPARATOR)!==0 || !is_file($real)){ http_response_code(404); exit('Файл недоступен'); }
 
+session_write_close(); // дальше сессия не нужна — не держим её лок, превью в списке грузятся параллельно
 $mime = $a['mime'] ?: 'application/octet-stream';
 $dl   = isset($_GET['dl']);
 $name = $a['orig_name'] ?: ('attachment-'.$a['id']);
@@ -26,5 +27,5 @@ header('Content-Type: '.$mime);
 header('Content-Length: '.filesize($real));
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: private, max-age=86400');
-header('Content-Disposition: '.($dl?'attachment':'inline').'; filename="'.rawurlencode($name).'"');
+header('Content-Disposition: '.($dl?'attachment':'inline').'; filename="attachment-'.(int)$a['id'].'"; filename*=UTF-8\'\''.rawurlencode($name));
 readfile($real);

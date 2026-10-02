@@ -79,6 +79,7 @@ crm_head('Операторы'); ?>
   <?php if($feedRaw>100){ ?><div class="flash warn" style="margin:10px 0 0"><?=crm_icon('warn')?> Сумма долей <?=$feedRaw?>% — больше 100. Лиды всё равно раздаются, но нижние в списке получат меньше, чем вы поставили. Приведите сумму к 100% или меньше.</div><?php } ?>
   <div style="font-size:13px;color:var(--muted);margin-top:8px">Личный Telegram: оператор жмёт <b>Start</b> у вашего бота (иначе Telegram не даст боту написать первым), узнаёт свой числовой <b>chat_id</b> (напр. через @userinfobot) — впишите в колонку «Telegram». Тогда назначенные ему лиды падают в личку.</div>
 </div>
+<?=crm_flash('err',$err)?><?=crm_flash('ok',$msg)?>
 <div class="grid2">
   <div class="card" style="padding:0;overflow-x:auto">
     <table><thead><tr><th>#</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Статус</th><th>Подача лидов</th><th>Telegram</th><th></th></tr></thead><tbody>
@@ -96,13 +97,12 @@ crm_head('Операторы'); ?>
           <input type="text" name="tg" value="<?=h($u['tg_chat_id']??'')?>" placeholder="chat_id" style="width:118px;padding:6px 8px" inputmode="numeric" title="Telegram chat_id оператора — узнать через @userinfobot">
           <button class="btn btn-sec" style="padding:5px 10px">OK</button>
         </form><?php }else{ ?><span class="muted" title="Уведомления идут в общий канал владельца">—</span><?php } ?></td>
-      <td class="right" style="white-space:nowrap"><?php if((int)$u['id']!==(int)$me['id']){ /* себя не отключить и не удалить */ ?><form method="post" style="display:inline"><?=crm_act_fields('toggle',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
-        <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm('Удалить <?=h($u['name'])?> навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')"><?=crm_act_fields('delete',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
+      <td class="right" style="white-space:nowrap"><?php if((int)$u['id']!==(int)$me['id']){ /* себя не отключить и не удалить */ ?><form method="post" style="display:inline"<?php if($u['active']){ ?> onsubmit="return confirm(this.dataset.q)" data-q="<?=h('Отключить '.$u['name'].'? Все его лиды сразу станут нераспределёнными — включение их обратно не вернёт.')?>"<?php } ?>><?=crm_act_fields('toggle',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px"><?=$u['active']?'отключить':'включить'?></button></form>
+        <form method="post" style="display:inline;margin-left:6px" onsubmit="return confirm(this.dataset.q)" data-q="<?=h('Удалить '.$u['name'].' навсегда? Его лиды станут нераспределёнными, а он потеряет доступ.')?>"><?=crm_act_fields('delete',['uid'=>$u['id']])?><button class="btn btn-sec" style="padding:5px 10px;color:#e57676;border-color:#5a3030">удалить</button></form><?php } ?></td>
     </tr><?php } ?></tbody></table>
   </div>
   <div class="card">
     <h3 style="margin:0 0 10px">Добавить оператора</h3>
-    <?=crm_flash('err',$err)?><?=crm_flash('ok',$msg)?>
     <form method="post">
       <?=crm_act_fields('add')?>
       <div style="margin-bottom:9px"><input name="name" placeholder="Имя" style="width:100%"></div>

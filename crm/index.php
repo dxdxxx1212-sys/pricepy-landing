@@ -122,7 +122,7 @@ crm_head('Лиды'); ?>
   </select>
   <button class="btn" type="submit">Передать</button>
   <button type="button" class="btn btn-sec" onclick="bulkClear()">Отмена</button>
-  <span class="muted" style="font-size:12px">Shift+клик — выбрать диапазон</span>
+  <span class="muted shift-hint" style="font-size:12px">Shift+клик — выбрать диапазон</span>
 </div>
 <?php } ?>
 <div class="card" style="padding:0;overflow-x:auto">
@@ -197,12 +197,15 @@ document.getElementById('bulkForm').addEventListener('submit',function(e){
 <div id="newlead" onclick="location.reload()" style="display:none;position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:50;background:var(--acc);color:#12181f;font-weight:700;padding:10px 16px;border-radius:22px;box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer"><?=crm_icon('bell')?> <span id="newleadn">0</span> новых — обновить</div>
 <script>
 (function(){ var base=<?=$maxId?>, title=document.title;
-  setInterval(function(){
+  function ping(){
+    if(document.hidden) return;
     fetch('ping.php',{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
       if(!j||!j.ok) return; var diff=j.max-base;
       if(diff>0){ document.getElementById('newleadn').textContent=diff; document.getElementById('newlead').style.display='block'; document.title='('+diff+') '+title; }
     }).catch(function(){});
-  }, 30000);
+  }
+  setInterval(ping, 30000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) ping(); });
 })();
 </script>
 <!-- поп-ап: комментарии + история изменений лида -->

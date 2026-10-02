@@ -23,6 +23,6 @@ function crm_head($title){ $u=crm_user();
 <link rel="stylesheet" href="assets/crm.css?v=<?=crm_asset_v('crm.css')?>"></head><body>
 <div class="top"><span class="brand">Восток<span>Прицеп</span> · CRM</span>
 <?php if($u){ ?><nav><a href="index.php">Лиды</a><?php if($u['role']==='owner'){ ?><a href="users.php">Операторы</a><?php } ?></nav>
-<span class="sp"></span><span class="me"><?=h($u['name'])?> · <?=$u['role']==='owner'?'владелец':'оператор'?></span> <a href="logout.php" class="muted">выйти</a><?php } ?>
+<span class="sp"></span><span class="me"><?=h($u['name'])?> · <?=$u['role']==='owner'?'владелец':'оператор'?></span> <form method="post" action="logout.php" class="logout"><?=crm_act_fields('logout')?><button class="linkbtn">выйти</button></form><?php } ?>
 </div><div class="wrap"><?php }
 function crm_foot(){ ?></div><div id="crmtoast"></div><script src="assets/crm.js?v=<?=crm_asset_v('crm.js')?>"></script></body></html><?php }

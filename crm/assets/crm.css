@@ -12,6 +12,7 @@ a{color:#9cc4ff;text-decoration:none}a:hover{text-decoration:underline}
 .top .brand{font-weight:800;color:var(--acc)}.top .brand span{color:#fff}
 .top nav{display:flex;gap:16px}.top nav a{color:var(--muted);font-weight:600}.top nav a.on{color:#fff}
 .top .sp{flex:1}.top .me{color:var(--muted);font-size:13px}
+.logout{display:inline;margin:0}.linkbtn{background:none;border:0;padding:0;color:var(--muted);cursor:pointer;font:inherit;font-size:13px}.linkbtn:hover{color:#fff}
 .wrap{max-width:1200px;margin:0 auto;padding:18px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
 .btn{display:inline-block;border:0;cursor:pointer;font-family:inherit;font-weight:700;border-radius:8px;background:var(--acc);color:#1a1a1a;padding:9px 16px;font-size:14px}
@@ -111,4 +112,16 @@ tr:hover td{background:#1b232c}
   .lc-txt{max-width:none}
   .newtab{padding:6px 11px;font-size:15px;line-height:22px}
   .cphone{padding:8px 0;display:inline-block}
+  /* зоны нажатия на телефоне — не меньше ~40px: мелкие «× снять», «удалить», фильтры-пилюли и галочки
+     стояли вплотную к крупным кнопкам и промахивались */
+  a.pill{padding:8px 12px;font-size:13px}
+  button.clr{padding:10px 8px}
+  .cmt-tools{gap:22px}.cmt-tools button{padding:8px 0;font-size:13px}
+  .hm-x{padding:8px 12px;top:0;right:0}
+  .bulkcb,#bulkall{width:22px;height:22px}
+  .linkbtn{padding:8px 0}
+  /* массовая передача — панелью снизу экрана, а не под липкой шапкой (та на телефоне выше 56px) */
+  #bulkbar{position:fixed!important;top:auto!important;bottom:0;left:0;right:0;margin:0!important;border-radius:12px 12px 0 0!important;z-index:20!important;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important}
+  #bulkbar .shift-hint{display:none}
+  .wrap{padding-bottom:110px}
 }
