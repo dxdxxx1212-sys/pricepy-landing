@@ -285,6 +285,7 @@ body.kbd .mcta{display:none}
   *{transition:none!important;animation:none!important}
   html{scroll-behavior:auto}
 }
+.lead-fail{margin:0 0 12px;padding:11px 14px;border-radius:12px;background:#fdecea;border:1px solid #f5c2bd;color:#8a1c12;font-size:15px;line-height:1.45;text-align:left}.lead-fail a{color:inherit;font-weight:800}
 </style>
 
 <!-- Аналитика опущена в конец head, чтобы не задерживать hero/LCP -->
@@ -529,20 +530,50 @@ function submit(){
   _submitting=true; document.body.classList.remove('kbd');
   const p={source:'quiz-v3-тонна'+(st.model?' · модель: '+st.model:''), use:st.ans.use, capacity:st.ans.capacity, type:st.ans.type, budget:st.ans.budget, timing:st.ans.timing, name, channel:st.channel, contact};
   if(st.model) p.model=st.model;
-  sendLead(p);
+  sendLead(p, $('#send')).then(function(ok){ _submitting=false; if(ok) showDone(); });
+  function showDone(){
   const L={use:'Назначение',capacity:'Грузоп.',type:'Тип',budget:'Бюджет',timing:'Сроки'};
   const rows=Object.keys(L).filter(k=>p[k]).map(k=>'<div class="row"><span class="k">'+L[k]+'</span><span class="v">'+esc(p[k])+'</span></div>').join('');
   $('#qbody').innerHTML='<div class="done"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Готово, '+esc(name)+'!</h2><p>Пришлём модели с ценами в '+esc(st.channel)+' — в течение 15 минут (9:00–21:00).</p><div class="summary"><div class="row"><span class="k">Связь</span><span class="v">'+esc(st.channel)+' · '+esc(contact)+'</span></div>'+rows+'</div></div>';
   $('#qbar').style.width='100%';$('#qcount').textContent='Готово';
+  }
 }
-function sendLead(data){
+/* Отправка заявки. «Спасибо» показываем ТОЛЬКО после ответа сервера, что заявка дошла (Telegram или CRM).
+   Раньше sendBeacon уходил «вслепую»: при сбое человек видел «Спасибо», а заявки не было нигде.
+   rid — метка заявки: повтор при плохой связи сервер узнаёт и не создаёт дубль. Возвращает Promise<boolean>. */
+function sendLead(data, btn){
   try{ data=Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
-  var _b=JSON.stringify(data), _sent=false;
-  try{ if(navigator.sendBeacon) _sent=navigator.sendBeacon('/api/lead', new Blob([_b],{type:'text/plain;charset=UTF-8'})); }catch(e){}
-  if(!_sent)(function r(n){ fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:_b}).then(function(x){ if(!x.ok&&n>0)setTimeout(function(){r(n-1)},1500); }).catch(function(){ if(n>0)setTimeout(function(){r(n-1)},1500); }); })(3);
-  try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
-  try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
-  showToast('Заявка отправлена');
+  var rid=(btn&&btn.dataset.rid)||(Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+  if(btn) btn.dataset.rid=rid; data.rid=rid;
+  var body=JSON.stringify(data), label=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.textContent='Отправляю…'; }
+  function attempt(n){
+    return fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+        if(r.ok) return !(j && j.ok===false);   // 2xx сервер отдаёт только когда заявка дошла; лишний текст в ответе — не повод пугать
+        return (r.status>=500 && n>0) ? later(n) : false; }); })
+      .catch(function(){ return n>0 ? later(n) : false; });            // нет сети — повторяем с той же меткой
+  }
+  function later(n){ return new Promise(function(res){ setTimeout(function(){ res(attempt(n-1)); },1500); }); }
+  return attempt(2).then(function(ok){
+    if(btn){ btn.disabled=false; btn.innerHTML=label; if(ok) delete btn.dataset.rid; }
+    leadFailNote(btn, !ok);
+    if(ok){
+      try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
+      try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
+      showToast('Заявка отправлена');
+    }
+    return ok;
+  });
+}
+// Не дошло — говорим прямо, форма остаётся заполненной, можно нажать ещё раз или позвонить.
+function leadFailNote(btn, show){
+  if(!btn) return;
+  var host=btn.closest('.qfoot,.quiz-foot')||btn, box=host.previousElementSibling;
+  if(!(box&&box.classList.contains('lead-fail'))) box=null;
+  if(!show){ if(box) box.remove(); return; }
+  if(!box){ box=document.createElement('div'); box.className='lead-fail'; box.setAttribute('role','alert'); host.parentNode.insertBefore(box,host); }
+  box.innerHTML='Заявка не отправилась — проверьте интернет и нажмите ещё раз. Или позвоните: <a href="tel:+74954873838">+7&nbsp;(495)&nbsp;487-38-38</a>';
 }
 let tt;function showToast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3000);}
 

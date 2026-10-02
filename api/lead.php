@@ -8,6 +8,7 @@ $ALLOWED_ORIGINS = [
   'https://xn----ctbklixakchgm2d.xn--p1ai',                 // восток-прицеп.рф
   'https://www.xn----ctbklixakchgm2d.xn--p1ai',
   'https://xn--90af3acbk.xn----ctbklixakchgm2d.xn--p1ai',   // подбор.восток-прицеп.рф
+  'https://xn--e1afucc1b.xn----ctbklixakchgm2d.xn--p1ai',   // прицеп.восток-прицеп.рф
 ];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origin, $ALLOWED_ORIGINS, true)) {
@@ -20,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo '{"ok":false}'; exit; }
 
 // Worker-релей (токен и chat_id хранятся в нём как секреты).
-$WORKER_URL = 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev';
+$WORKER_URL = getenv('LEAD_WORKER') ?: 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev'; // env — только для локального стенда
 // Общий секрет для аутентификации у воркера (из api/config.php вне git). Пусто = воркер
 // пока не требует секрета — доставка не ломается до включения проверки в Cloudflare.
 $LEAD_SECRET = '';
@@ -57,14 +58,32 @@ if (!empty($data['hp'])) {
   echo '{"ok":true}'; exit;
 }
 
-// мягкий анти-флуд: не более 30 заявок с одного IP за 60 сек (режем ботов, людям не мешает).
+// Повтор той же заявки (браузер не дождался ответа при плохой связи и отправил снова) — узнаём по метке rid,
+// которую ставит лендинг, и отвечаем «ок», не создавая второй лид и второе сообщение в Telegram.
+$rid = substr(preg_replace('/[^A-Za-z0-9-]/', '', (string)($data['rid'] ?? '')), 0, 40);
+$ridFile = $rid !== '' ? $LOG_DIR . '/.rid_' . $rid : '';
+if ($ridFile !== '' && is_file($ridFile) && filemtime($ridFile) > time() - 900) { echo '{"ok":true}'; exit; }
+
+// Раз в ~50 заявок чистим служебные файлы старше суток (счётчики анти-флуда и метки повторов копились вечно).
+if (mt_rand(1, 50) === 1) {
+  foreach (array_merge(glob($LOG_DIR . '/.rl_*') ?: [], glob($LOG_DIR . '/.rid_*') ?: []) as $f) {
+    if (@filemtime($f) < time() - 86400) @unlink($f);
+  }
+}
+
+// мягкий анти-флуд: не более 10 заявок с одного IP за 60 сек (человек шлёт одну; мобильный NAT — запас).
+// Придержанную заявку не выбрасываем молча — пишем в отдельный лог с потолком.
 // fail-open: любая ошибка троттлинга не блокирует лид.
 try {
   $ip = $_SERVER['REMOTE_ADDR'] ?? '';
   $rlFile = $LOG_DIR . '/.rl_' . md5($ip);
   $now = time(); $hits = [];
   if (is_file($rlFile)) { foreach (explode(',', (string)@file_get_contents($rlFile)) as $t) { if ((int)$t > $now - 60) $hits[] = (int)$t; } }
-  if (count($hits) >= 30) { http_response_code(429); echo '{"ok":false}'; exit; }
+  if (count($hits) >= 10) {
+    $thLog = $LOG_DIR . '/leads-throttled.log';
+    if (!is_file($thLog) || filesize($thLog) < 2 * 1024 * 1024) { @file_put_contents($thLog, date('c') . ' | ' . $raw . "\n", FILE_APPEND | LOCK_EX); }
+    http_response_code(429); echo '{"ok":false}'; exit;
+  }
   $hits[] = $now;
   @file_put_contents($rlFile, implode(',', $hits), LOCK_EX);
 } catch (Throwable $e) { /* пропускаем лид */ }
@@ -75,25 +94,27 @@ $logFile = $LOG_DIR . '/leads.log';
 if (is_file($logFile) && filesize($logFile) > 5 * 1024 * 1024) { @rename($logFile, $logFile . '.1'); }
 @file_put_contents($logFile, date('c') . ' | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 
-// 2) доставка в Telegram через Worker — с повтором и проверкой ответа
+// 2) доставка в Telegram через Worker — с повтором и проверкой ответа.
+// Служебную метку rid в Telegram не шлём (в leads.log и CRM она остаётся в raw).
+$fwd = $data; unset($fwd['rid']);
+$fwdRaw = json_encode($fwd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 $ok = false; $lastErr = '';
-for ($i = 0; $i < 3; $i++) {
+for ($i = 0; $i < 2; $i++) {
   $ch = curl_init($WORKER_URL);
   curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER     => ['Content-Type: application/json', 'X-Lead-Secret: ' . $LEAD_SECRET],
-    CURLOPT_POSTFIELDS     => $raw,
-    CURLOPT_TIMEOUT        => 12,
-    CURLOPT_CONNECTTIMEOUT => 8,
+    CURLOPT_POSTFIELDS     => $fwdRaw,
+    CURLOPT_TIMEOUT        => 8,
+    CURLOPT_CONNECTTIMEOUT => 5,
   ]);
   $resp = curl_exec($ch);
   $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
   $err  = curl_error($ch);
-  curl_close($ch);
   if ($resp !== false && $code >= 200 && $code < 300) { $ok = true; break; }
   $lastErr = $err !== '' ? $err : ('HTTP ' . $code);
-  usleep(700000); // 0.7s перед повтором
+  if ($i === 0) usleep(700000); // 0.7s перед повтором
 }
 
 // если доставить не удалось — фиксируем в отдельный лог (лид не теряется, видно причину)
@@ -104,12 +125,22 @@ if (!$ok) {
 // 3) запись в CRM-базу — ПОСЛЕ доставки в Telegram, чтобы код БД физически не мог
 //    задержать или сорвать доставку. Любой сбой БД логируется и на лид не влияет
 //    (leads.log + Telegram уже отработали выше).
+$crmOk = false;
 try {
   require_once __DIR__ . '/../crm/lib.php';
   $newId = crm_insert_lead($data, $raw);
+  $crmOk = (int)$newId > 0;
   crm_autoassign_new_lead($newId); // авто-подача лида оператору по долям (fail-safe внутри; не влияет на доставку)
 } catch (Throwable $e) {
   @file_put_contents($LOG_DIR . '/leads-errors.log', date('c') . ' | CRM_DB_FAIL(' . $e->getMessage() . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 }
 
-echo $ok ? '{"ok":true}' : '{"ok":false}';
+// Ответ лендингу: «ок» — только если заявку реально увидит владелец (Telegram ИЛИ CRM). Раньше отдавали 200
+// всегда, и посетитель видел «Спасибо» даже когда заявка не дошла никуда. Копия в leads.log есть в любом случае.
+if ($ok || $crmOk) {
+  if ($ridFile !== '') @touch($ridFile);
+  echo '{"ok":true}';
+} else {
+  http_response_code(503);
+  echo '{"ok":false}';
+}

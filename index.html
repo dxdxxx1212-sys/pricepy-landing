@@ -548,6 +548,7 @@ _tmr.push({id: window.VK_PIXEL.id, type: "pageView", start: (new Date()).getTime
     /* блок логотипов компактнее на телефоне */
     .partners-logos{padding:16px;margin-top:26px}
   }
+.lead-fail{margin:0 0 12px;padding:11px 14px;border-radius:12px;background:#fdecea;border:1px solid #f5c2bd;color:#8a1c12;font-size:15px;line-height:1.45;text-align:left}.lead-fail a{color:inherit;font-weight:800}
 </style>
 </head>
 <body>
@@ -1475,7 +1476,8 @@ function submitCart(){
     source:'Корзина (уточнить цену и наличие)',
     items: cart.map(x=>x.name).join('; '),
     name, contact, channel: cartChannel
-  });
+  }, modalContent.querySelector('#cartSubmit')).then(function(ok){ if(ok) showCartDone(); });
+  function showCartDone(){
 
   const cnt = cart.length;
   modalContent.innerHTML = `<div style="text-align:center;padding:14px 6px">
@@ -1485,6 +1487,7 @@ function submitCart(){
     <button class="btn btn-primary btn-block" data-close-modal style="margin-top:10px">Хорошо</button>
   </div>`;
   cart = []; updateCartBadge();
+  }
 }
 
 /* --- попап с подробной информацией --- */
@@ -1758,7 +1761,8 @@ function submitQuiz(){
     name:a.name, channel:state.channel, contact:a.contact,
     tgMode: state.channel==='telegram' ? (state.tgMode||'phone') : '',
   };
-  sendLead(payload); // <-- здесь данные уходят (см. функцию sendLead ниже)
+  sendLead(payload, btnNext).then(function(ok){ if(ok) showQuizDone(); }); // данные уходят — см. sendLead ниже
+  function showQuizDone(){
 
   // экран благодарности + сводка
   bar.style.width='100%';
@@ -1779,6 +1783,7 @@ function submitQuiz(){
     <div style="margin-top:24px"><button class="btn btn-ghost" data-scroll="#catalog">Пока посмотреть каталог</button></div>
   </div>`;
   bindGlobalScroll();
+  }
 }
 
 function channelName(c){return c==='telegram'?'Telegram':c==='max'?'МАКС':c==='phone'?'по телефону':'WhatsApp';}
@@ -1806,21 +1811,42 @@ const LEAD_ENDPOINT = '/api/lead';
 })();
 function leadUTMs(){ try{ return JSON.parse(localStorage.getItem('vp_utm')||'{}') || {}; }catch(e){ return {}; } }
 
-function sendLead(data){
-  if(window.__leadBusy) return; window.__leadBusy=true; setTimeout(function(){window.__leadBusy=false;},4000); // защита от двойной отправки
-  try{ data = Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
-  var _b = JSON.stringify(data), _sent = false;
-  try { if (navigator.sendBeacon) _sent = navigator.sendBeacon(LEAD_ENDPOINT, new Blob([_b], {type:'text/plain;charset=UTF-8'})); } catch(e){}
-  if (!_sent) (function r(n){
-    fetch(LEAD_ENDPOINT, {method:'POST', keepalive:true, headers:{'Content-Type':'application/json'}, body:_b})
-      .then(function(x){ if(!x.ok && n>0) setTimeout(function(){r(n-1)},1500); })
-      .catch(function(){ if(n>0) setTimeout(function(){r(n-1)},1500); });
-  })(3);
-
-  // цель-конверсия для пикселя VK (Top.Mail.Ru) — для оптимизации рекламы
-  try { var _vp = window.VK_PIXEL || {id:'3787094', goal:'Lead3'}; (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: _vp.id, goal: _vp.goal }); } catch(e){}
-
-  showToast('✓ Заявка отправлена! Скоро свяжемся.');
+/* Отправка заявки. «Спасибо» показываем ТОЛЬКО после ответа сервера, что заявка дошла (Telegram или CRM).
+   Раньше sendBeacon уходил «вслепую»: при сбое человек видел «Спасибо», а заявки не было нигде.
+   rid — метка заявки: повтор при плохой связи сервер узнаёт и не создаёт дубль. Возвращает Promise<boolean>. */
+function sendLead(data, btn){
+  try{ data=Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
+  var rid=(btn&&btn.dataset.rid)||(Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+  if(btn) btn.dataset.rid=rid; data.rid=rid;
+  var body=JSON.stringify(data), label=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.textContent='Отправляю…'; }
+  function attempt(n){
+    return fetch(LEAD_ENDPOINT,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+        if(r.ok) return !(j && j.ok===false);   // 2xx сервер отдаёт только когда заявка дошла; лишний текст в ответе — не повод пугать
+        return (r.status>=500 && n>0) ? later(n) : false; }); })
+      .catch(function(){ return n>0 ? later(n) : false; });            // нет сети — повторяем с той же меткой
+  }
+  function later(n){ return new Promise(function(res){ setTimeout(function(){ res(attempt(n-1)); },1500); }); }
+  return attempt(2).then(function(ok){
+    if(btn){ btn.disabled=false; btn.innerHTML=label; if(ok) delete btn.dataset.rid; }
+    leadFailNote(btn, !ok);
+    if(ok){
+      // цель-конверсия для пикселя VK (Top.Mail.Ru) — теперь только по реально доставленной заявке
+      try { var _vp = window.VK_PIXEL || {id:'3787094', goal:'Lead3'}; (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: _vp.id, goal: _vp.goal }); } catch(e){}
+      showToast('✓ Заявка отправлена! Скоро свяжемся.');
+    }
+    return ok;
+  });
+}
+// Не дошло — говорим прямо, форма остаётся заполненной, можно нажать ещё раз или позвонить.
+function leadFailNote(btn, show){
+  if(!btn) return;
+  var host=btn.closest('.qfoot,.quiz-foot')||btn, box=host.previousElementSibling;
+  if(!(box&&box.classList.contains('lead-fail'))) box=null;
+  if(!show){ if(box) box.remove(); return; }
+  if(!box){ box=document.createElement('div'); box.className='lead-fail'; box.setAttribute('role','alert'); host.parentNode.insertBefore(box,host); }
+  box.innerHTML='Заявка не отправилась — проверьте интернет и нажмите ещё раз. Или позвоните: <a href="tel:+74954873838">+7&nbsp;(495)&nbsp;487-38-38</a>';
 }
 
 /* =========================================================
@@ -1868,10 +1894,13 @@ leadForm.addEventListener('submit',e=>{
   if(!contactOk){errContact&&errContact.classList.add('show');ok=false;}else errContact&&errContact.classList.remove('show');
   if(!leadForm.consent.checked){showToast('Подтвердите согласие на обработку данных');ok=false;}
   if(!ok) return;
-  sendLead({source:'cta-form', name, contact, channel:leadChannel, tgMode: leadChannel==='telegram'?leadTgMode:''});
-  leadForm.reset();
-  leadForm.querySelectorAll('[data-channels] .channel').forEach((x,i)=>x.classList.toggle('selected',i===0));
-  leadChannel='whatsapp'; leadTgMode='phone'; renderLeadContact();
+  sendLead({source:'cta-form', name, contact, channel:leadChannel, tgMode: leadChannel==='telegram'?leadTgMode:''},
+    leadForm.querySelector('button[type="submit"]')).then(function(ok){
+    if(!ok) return;                                   // не дошло — форму не очищаем, пусть нажмут ещё раз
+    leadForm.reset();
+    leadForm.querySelectorAll('[data-channels] .channel').forEach((x,i)=>x.classList.toggle('selected',i===0));
+    leadChannel='whatsapp'; leadTgMode='phone'; renderLeadContact();
+  });
 });
 
 /* =========================================================
