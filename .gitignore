@@ -10,3 +10,4 @@ api/config.php
 # внутренние заметки с операционными данными (IP, chat_id, cron) — не публиковать
 PROJECT_NOTES.md
 CRM_PLAN.md
+preview_serve.py
