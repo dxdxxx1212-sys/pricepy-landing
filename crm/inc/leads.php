@@ -17,6 +17,17 @@ function crm_lead_request_summary($L){
 function crm_event($lead_id,$user_id,$type,$detail=''){
   crm_db()->prepare("INSERT INTO events(lead_id,user_id,type,detail,created_at) VALUES(?,?,?,?,?)")->execute([$lead_id,$user_id,$type,$detail,crm_now()]);
 }
+// Итог последнего действия для плашки в карточке: [вид ok|warn|err, текст, флаги]. null — «Сохранено» по умолчанию.
+// Нужен, чтобы не писать «Сохранено», когда на деле ничего не сохранилось (пустая дата, отклонённое фото).
+function crm_note($kind=null,$text='',$flags=[]){ static $n=null; if($kind!==null) $n=[$kind,$text,$flags]; return $n; }
+// Текущее напоминание поставлено автоматически по «Не дозвонился» и с тех пор никто его не менял?
+// (последнее событие «напоминание» — ровно авто-запись с той же датой). Ручные напоминания так не выглядят.
+function crm_auto_remind_active($L){
+  if(empty($L['next_action_at'])) return false;
+  $s=crm_db()->prepare("SELECT detail FROM events WHERE lead_id=? AND type='напоминание' ORDER BY id DESC LIMIT 1");
+  $s->execute([(int)$L['id']]);
+  return $s->fetchColumn()==='перезвонить '.crm_dt($L['next_action_at']);
+}
 function crm_users_map(){ $m=[]; foreach(crm_db()->query("SELECT id,name FROM users") as $r){ $m[$r['id']]=$r['name']; } return $m; }
 
 // Обработка действий над лидом (общая для карточки и поп-апа): статус, канал связи, напоминание, назначение, комментарий(+фото).
@@ -38,7 +49,13 @@ function crm_process_lead_action($me,$id,$act){
   } elseif($act==='contact'){
     $C=crm_contacts(); $nc=$_POST['contact']??'';
     if($nc===''){                                            // «сбросить всё»
-      if($L['call_status']!==''){ crm_lead_update($id,['call_status'=>'']); crm_event($id,$me['id'],'контакт','сброшено'); }
+      if($L['call_status']!==''){
+        $upd=['call_status'=>''];
+        $clearAuto = in_array('noanswer',crm_contact_list($L['call_status']),true) && crm_auto_remind_active($L);
+        if($clearAuto) $upd['next_action_at']='';
+        crm_lead_update($id,$upd); crm_event($id,$me['id'],'контакт','сброшено');
+        if($clearAuto) crm_event($id,$me['id'],'напоминание','снято');
+      }
     } elseif(isset($C[$nc])){
       $old=(string)$L['call_status']; $new=crm_contact_toggle($old,$nc);
       if($new!==$old){
@@ -50,10 +67,16 @@ function crm_process_lead_action($me,$id,$act){
         // «не дозвонился» без напоминания — ставим перезвон через 2 часа
         $autoRemind = !$wasOn && $nc==='noanswer' && empty($L['next_action_at']);
         if($autoRemind) $upd['next_action_at']=date('c',strtotime('+2 hours'));
+        // связались (или «не дозвонился» сняли) — авто-«перезвонить» больше не нужен, иначе лид висит в «на сегодня»
+        $reached   = !$wasOn && in_array($nc,['called','wa','tg','max'],true);
+        $noansGone = in_array('noanswer',crm_contact_list($old),true) && !in_array('noanswer',crm_contact_list($new),true);
+        $clearAuto = ($reached || $noansGone) && crm_auto_remind_active($L);
+        if($clearAuto) $upd['next_action_at']='';
         crm_lead_update($id,$upd);
         crm_event($id,$me['id'],'контакт',($wasOn?'убрано: ':'').crm_contact_label($nc));
         if($toWork) crm_event($id,$me['id'],'статус','Новый → В работе');
         if($autoRemind) crm_event($id,$me['id'],'напоминание','перезвонить '.crm_dt($upd['next_action_at']));
+        if($clearAuto)  crm_event($id,$me['id'],'напоминание','снято: связались');
       }
     }
   } elseif($act==='remind'){
@@ -63,7 +86,8 @@ function crm_process_lead_action($me,$id,$act){
     elseif($when==='tom'){ $ts=date('c',strtotime('tomorrow 10:00')); }
     elseif($when==='d3'){ $ts=date('c',strtotime('+3 days 10:00')); }
     elseif($when==='custom'){ $cv=trim($_POST['dt']??''); $t=$cv?strtotime($cv):0; if($t) $ts=date('c',$t); }
-    if($ts!==null){ crm_lead_update($id,['next_action_at'=>$ts]); crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято'); }
+    if($ts===null){ crm_note('warn','Напоминание не поставлено: не выбрана дата и время.'); }
+    else { crm_lead_update($id,['next_action_at'=>$ts]); crm_event($id,$me['id'],'напоминание',$ts?crm_dt($ts):'снято'); }
   } elseif($act==='assign'){
     if(($me['role']??'')!=='owner') return false;          // распределяет лидов только владелец
     $uid=$_POST['uid']??'';
@@ -82,19 +106,31 @@ function crm_process_lead_action($me,$id,$act){
   } elseif($act==='comment'){
     $body=trim($_POST['body']??''); $F=$_FILES['att']??null;
     $hasFiles = is_array($F) && isset($F['name']) && is_array($F['name']) && array_filter($F['name'], function($n){ return $n!==''; });
-    if($body!=='' || $hasFiles){
+    if($body==='' && !$hasFiles){ crm_note('warn','Пустой комментарий не сохранён — напишите текст или прикрепите фото.'); }
+    else {
       $db=crm_db();
       $db->prepare("INSERT INTO comments(lead_id,user_id,body,created_at) VALUES(?,?,?,?)")->execute([$id,$me['id'],$body,crm_now()]);
-      $cid=(int)$db->lastInsertId(); $saved=0;
+      $cid=(int)$db->lastInsertId(); $saved=0; $tried=0;
       if($hasFiles){
         $n=count($F['name']);
         for($i=0;$i<$n && $saved<10;$i++){
+          if(($F['name'][$i]??'')==='') continue;
+          $tried++;
           if((int)($F['error'][$i]??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) continue;
           $one=['name'=>$F['name'][$i],'tmp_name'=>$F['tmp_name'][$i],'error'=>$F['error'][$i],'size'=>$F['size'][$i]];
           if(crm_attach_save($id,$cid,$me['id'],$one)) $saved++;
         }
       }
       if($saved) crm_event($id,$me['id'],'вложение',$saved.' фото');
+      $bad=$tried-$saved; $why='подходят JPG, PNG, WEBP или GIF до 15 МБ';
+      if($body==='' && !$saved){                          // только фото, и ни одно не принято — пустой комментарий не оставляем
+        $db->prepare("DELETE FROM comments WHERE id=?")->execute([$cid]);
+        crm_note('err','Фото не принято ('.$why.'). Комментарий не сохранён.');
+      } elseif($bad>0){
+        crm_note('warn','Комментарий сохранён, но '.$bad.' фото не принято ('.$why.').',['cmt'=>1]);
+      } else {
+        crm_note('ok','Комментарий добавлен',['cmt'=>1]);
+      }
     }
   } else { return false; }
   return true;

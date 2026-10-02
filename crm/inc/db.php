@@ -10,11 +10,20 @@ function crm_db(){
   $db = new PDO('sqlite:'.CRM_DB_PATH);
   $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+  $db->exec('PRAGMA busy_timeout=3000;');   // первым: иначе journal_mode ниже падает сразу, если базу держит бэкап/другой запрос
   $db->exec('PRAGMA journal_mode=WAL;');
-  $db->exec('PRAGMA busy_timeout=3000;');
   if((int)$db->query("PRAGMA user_version")->fetchColumn() < CRM_SCHEMA_VERSION){
-    crm_init_schema($db);
-    crm_migrate($db);
+    // Миграция целиком в одной транзакции с захватом записи: оборвалась — откат, база остаётся старой и
+    // целой (раньше колонки добавлялись, а бэкофилл пропадал навсегда). Параллельный запрос ждёт и
+    // перепроверяет версию — без «duplicate column» и потерянной заявки в первые секунды после деплоя.
+    $db->exec('BEGIN IMMEDIATE');
+    try{
+      if((int)$db->query("PRAGMA user_version")->fetchColumn() < CRM_SCHEMA_VERSION){
+        crm_init_schema($db);
+        crm_migrate($db);
+      }
+      $db->exec('COMMIT');
+    }catch(Throwable $e){ $db->exec('ROLLBACK'); throw $e; }
   }
   return $db;
 }
@@ -35,6 +44,7 @@ function crm_init_schema($db){
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at)");
   // оператор в каждом запросе фильтрует по assignee_id — без индекса это полный скан таблицы
   $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_assignee ON leads(assignee_id)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_leads_next ON leads(next_action_at)");   // фильтр и KPI «на сегодня»
   $db->exec("CREATE TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY AUTOINCREMENT, login TEXT UNIQUE, pass_hash TEXT,
     name TEXT, role TEXT DEFAULT 'operator', active INTEGER DEFAULT 1, created_at TEXT,
@@ -43,6 +53,9 @@ function crm_init_schema($db){
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, body TEXT, created_at TEXT, edited_at TEXT)");
   $db->exec("CREATE TABLE IF NOT EXISTS events(
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, user_id INTEGER, type TEXT, detail TEXT, created_at TEXT)");
+  // комментарии и история открываются по лиду в каждой карточке/поп-апе и в списке — без индекса это полный скан
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_comments_lead ON comments(lead_id)");
+  $db->exec("CREATE INDEX IF NOT EXISTS idx_events_lead ON events(lead_id)");
   // Вложения к комментариям (фото/скрины). path — имя файла внутри CRM_UPLOAD_DIR (генерим сами, не из ввода).
   $db->exec("CREATE TABLE IF NOT EXISTS attachments(
     id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER, comment_id INTEGER, user_id INTEGER,

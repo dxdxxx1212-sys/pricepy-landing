@@ -8,9 +8,15 @@ $L=crm_lead_get($id);
 if(!$L){ crm_head('Лид'); echo '<div class="card">Лид не найден. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
 // оператор может открывать только назначенные ему лиды (иначе — 403, ещё до обработки POST)
 if(!crm_can_see_lead($me,$L)){ http_response_code(403); crm_head('Лид'); echo '<div class="card">Этот лид назначен другому менеджеру. <a href="index.php">← к списку</a></div>'; crm_foot(); exit; }
-$msg='';
+$msg=''; $msgKind='ok'; $keepBody=''; $cmtSaved=false;
 
-if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
+if($_SERVER['REQUEST_METHOD']==='POST' && !crm_csrf_ok()){
+  // Токен не сошёлся: вкладка долго висела открытой, или фото больше лимита сервера (тогда PHP отдаёт пустой POST).
+  // Раньше действие молча пропускалось — теперь говорим прямо и возвращаем набранный текст в поле.
+  $msgKind='err'; $keepBody=(string)($_POST['body']??'');
+  $msg='Не сохранилось: страница устарела или фото слишком большие. Повторите действие'.($keepBody!==''?' — текст комментария на месте, ниже':'').'.';
+}
+elseif($_SERVER['REQUEST_METHOD']==='POST'){
   $act=$_POST['act']??'';
   if(in_array($act,['status','contact','remind','assign','comment'],true)){
     crm_process_lead_action($me,$id,$act); // общая логика (та же в поп-апе hist.php)
@@ -21,9 +27,12 @@ if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
     crm_delete_lead($id);
     header('Location: index.php?deleted=1'); exit;
   }
-  header('Location: view.php?id='.$id.'&ok=1'); exit; // PRG
+  $n=crm_note() ?: ['ok','Сохранено',[]];
+  $_SESSION['lead_flash']=['id'=>$id,'kind'=>$n[0],'text'=>$n[1],'cmt'=>!empty($n[2]['cmt'])];
+  header('Location: view.php?id='.$id); exit; // PRG
 }
-if(isset($_GET['ok'])) $msg='Сохранено';
+$fl=$_SESSION['lead_flash']??null; unset($_SESSION['lead_flash']);
+if($fl && (int)$fl['id']===$id){ $msgKind=$fl['kind']; $msg=$fl['text']; $cmtSaved=!empty($fl['cmt']); }
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
@@ -69,7 +78,7 @@ crm_head('Лид #'.$id); ?>
 </style>
 <div class="lead-wrap">
 <p style="margin:0 0 14px"><a href="index.php" class="muted">← к списку</a></p>
-<?=crm_flash('ok',$msg)?>
+<?=crm_flash($msgKind,$msg)?>
 <?php if($related){ $n=count($related); ?><div class="flash warn"><?=crm_icon('warn')?> Повторный клиент — ещё <?=$n?> заявк<?=$n==1?'а':($n<5?'и':'')?>: <?php
     foreach($related as $i=>$rl){ echo ($i?' · ':'').'<a href="view.php?id='.$rl['id'].'" style="color:#ffd6b0">#'.$rl['id'].'</a>'; } ?></div><?php } ?>
 
@@ -158,7 +167,7 @@ if($reqs){ ?>
   <h3 style="margin:0 0 10px">Комментарии</h3>
   <form method="post" enctype="multipart/form-data" style="margin-bottom:8px" id="cmtForm">
     <?=crm_act_fields('comment')?>
-    <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V"></textarea>
+    <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V" data-draft="crm_draft_<?=$id?>" data-saved="<?=$cmtSaved?1:0?>"><?=h($keepBody)?></textarea>
     <input type="file" name="att[]" id="cmtFiles" accept="image/*" multiple hidden>
     <div id="cmtPrev" class="att-prev" hidden></div>
     <div class="att-bar">
@@ -225,15 +234,33 @@ if($reqs){ ?>
     }catch(_){ URL.revokeObjectURL(url); res(file); } };
     img.onerror=function(){ URL.revokeObjectURL(url); res(file); };
     img.src=url; }); }
-  var sending=false;
+  // Кнопка гаснет и говорит, что происходит: на медленном интернете без этого жмут второй раз → два комментария.
+  var sending=false, sbtn=form.querySelector('.btn-b');
+  function busy(on,txt){ sending=on; if(!sbtn) return; sbtn.disabled=on;
+    if(on){ if(!sbtn.dataset.l) sbtn.dataset.l=sbtn.textContent; sbtn.textContent=txt||'Отправляю…'; }
+    else if(sbtn.dataset.l){ sbtn.textContent=sbtn.dataset.l; } }
+  window.addEventListener('pageshow',function(){ busy(false); });   // вернулись «назад» — кнопка снова живая
   form.addEventListener('submit',function(e){
-    if(sending || !pend.length) return;               // без файлов — обычная отправка
-    e.preventDefault(); sending=true;
+    if(sending){ e.preventDefault(); return; }
+    if(!pend.length){ busy(true); return; }            // без файлов — обычная отправка
+    e.preventDefault(); busy(true, pend.length>1?'Готовлю '+pend.length+' фото…':'Готовлю фото…');
     Promise.all(pend.map(function(p){return shrink(p.file);})).then(function(files){
       try{ var dt=new DataTransfer(); files.forEach(function(f){ dt.items.add(f); }); input.files=dt.files; }
-      catch(err){ sending=false; if(window.crmToast)crmToast('Браузер не смог прикрепить фото — обновите страницу и попробуйте снова'); return; } // не отправляем пустое
+      catch(err){ busy(false); if(window.crmToast)crmToast('Браузер не смог прикрепить фото — обновите страницу и попробуйте снова'); return; } // не отправляем пустое
+      busy(true,'Загружаю фото…');
       form.submit();
-    }).catch(function(){ sending=false; if(window.crmToast)crmToast('Не удалось подготовить фото, попробуйте ещё раз'); }); });
+    }).catch(function(){ busy(false); if(window.crmToast)crmToast('Не удалось подготовить фото, попробуйте ещё раз'); }); });
+})();
+// Черновик комментария живёт в браузере, пока сервер не подтвердил «Комментарий добавлен»: текст не пропадает,
+// если по ходу нажали статус/канал (страница перезагружается), ушли со страницы или отправка не прошла.
+(function(){
+  var t=document.getElementById('cmtBody'); if(!t) return; var k=t.getAttribute('data-draft');
+  try{
+    if(t.getAttribute('data-saved')==='1') localStorage.removeItem(k);
+    else if(!t.value){ var d=localStorage.getItem(k); if(d) t.value=d; }
+    else localStorage.setItem(k,t.value);
+  }catch(e){}
+  t.addEventListener('input',function(){ try{ t.value ? localStorage.setItem(k,t.value) : localStorage.removeItem(k); }catch(e){} });
 })();
 </script>
 <?php crm_foot();

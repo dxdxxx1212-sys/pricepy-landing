@@ -83,7 +83,7 @@ tr:hover td{background:#1b232c}
 .hist-sec{margin-top:16px}
 .hist-lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
 .cphone.ok{color:#5fd08a;border-bottom-color:transparent}
-#crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
+#crmtoast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#173a24;color:#8ff0b0;padding:9px 16px;border-radius:22px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:120;opacity:0;transition:opacity .18s;pointer-events:none;max-width:90vw;text-align:center}
 #crmtoast.on{opacity:1}
 @media(max-width:820px){.grid2{grid-template-columns:1fr}.top nav{gap:12px;font-size:14px}}
 /* Мобильные карточки: таблица лидов превращается в стопку карточек, без гориз. скролла */

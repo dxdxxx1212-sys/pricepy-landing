@@ -8,18 +8,26 @@ function crm_now(){ return date('c'); }
 function crm_dt($iso){ if(!$iso) return '—'; $t=strtotime($iso); return $t? date('d.m.Y H:i',$t):h($iso); }
 function crm_ucfirst($s){ return mb_strtoupper(mb_substr($s,0,1,'UTF-8'),'UTF-8').mb_substr($s,1,null,'UTF-8'); }
 function crm_dt_short($iso){ $t=$iso?strtotime($iso):0; return $t? date('d.m H:i',$t):'—'; } // без года — для тесных мест в списке
-// Канонический ключ телефона для дедупа/поиска/связки: РФ-номер → 7XXXXXXXXXX (8→7, 10-значный 9XX→7 9XX).
-// Ник/не-телефон — как цифры (обычно ''). Единственное место, где разбирается формат номера.
+// Канонический ключ телефона для дедупа/поиска/связки: РФ-номер → 7XXXXXXXXXX, иностранный в формате +… → цифры.
+// Всё, что НЕ похоже на телефон, → '' (ник @ivan2024, мусор, обрывки). Иначе «2024» из двух разных ников
+// склеивал разных клиентов в «повтор», а кнопки «Позвонить»/WhatsApp вели в никуда.
+// Единственное место, где разбирается формат номера.
 function crm_phone_norm($c){
-  $d = preg_replace('/\D+/','',(string)$c);
-  if(strlen($d)===11 && ($d[0]==='8'||$d[0]==='7')) return '7'.substr($d,1);
-  if(strlen($d)===10 && $d[0]==='9') return '7'.$d;
-  return $d;
+  $s = (string)$c;
+  if(strpos($s,'@')!==false) return '';                                   // телеграм-ник / почта — не телефон
+  $s = preg_split('/[\/,;]|доб|ext/iu', $s)[0];                            // «… / второй номер», «… доб. 101» — берём первый номер
+  $intl = (ltrim($s)[0] ?? '')==='+';
+  $d = preg_replace('/\D+/','',$s);
+  if(strlen($d)===11 && ($d[0]==='8'||$d[0]==='7')) return '7'.substr($d,1);   // 8 900… / +7 900… / 7 495…
+  if(strlen($d)===10 && strpos('3489',$d[0])!==false) return '7'.$d;            // без кода страны: 900…, 495…, 812…, 3XX…
+  if($intl && strlen($d)>=11 && strlen($d)<=15) return $d;                       // иностранный: +375…, +996…
+  return '';
 }
 // Телефон в формате для набора/мессенджеров (МАКС, WhatsApp, звонилка): +7XXXXXXXXXX. '' — если номера нет.
 function crm_phone_e164($c){ $n=crm_phone_norm($c); return $n==='' ? '' : '+'.$n; }
 // Красивый вид телефона: +7 900 123-45-67. Ник/необычный формат — как есть.
 function crm_phone_fmt($c){
+  if(preg_match('/[\/,;]|доб|ext/iu',(string)$c)) return trim((string)$c);   // добавочный / второй номер — не теряем при показе
   $n = crm_phone_norm($c);
   if(preg_match('/^7(\d{3})(\d{3})(\d{2})(\d{2})$/',$n,$m)) return '+7 '.$m[1].' '.$m[2].'-'.$m[3].'-'.$m[4];
   return trim((string)$c);

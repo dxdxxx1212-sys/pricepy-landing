@@ -95,6 +95,7 @@ crm_head('Лиды'); ?>
 
 <form class="filters" method="get">
   <?php if($fUnassigned){ ?><input type="hidden" name="unassigned" value="1"><?php } ?>
+  <?php if($fDue){ ?><input type="hidden" name="due" value="1"><?php } ?>
   <?php if($isOwner){ ?><select name="assignee" onchange="this.form.submit()"><option value="">Все менеджеры</option><option value="none" <?=$fAssignee==='none'?'selected':''?>>— не распределён</option>
     <?php foreach($opList as $op){ ?><option value="<?=$op['id']?>" <?=$fAssignee===(string)$op['id']?'selected':''?>><?=h($op['name'])?></option><?php } ?></select><?php } ?>
   <select name="status" onchange="this.form.submit()"><option value="">Все статусы</option>
@@ -227,7 +228,7 @@ document.getElementById('histBody').addEventListener('submit',function(e){
   e.preventDefault();
   var b=document.getElementById('histBody'), id=b.getAttribute('data-id'), fd=new FormData(f);
   if(e.submitter && e.submitter.name) fd.append(e.submitter.name, e.submitter.value); // значение нажатой кнопки-чипа
-  fetch('hist.php?id='+id,{method:'POST',body:fd,cache:'no-store'}).then(function(r){return r.text();}).then(function(html){ if(document.getElementById('histBody').getAttribute('data-id')===String(id)){ b.innerHTML=html; b.setAttribute('data-id',id); histChanged=true; } })
-    .catch(function(){ if(window.crmToast)crmToast('Не удалось сохранить'); }); });
+  fetch('hist.php?id='+id,{method:'POST',body:fd,cache:'no-store'}).then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error(t); return t; }); }).then(function(html){ if(document.getElementById('histBody').getAttribute('data-id')===String(id)){ b.innerHTML=html; b.setAttribute('data-id',id); histChanged=true; } })
+    .catch(function(e){ if(window.crmToast)crmToast((e&&e.message)||'Не удалось сохранить — проверьте связь'); }); });
 </script>
 <?php crm_foot();

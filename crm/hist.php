@@ -12,7 +12,8 @@ if(!$L){ http_response_code(404); exit('Лид не найден'); }
 // оператор видит комментарии/фото только своих лидов — проверяем ДО любых действий
 if(!crm_can_see_lead($me,$L)){ http_response_code(403); exit('Нет доступа'); }
 
-if($_SERVER['REQUEST_METHOD']==='POST' && crm_csrf_ok()){
+if($_SERVER['REQUEST_METHOD']==='POST' && !crm_csrf_ok()){ http_response_code(409); exit('Страница устарела — обновите её и повторите.'); }
+if($_SERVER['REQUEST_METHOD']==='POST'){
   $act=$_POST['act']??'';
   if($act==='comment_edit' || $act==='comment_delete'){ crm_process_comment_ops($me,$act); } // правка/удаление — только владелец (проверка внутри)
 }
