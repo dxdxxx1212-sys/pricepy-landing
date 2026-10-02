@@ -82,7 +82,7 @@ function crm_process_lead_action($me,$id,$act){
   } elseif($act==='remind'){
     $when=$_POST['when']??''; $ts=null;
     if($when==='clear'){ $ts=''; }
-    elseif($when==='eve'){ $ts=date('c',strtotime('today 18:00')); }
+    elseif($when==='eve'){ $ts=date('c',max(strtotime('today 18:00'),strtotime('+1 hour'))); } // после 18:00 — не в прошлое
     elseif($when==='tom'){ $ts=date('c',strtotime('tomorrow 10:00')); }
     elseif($when==='d3'){ $ts=date('c',strtotime('+3 days 10:00')); }
     elseif($when==='custom'){ $cv=trim($_POST['dt']??''); $t=$cv?strtotime($cv):0; if($t) $ts=date('c',$t); }
@@ -113,16 +113,17 @@ function crm_process_lead_action($me,$id,$act){
       $cid=(int)$db->lastInsertId(); $saved=0; $tried=0;
       if($hasFiles){
         $n=count($F['name']);
-        for($i=0;$i<$n && $saved<10;$i++){
+        for($i=0;$i<$n;$i++){
           if(($F['name'][$i]??'')==='') continue;
           $tried++;
+          if($saved>=10) continue;                                    // больше 10 за раз — не берём, но и не молчим (ниже)
           if((int)($F['error'][$i]??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) continue;
           $one=['name'=>$F['name'][$i],'tmp_name'=>$F['tmp_name'][$i],'error'=>$F['error'][$i],'size'=>$F['size'][$i]];
           if(crm_attach_save($id,$cid,$me['id'],$one)) $saved++;
         }
       }
       if($saved) crm_event($id,$me['id'],'вложение',$saved.' фото');
-      $bad=$tried-$saved; $why='подходят JPG, PNG, WEBP или GIF до 15 МБ';
+      $bad=$tried-$saved; $why='подходят JPG, PNG, WEBP или GIF до 15 МБ, не больше 10 за раз';
       if($body==='' && !$saved){                          // только фото, и ни одно не принято — пустой комментарий не оставляем
         $db->prepare("DELETE FROM comments WHERE id=?")->execute([$cid]);
         crm_note('err','Фото не принято ('.$why.'). Комментарий не сохранён.');

@@ -353,7 +353,7 @@ function render(){
     html+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
     html+='<input id="cHp" name="xq_field_7" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" placeholder="Оставьте пустым">'; // honeypot: люди не видят, боты заполняют. Имя поля НЕ должно быть company/email/phone и т.п. — их заполняет автозаполнение браузера
     html+='<div class="err" id="cErr">Заполните имя и контакт</div>';
-    html+='<label class="consent"><input type="checkbox" id="cAgree" checked><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
+    html+='<label class="consent"><input type="checkbox" id="cAgree"><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
     html+='<button class="btn" id="send">Получить подбор →</button>';
   }
   $('#qbody').innerHTML=html;
@@ -364,7 +364,11 @@ $('#qbody').addEventListener('click',e=>{
   if(opt){const q=QUIZ[st.step];st.ans[q.key]=q.options[+opt.dataset.opt].label;render();
     const nb=$('#next');if(nb){const r=nb.getBoundingClientRect();if(r.bottom>innerHeight-8)nb.scrollIntoView({behavior:'smooth',block:'center'});}return;}
   const chan=e.target.closest('[data-chan]');
-  if(chan){st.channel=chan.dataset.chan;render();return;}
+  if(chan){ // перерисовка шага не должна стирать то, что человек уже ввёл
+    const keep={n:($('#cName')||{}).value||'', c:($('#cContact')||{}).value||'', a:!!($('#cAgree')||{}).checked};
+    st.channel=chan.dataset.chan; render();
+    if($('#cName'))$('#cName').value=keep.n; if($('#cContact'))$('#cContact').value=keep.c; if($('#cAgree'))$('#cAgree').checked=keep.a;
+    return;}
   if(e.target.id==='next'){st.step++;render();scrollQuiz();return;}
   if(e.target.id==='send'){submit();return;}
 });
@@ -403,27 +407,29 @@ function sendLead(data, btn){
   var body=JSON.stringify(data), label=btn?btn.innerHTML:'';
   if(btn){ btn.disabled=true; btn.textContent='Отправляю…'; }
   function attempt(n){
-    return fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body})
-      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+    var ctl=window.AbortController?new AbortController():null, tm=ctl?setTimeout(function(){ ctl.abort(); },25000):0; // не висим вечно на «Отправляю…»
+    return fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body,signal:ctl?ctl.signal:undefined})
+      .then(function(r){ clearTimeout(tm); return r.json().catch(function(){ return {}; }).then(function(j){
         if(r.ok) return !(j && j.ok===false);   // 2xx сервер отдаёт только когда заявка дошла; лишний текст в ответе — не повод пугать
         return (r.status>=500 && n>0) ? later(n) : false; }); })
-      .catch(function(){ return n>0 ? later(n) : false; });            // нет сети — повторяем с той же меткой
+      .catch(function(){ clearTimeout(tm); return n>0 ? later(n) : false; }); // нет сети/таймаут — повторяем с той же меткой
   }
   function later(n){ return new Promise(function(res){ setTimeout(function(){ res(attempt(n-1)); },1500); }); }
   return attempt(2).then(function(ok){
     if(btn){ btn.disabled=false; btn.innerHTML=label; if(ok) delete btn.dataset.rid; }
-    leadFailNote(btn, !ok);
+    try{ leadFailNote(btn, !ok); }catch(e){}
     if(ok){
       try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
       try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
       showToast('✓ Заявка отправлена!');
     }
     return ok;
-  });
+  }).catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=label; } return false; }); // промис не падает никогда — форма не зависнет
 }
 // Не дошло — говорим прямо, форма остаётся заполненной, можно нажать ещё раз или позвонить.
 function leadFailNote(btn, show){
   if(!btn) return;
+  if(!btn.isConnected){ if(show) showToast('Заявка не отправилась — нажмите «отправить» ещё раз или позвоните +7 (495) 487-38-38'); return; } // шаг уже перерисован
   var host=btn.closest('.qfoot,.quiz-foot')||btn, box=host.previousElementSibling;
   if(!(box&&box.classList.contains('lead-fail'))) box=null;
   if(!show){ if(box) box.remove(); return; }

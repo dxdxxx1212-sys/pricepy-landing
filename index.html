@@ -1452,7 +1452,11 @@ function openCart(){
 
 function bindCartEvents(){
   modalContent.querySelectorAll('#cartChannels .channel').forEach(c=>{
-    c.addEventListener('click',()=>{ cartChannel=c.dataset.ch; openCart(); });
+    c.addEventListener('click',()=>{
+      const g=id=>modalContent.querySelector(id), keep={n:(g('#cartName')||{}).value||'', c:(g('#cartContact')||{}).value||'', a:!!(g('#cartConsent')||{}).checked};
+      cartChannel=c.dataset.ch; openCart();
+      if(g('#cartName'))g('#cartName').value=keep.n; if(g('#cartContact'))g('#cartContact').value=keep.c; if(g('#cartConsent'))g('#cartConsent').checked=keep.a;
+    });
   });
   modalContent.querySelectorAll('[data-remove]').forEach(b=>{
     b.addEventListener('click',()=>{ cart = cart.filter(x=>x.id !== +b.dataset.remove); updateCartBadge(); openCart(); });
@@ -1821,27 +1825,29 @@ function sendLead(data, btn){
   var body=JSON.stringify(data), label=btn?btn.innerHTML:'';
   if(btn){ btn.disabled=true; btn.textContent='Отправляю…'; }
   function attempt(n){
-    return fetch(LEAD_ENDPOINT,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body})
-      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+    var ctl=window.AbortController?new AbortController():null, tm=ctl?setTimeout(function(){ ctl.abort(); },25000):0; // не висим вечно на «Отправляю…»
+    return fetch(LEAD_ENDPOINT,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body,signal:ctl?ctl.signal:undefined})
+      .then(function(r){ clearTimeout(tm); return r.json().catch(function(){ return {}; }).then(function(j){
         if(r.ok) return !(j && j.ok===false);   // 2xx сервер отдаёт только когда заявка дошла; лишний текст в ответе — не повод пугать
         return (r.status>=500 && n>0) ? later(n) : false; }); })
-      .catch(function(){ return n>0 ? later(n) : false; });            // нет сети — повторяем с той же меткой
+      .catch(function(){ clearTimeout(tm); return n>0 ? later(n) : false; }); // нет сети/таймаут — повторяем с той же меткой
   }
   function later(n){ return new Promise(function(res){ setTimeout(function(){ res(attempt(n-1)); },1500); }); }
   return attempt(2).then(function(ok){
     if(btn){ btn.disabled=false; btn.innerHTML=label; if(ok) delete btn.dataset.rid; }
-    leadFailNote(btn, !ok);
+    try{ leadFailNote(btn, !ok); }catch(e){}
     if(ok){
       // цель-конверсия для пикселя VK (Top.Mail.Ru) — теперь только по реально доставленной заявке
       try { var _vp = window.VK_PIXEL || {id:'3787094', goal:'Lead3'}; (window._tmr = window._tmr || []).push({ type: 'reachGoal', id: _vp.id, goal: _vp.goal }); } catch(e){}
       showToast('✓ Заявка отправлена! Скоро свяжемся.');
     }
     return ok;
-  });
+  }).catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=label; } return false; }); // промис не падает никогда — форма не зависнет
 }
 // Не дошло — говорим прямо, форма остаётся заполненной, можно нажать ещё раз или позвонить.
 function leadFailNote(btn, show){
   if(!btn) return;
+  if(!btn.isConnected){ if(show) showToast('Заявка не отправилась — нажмите «отправить» ещё раз или позвоните +7 (495) 487-38-38'); return; } // шаг уже перерисован
   var host=btn.closest('.qfoot,.quiz-foot')||btn, box=host.previousElementSibling;
   if(!(box&&box.classList.contains('lead-fail'))) box=null;
   if(!show){ if(box) box.remove(); return; }
@@ -1857,6 +1863,8 @@ let leadChannel='whatsapp', leadTgMode='phone';
 /* поле контакта нижней формы: для Telegram — переключатель телефон / @username (как в квизе) */
 function renderLeadContact(){
   const dyn=document.getElementById('leadContactDyn'); if(!dyn) return;
+  const prev=((document.getElementById('leadContact')||{}).value)||'';   // не стираем уже введённое
+  setTimeout(function(){ const f=document.getElementById('leadContact'); if(f && !f.value) f.value=prev; },0);
   if(leadChannel==='telegram'){
     const m=leadTgMode;
     dyn.innerHTML=`<label>Как с вами связаться в Telegram?</label>

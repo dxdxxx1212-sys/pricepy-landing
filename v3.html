@@ -548,27 +548,29 @@ function sendLead(data, btn){
   var body=JSON.stringify(data), label=btn?btn.innerHTML:'';
   if(btn){ btn.disabled=true; btn.textContent='Отправляю…'; }
   function attempt(n){
-    return fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body})
-      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+    var ctl=window.AbortController?new AbortController():null, tm=ctl?setTimeout(function(){ ctl.abort(); },25000):0; // не висим вечно на «Отправляю…»
+    return fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:body,signal:ctl?ctl.signal:undefined})
+      .then(function(r){ clearTimeout(tm); return r.json().catch(function(){ return {}; }).then(function(j){
         if(r.ok) return !(j && j.ok===false);   // 2xx сервер отдаёт только когда заявка дошла; лишний текст в ответе — не повод пугать
         return (r.status>=500 && n>0) ? later(n) : false; }); })
-      .catch(function(){ return n>0 ? later(n) : false; });            // нет сети — повторяем с той же меткой
+      .catch(function(){ clearTimeout(tm); return n>0 ? later(n) : false; }); // нет сети/таймаут — повторяем с той же меткой
   }
   function later(n){ return new Promise(function(res){ setTimeout(function(){ res(attempt(n-1)); },1500); }); }
   return attempt(2).then(function(ok){
     if(btn){ btn.disabled=false; btn.innerHTML=label; if(ok) delete btn.dataset.rid; }
-    leadFailNote(btn, !ok);
+    try{ leadFailNote(btn, !ok); }catch(e){}
     if(ok){
       try{(window._tmr=window._tmr||[]).push({type:'reachGoal',id:3787094,goal:'Lead3'});}catch(e){}
       try{if(window.ym)ym(111722114,'reachGoal','lead');}catch(e){}
       showToast('Заявка отправлена');
     }
     return ok;
-  });
+  }).catch(function(){ if(btn){ btn.disabled=false; btn.innerHTML=label; } return false; }); // промис не падает никогда — форма не зависнет
 }
 // Не дошло — говорим прямо, форма остаётся заполненной, можно нажать ещё раз или позвонить.
 function leadFailNote(btn, show){
   if(!btn) return;
+  if(!btn.isConnected){ if(show) showToast('Заявка не отправилась — нажмите «отправить» ещё раз или позвоните +7 (495) 487-38-38'); return; } // шаг уже перерисован
   var host=btn.closest('.qfoot,.quiz-foot')||btn, box=host.previousElementSibling;
   if(!(box&&box.classList.contains('lead-fail'))) box=null;
   if(!show){ if(box) box.remove(); return; }

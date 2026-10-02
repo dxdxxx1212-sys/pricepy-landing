@@ -25,12 +25,14 @@ export default {
     if (!d || typeof d !== 'object' || Array.isArray(d)) return json({ ok: false }, 400);
 
     const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const cut = s => (s.length > MAX_TEXT ? s.slice(0, MAX_TEXT) + '\n… (обрезано, полный текст — в CRM)' : s);
+    // Слишком длинно для Telegram — шлём простым текстом без разметки: резать HTML нельзя (рваный тег/&amp; → 400).
+    const plain = s => s.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    const fit = p => (p.text.length <= MAX_TEXT ? p : { chat_id: p.chat_id, text: plain(p.text).slice(0, MAX_TEXT) + '\n… (обрезано, полный текст — в CRM)', plain: true });
 
     let payload;
     if (d.op_notify && d.op_notify.chat_id && d.op_notify.text) {
       // текст готовит CRM (уже с HTML-экранированием)
-      payload = { chat_id: d.op_notify.chat_id, text: cut(String(d.op_notify.text)) };
+      payload = fit({ chat_id: d.op_notify.chat_id, text: String(d.op_notify.text) });
     } else {
       const copyable = ['contact', 'phone'];          // тап по полю в Telegram копирует его
       const skip = ['hp', 'rid'];                      // служебные поля
@@ -40,15 +42,17 @@ export default {
         const val = esc(String(v ?? '').slice(0, 1000));
         lines += `${esc(k)}: ` + (copyable.includes(k) ? `<code>${val}</code>` : val) + '\n';
       }
-      payload = { chat_id: env.CHAT_ID, text: cut(`🆕 <b>Новая заявка с сайта</b>\n\n${lines}`) };
+      payload = fit({ chat_id: env.CHAT_ID, text: `🆕 <b>Новая заявка с сайта</b>\n\n${lines}` });
     }
-    payload.parse_mode = 'HTML';
+    if (payload.plain) delete payload.plain; else payload.parse_mode = 'HTML';
     payload.disable_web_page_preview = true;
 
     const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`;
     const body = JSON.stringify(payload);
     const tg = async () => {
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      // 6 с на попытку: lead.php ждёт 8 с — без таймаута медленный Telegram давал повтор и два сообщения
+      const signal = (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(6000) : undefined;
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal });
       const j = await r.json().catch(() => ({}));
       return { ok: !!(j && j.ok), code: r.status, retryAfter: j && j.parameters && j.parameters.retry_after };
     };
@@ -63,7 +67,7 @@ export default {
     ctx.waitUntil((async () => {
       let wait = first.retryAfter || 2;
       for (let i = 0; i < 3; i++) {
-        await new Promise(res => setTimeout(res, Math.min(wait, 20) * 1000));
+        await new Promise(res => setTimeout(res, Math.min(wait, 7) * 1000));   // фон живёт ~30 с после ответа — укладываемся
         try { const r = await tg(); if (r.ok) return; wait = r.retryAfter || 2; } catch (e) { wait = 2; }
       }
     })());

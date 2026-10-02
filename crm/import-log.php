@@ -24,7 +24,9 @@ if (!$files) { fwrite(STDERR, "leads.log не найден. Искал: ".implod
 
 if ($dry) echo "=== РЕЖИМ ПРЕДПРОСМОТРА: ничего не записывается ===\n";
 $db = crm_db();
-$check = $db->prepare("SELECT 1 FROM leads WHERE created_at=? AND phone_norm=? LIMIT 1");
+// Уже в базе? Живые заявки lead.php пишет в CRM с исходным телом (raw) — сверяем по нему: created_at у них на
+// 0–17 с позже строки лога, и старая проверка «время+телефон» при повторном запуске дублировала все живые лиды.
+$check = $db->prepare("SELECT 1 FROM leads WHERE raw=? OR (created_at=? AND phone_norm=?) LIMIT 1");
 
 $imported=0; $dupes=0; $empty=0; $junk=0; $bad=0; $ln=0; $seen=[]; $junkList=[];
 foreach ($files as $log) {
@@ -46,10 +48,10 @@ foreach ($files as $log) {
     // ключ дедупа должен совпадать с тем, что реально лежит в колонке phone_norm (8XXX… → 7XXX…),
     // иначе повторный запуск импорта заводил дубли для номеров, записанных через «8».
     $phone = crm_phone_norm($contact);
-    $key = $ca.'|'.$phone;
+    $key = !empty($data['rid']) ? 'rid:'.$data['rid'] : $ca.'|'.$phone;   // повторы одной заявки (метка rid) — один лид
     if (isset($seen[$key])) { $dupes++; continue; }                  // дубль внутри логов
     $seen[$key] = 1;
-    $check->execute([$ca, $phone]);
+    $check->execute([$json, $ca, $phone]);
     if ($check->fetchColumn()) { $dupes++; continue; }               // уже есть в базе
 
     if ($dry) echo sprintf("  + %s | %s | %s | %s\n", crm_dt($ca), $name ?: '(без имени)', $contact, crm_channel_label($data['channel'] ?? ''));

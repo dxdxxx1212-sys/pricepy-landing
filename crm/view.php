@@ -28,11 +28,11 @@ elseif($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location: index.php?deleted=1'); exit;
   }
   $n=crm_note() ?: ['ok','Сохранено',[]];
-  $_SESSION['lead_flash']=['id'=>$id,'kind'=>$n[0],'text'=>$n[1],'cmt'=>!empty($n[2]['cmt'])];
+  $_SESSION['lead_flash'][$id]=['kind'=>$n[0],'text'=>$n[1],'cmt'=>!empty($n[2]['cmt'])]; // по лиду: соседняя вкладка не «съест» итог
   header('Location: view.php?id='.$id); exit; // PRG
 }
-$fl=$_SESSION['lead_flash']??null; unset($_SESSION['lead_flash']);
-if($fl && (int)$fl['id']===$id){ $msgKind=$fl['kind']; $msg=$fl['text']; $cmtSaved=!empty($fl['cmt']); }
+$fl=$_SESSION['lead_flash'][$id]??null; unset($_SESSION['lead_flash'][$id]);
+if(is_array($fl)){ $msgKind=$fl['kind']; $msg=$fl['text']; $cmtSaved=!empty($fl['cmt']); }
 
 $comments=$db->prepare("SELECT c.*,u.name un FROM comments c LEFT JOIN users u ON u.id=c.user_id WHERE lead_id=? ORDER BY c.id DESC"); $comments->execute([$id]); $comments=$comments->fetchAll();
 $events=$db->prepare("SELECT e.*,u.name un FROM events e LEFT JOIN users u ON u.id=e.user_id WHERE lead_id=? ORDER BY e.id DESC LIMIT 40"); $events->execute([$id]); $events=$events->fetchAll();
@@ -167,7 +167,7 @@ if($reqs){ ?>
   <h3 style="margin:0 0 10px">Комментарии</h3>
   <form method="post" enctype="multipart/form-data" style="margin-bottom:8px" id="cmtForm">
     <?=crm_act_fields('comment')?>
-    <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V" data-draft="crm_draft_<?=$id?>" data-saved="<?=$cmtSaved?1:0?>"><?=h($keepBody)?></textarea>
+    <textarea name="body" id="cmtBody" rows="2" style="width:100%" placeholder="Что скинул, что ответил, договорённости… Скрин можно вставить прямо сюда — Ctrl+V" data-draft="crm_draft_<?=(int)$me['id']?>_<?=$id?>" data-saved="<?=$cmtSaved?1:0?>"><?=h($keepBody)?></textarea>
     <input type="file" name="att[]" id="cmtFiles" accept="image/*" multiple hidden>
     <div id="cmtPrev" class="att-prev" hidden></div>
     <div class="att-bar">

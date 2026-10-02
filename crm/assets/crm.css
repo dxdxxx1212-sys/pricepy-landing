@@ -123,5 +123,6 @@ tr:hover td{background:#1b232c}
   /* массовая передача — панелью снизу экрана, а не под липкой шапкой (та на телефоне выше 56px) */
   #bulkbar{position:fixed!important;top:auto!important;bottom:0;left:0;right:0;margin:0!important;border-radius:12px 12px 0 0!important;z-index:20!important;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important}
   #bulkbar .shift-hint{display:none}
+  #newlead{bottom:auto!important;top:calc(64px + env(safe-area-inset-top,0px))}
   .wrap{padding-bottom:110px}
 }

@@ -9,6 +9,9 @@ $ALLOWED_ORIGINS = [
   'https://www.xn----ctbklixakchgm2d.xn--p1ai',
   'https://xn--90af3acbk.xn----ctbklixakchgm2d.xn--p1ai',   // подбор.восток-прицеп.рф
   'https://xn--e1afucc1b.xn----ctbklixakchgm2d.xn--p1ai',   // прицеп.восток-прицеп.рф
+  'https://xn--80aajzhsz.xn----ctbklixakchgm2d.xn--p1ai',   // каталог.восток-прицеп.рф (шлёт заявки кросс-доменно)
+  'https://xn--80adsazqn.xn----ctbklixakchgm2d.xn--p1ai',   // витрина.восток-прицеп.рф
+  'https://jefwipwero.online', 'https://catalog.jefwipwero.online',
 ];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origin, $ALLOWED_ORIGINS, true)) {
@@ -22,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo '{"ok
 
 // Worker-релей (токен и chat_id хранятся в нём как секреты).
 $WORKER_URL = getenv('LEAD_WORKER') ?: 'https://throbbing-union-7326pricepy-leads.dxdxxx1212.workers.dev'; // env — только для локального стенда
-// Общий секрет для аутентификации у воркера (из api/config.php вне git). Пусто = воркер
-// пока не требует секрета — доставка не ломается до включения проверки в Cloudflare.
+// Общий секрет для аутентификации у воркера (из api/config.php вне git). Воркер без совпадающего секрета
+// отвечает 401/500 — заявка тогда остаётся в CRM и leads.log, а сбой пишется в leads-errors.log.
 $LEAD_SECRET = '';
 if (is_file(__DIR__ . '/config.php')) { include __DIR__ . '/config.php'; } // задаёт $LEAD_SECRET (+ legacy $BOT_TOKEN/$CHAT_ID)
 
@@ -63,6 +66,7 @@ if (!empty($data['hp'])) {
 $rid = substr(preg_replace('/[^A-Za-z0-9-]/', '', (string)($data['rid'] ?? '')), 0, 40);
 $ridFile = $rid !== '' ? $LOG_DIR . '/.rid_' . $rid : '';
 if ($ridFile !== '' && is_file($ridFile) && filemtime($ridFile) > time() - 900) { echo '{"ok":true}'; exit; }
+if ($ridFile !== '') @touch($ridFile);   // бронь сразу: повтор, пришедший пока эта заявка ещё доставляется, не задвоит её
 
 // Раз в ~50 заявок чистим служебные файлы старше суток (счётчики анти-флуда и метки повторов копились вечно).
 if (mt_rand(1, 50) === 1) {
@@ -95,8 +99,9 @@ if (is_file($logFile) && filesize($logFile) > 5 * 1024 * 1024) { @rename($logFil
 @file_put_contents($logFile, date('c') . ' | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 
 // 2) доставка в Telegram через Worker — с повтором и проверкой ответа.
-// Служебную метку rid в Telegram не шлём (в leads.log и CRM она остаётся в raw).
-$fwd = $data; unset($fwd['rid']);
+// В воркер — только поля заявки. op_notify — служебная ветка CRM («написать оператору»): с сайта её не пропускаем,
+// иначе любой мог бы через форму слать от имени бота произвольный текст в любой чат. rid в Telegram не нужен.
+$fwd = $data; unset($fwd['rid'], $fwd['op_notify']);
 $fwdRaw = json_encode($fwd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 $ok = false; $lastErr = '';
 for ($i = 0; $i < 2; $i++) {
@@ -130,7 +135,6 @@ try {
   require_once __DIR__ . '/../crm/lib.php';
   $newId = crm_insert_lead($data, $raw);
   $crmOk = (int)$newId > 0;
-  crm_autoassign_new_lead($newId); // авто-подача лида оператору по долям (fail-safe внутри; не влияет на доставку)
 } catch (Throwable $e) {
   @file_put_contents($LOG_DIR . '/leads-errors.log', date('c') . ' | CRM_DB_FAIL(' . $e->getMessage() . ') | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
 }
@@ -138,9 +142,15 @@ try {
 // Ответ лендингу: «ок» — только если заявку реально увидит владелец (Telegram ИЛИ CRM). Раньше отдавали 200
 // всегда, и посетитель видел «Спасибо» даже когда заявка не дошла никуда. Копия в leads.log есть в любом случае.
 if ($ok || $crmOk) {
-  if ($ridFile !== '') @touch($ridFile);
   echo '{"ok":true}';
 } else {
+  if ($ridFile !== '') @unlink($ridFile); // не дошло — снимаем бронь, повтор должен пройти заново
   http_response_code(503);
   echo '{"ok":false}';
+}
+
+// Авто-подача оператору (и его уведомление в Telegram, до ~6 с) — ПОСЛЕ ответа посетителю: ждать её ему незачем.
+if ($crmOk) {
+  if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+  try { crm_autoassign_new_lead($newId); } catch (Throwable $e) { /* fail-safe: лид уже в CRM, остаётся у владельца */ }
 }
