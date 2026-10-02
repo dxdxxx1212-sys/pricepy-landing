@@ -298,6 +298,18 @@ footer .docs a{margin-right:14px;text-decoration:underline;cursor:pointer}
 <div class="toast" id="toast"></div>
 
 <script>
+/* Рекламные метки (utm_*, gclid, yclid) при первом заходе — чтобы в CRM было видно, какая кампания
+   привела лид. First-touch в localStorage, подмешиваются в каждую заявку. Тот же код, что в index.html. */
+(function(){
+  try{
+    var p=new URLSearchParams(location.search), got={};
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','yclid'].forEach(function(k){
+      var v=p.get(k); if(v) got[k]=String(v).slice(0,200);
+    });
+    if(Object.keys(got).length && !localStorage.getItem('vp_utm')) localStorage.setItem('vp_utm', JSON.stringify(got));
+  }catch(e){}
+})();
+function leadUTMs(){ try{ return JSON.parse(localStorage.getItem('vp_utm')||'{}') || {}; }catch(e){ return {}; } }
 const QUIZ = [
   {key:"use", type:"single", bubble:"Здравствуйте! Помогу подобрать прицеп. Что планируете возить?", title:"Для чего нужен прицеп?", hint:"Выберите основную задачу",
     options:[{em:"🚙",label:"Бытовые грузы / дача"},{em:"⛵",label:"Лодка или катер"},{em:"🏍️",label:"Мото / квадроцикл"},{em:"🏗️",label:"Стройматериалы"},{em:"🚜",label:"Для хозяйства / фермы"},{em:"💼",label:"Бизнес / доставка"}]},
@@ -338,7 +350,7 @@ function render(){
     html+='<div class="chans">'+['Телефон','Telegram','WhatsApp','МАКС'].map(c=>'<div class="chan'+(st.channel===c?' sel':'')+'" data-chan="'+c+'">'+c+'</div>').join('')+'</div>';
     html+='<div class="field"><label>Ваше имя</label><input id="cName" placeholder="Как к вам обращаться"></div>';
     html+='<div class="field"><label>'+(st.channel==='Telegram'?'Телефон или @username':'Телефон')+'</label><input id="cContact" placeholder="'+(st.channel==='Telegram'?'+7… или @username':'+7 (___) ___-__-__')+'" inputmode="'+(st.channel==='Telegram'?'text':'tel')+'"></div>';
-    html+='<input id="cHp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" placeholder="Оставьте пустым">'; // honeypot: люди не видят, боты заполняют
+    html+='<input id="cHp" name="xq_field_7" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" placeholder="Оставьте пустым">'; // honeypot: люди не видят, боты заполняют. Имя поля НЕ должно быть company/email/phone и т.п. — их заполняет автозаполнение браузера
     html+='<div class="err" id="cErr">Заполните имя и контакт</div>';
     html+='<label class="consent"><input type="checkbox" id="cAgree" checked><span>Согласен на обработку персональных данных и принимаю <a data-doc="privacy">политику конфиденциальности</a>.</span></label>';
     html+='<button class="btn" id="send">Получить подбор →</button>';
@@ -379,6 +391,7 @@ function submit(){
 }
 
 function sendLead(data){
+  try{ data=Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
   var _b=JSON.stringify(data), _sent=false;
   try{ if(navigator.sendBeacon) _sent=navigator.sendBeacon('/api/lead', new Blob([_b],{type:'text/plain;charset=UTF-8'})); }catch(e){}
   if(!_sent)(function r(n){ fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:_b}).then(function(x){ if(!x.ok&&n>0)setTimeout(function(){r(n-1)},1500); }).catch(function(){ if(n>0)setTimeout(function(){r(n-1)},1500); }); })(3);

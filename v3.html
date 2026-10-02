@@ -444,6 +444,18 @@ _tmr.push({id: "3787094", type: "pageView", start: (new Date()).getTime()});
 </div>
 
 <script>
+/* Рекламные метки (utm_*, gclid, yclid) при первом заходе — чтобы в CRM было видно, какая кампания
+   привела лид. First-touch в localStorage, подмешиваются в каждую заявку. Тот же код, что в index.html. */
+(function(){
+  try{
+    var p=new URLSearchParams(location.search), got={};
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','yclid'].forEach(function(k){
+      var v=p.get(k); if(v) got[k]=String(v).slice(0,200);
+    });
+    if(Object.keys(got).length && !localStorage.getItem('vp_utm')) localStorage.setItem('vp_utm', JSON.stringify(got));
+  }catch(e){}
+})();
+function leadUTMs(){ try{ return JSON.parse(localStorage.getItem('vp_utm')||'{}') || {}; }catch(e){ return {}; } }
 const QUIZ = [
   {key:"use", type:"single", title:"Что планируете возить?", hint:"Выберите основную задачу",
     options:["Бытовые грузы, дача","Лодка или катер","Мото, квадроцикл","Стройматериалы","Хозяйство, ферма","Бизнес, доставка"]},
@@ -524,6 +536,7 @@ function submit(){
   $('#qbar').style.width='100%';$('#qcount').textContent='Готово';
 }
 function sendLead(data){
+  try{ data=Object.assign({}, leadUTMs(), data); }catch(e){} // метки не перетирают поля формы
   var _b=JSON.stringify(data), _sent=false;
   try{ if(navigator.sendBeacon) _sent=navigator.sendBeacon('/api/lead', new Blob([_b],{type:'text/plain;charset=UTF-8'})); }catch(e){}
   if(!_sent)(function r(n){ fetch('/api/lead',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:_b}).then(function(x){ if(!x.ok&&n>0)setTimeout(function(){r(n-1)},1500); }).catch(function(){ if(n>0)setTimeout(function(){r(n-1)},1500); }); })(3);

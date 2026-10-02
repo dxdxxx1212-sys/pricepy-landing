@@ -34,9 +34,6 @@ if (strlen($raw) > 16384) { http_response_code(413); echo '{"ok":false}'; exit; 
 $data = json_decode($raw, true);
 if (!is_array($data)) { http_response_code(400); echo '{"ok":false}'; exit; }
 
-// honeypot: скрытое поле hp заполняют только боты. Тихо «принимаем» и выкидываем.
-if (!empty($data['hp'])) { echo '{"ok":true}'; exit; }
-
 // минимальная валидация: должно быть имя ИЛИ контакт — режем пустые {} и мусор,
 // не рискуя реальными заявками (контакт может быть телефоном или ником мессенджера).
 $vName = trim((string)($data['name'] ?? ''));
@@ -48,6 +45,17 @@ if ($vName === '' && mb_strlen($vContact) < 4) { http_response_code(422); echo '
 $LOG_DIR = '/var/lib/pricepy-crm';
 if (!is_dir($LOG_DIR)) { @mkdir($LOG_DIR, 0770, true); }
 if (!is_dir($LOG_DIR) || !is_writable($LOG_DIR)) { $LOG_DIR = sys_get_temp_dir(); }
+
+// honeypot: скрытое поле hp заполняют боты. Боту отвечаем «ок», но заявку не выбрасываем бесследно:
+// пишем в отдельный лог — если ловушка когда-нибудь поймает живого человека (автозаполнение браузера),
+// его контакт можно будет найти и перезвонить.
+if (!empty($data['hp'])) {
+  $hpLog = $LOG_DIR . '/leads-honeypot.log';
+  if (!is_file($hpLog) || filesize($hpLog) < 2 * 1024 * 1024) { // потолок, чтобы флуд ботов не съел диск
+    @file_put_contents($hpLog, date('c') . ' | ' . $raw . "\n", FILE_APPEND | LOCK_EX);
+  }
+  echo '{"ok":true}'; exit;
+}
 
 // мягкий анти-флуд: не более 30 заявок с одного IP за 60 сек (режем ботов, людям не мешает).
 // fail-open: любая ошибка троттлинга не блокирует лид.
