@@ -34,6 +34,7 @@ server {
     server_name ${SUB};
     root ${WWW};
     index index.php login.php;
+    client_max_body_size 64m;   # фото в комментариях (в коде лимит 15 МБ на файл)
 
     add_header X-Frame-Options "DENY" always;
     add_header X-Content-Type-Options "nosniff" always;
@@ -44,6 +45,8 @@ server {
     location ~* \.(sqlite|sqlite-wal|sqlite-shm|log|md|sh|sql|bak)\$ { deny all; }
     location = /lib.php { deny all; }
     location = /mkowner.php { deny all; }
+    location ^~ /inc/ { deny all; }             # модули CRM — только через lib.php
+    location ~ ^/import-.*\\.php\$ { deny all; }  # консольные импорты — не из браузера
 
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
 
