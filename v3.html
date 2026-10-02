@@ -507,7 +507,11 @@ $('#qbody').addEventListener('click',e=>{
   if(e.target.id==='send'){submit();return;}
   const d=e.target.closest('[data-doc]'); if(d){openDoc(d.dataset.doc);return;}
 });
-$('#qbody').addEventListener('focusin',e=>{if(e.target.tagName==='INPUT'){document.body.classList.add('kbd');setTimeout(()=>{try{e.target.scrollIntoView({block:'center'})}catch(_){}} ,300);}});
+const scrollIfHidden=function(t){ try{ // прокручиваем, только если поле реально закрыто клавиатурой/краем экрана — иначе двойной рывок
+    const vv=window.visualViewport, top=vv?vv.offsetTop:0, h=vv?vv.height:innerHeight, r=t.getBoundingClientRect();
+    if(r.top<top+8 || r.bottom>top+h-8) t.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(_){} };
+$('#qbody').addEventListener('focusin',e=>{if(e.target.tagName==='INPUT'){document.body.classList.add('kbd');const t=e.target;setTimeout(()=>scrollIfHidden(t),350);}});
 $('#qbody').addEventListener('focusout',e=>{if(e.target.tagName==='INPUT'){if(e.target.id==='cName')st.name=e.target.value;if(e.target.id==='cContact')st.contactVal=e.target.value;setTimeout(()=>{if(!/^(cName|cContact)$/.test((document.activeElement||{}).id))document.body.classList.remove('kbd');},80);}});
 $('#qbody').addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ')){const t=e.target.closest('[data-opt],[data-chan]');if(t){e.preventDefault();t.click();return;}}

@@ -1570,10 +1570,12 @@ faqList.querySelectorAll('.faq-item').forEach(item=>{
 const state = { step:0, answers:{}, channel:"whatsapp" };
 const body = document.getElementById('quizBody');
 // на мобиле: при фокусе на поле прокручиваем его над клавиатурой (иначе поле уходит под неё)
+const scrollIfHidden=function(t){ try{ // прокручиваем, только если поле реально закрыто клавиатурой/краем экрана — иначе двойной рывок
+    const vv=window.visualViewport, top=vv?vv.offsetTop:0, h=vv?vv.height:innerHeight, r=t.getBoundingClientRect();
+    if(r.top<top+8 || r.bottom>top+h-8) t.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(_){} };
 body.addEventListener('focusin', function(e){
-  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){
-    setTimeout(function(){ try{ e.target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} }, 300);
-  }
+  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){ const t=e.target; setTimeout(function(){ scrollIfHidden(t); }, 350); }
 });
 const bar = document.getElementById('progressBar');
 const stepCount = document.getElementById('stepCount');

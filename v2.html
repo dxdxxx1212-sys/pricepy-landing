@@ -373,10 +373,14 @@ $('#qbody').addEventListener('click',e=>{
   if(e.target.id==='send'){submit();return;}
 });
 // на мобиле: при фокусе на поле прокручиваем его над клавиатурой (иначе поле уходит под неё)
+// Только если поле реально не видно: раньше прокрутка шла всегда — на телефоне браузер уже сам поднял поле
+// над клавиатурой, и выходил двойной рывок вверх-вниз; на компьютере страница дёргалась при каждом клике.
 $('#qbody').addEventListener('focusin',function(e){
-  if(e.target.tagName==='INPUT' && e.target.type!=='checkbox'){
-    setTimeout(function(){ try{ e.target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} }, 300);
-  }
+  const t=e.target; if(t.tagName!=='INPUT' || t.type==='checkbox') return;
+  setTimeout(function(){ try{
+    const vv=window.visualViewport, top=vv?vv.offsetTop:0, h=vv?vv.height:innerHeight, r=t.getBoundingClientRect();
+    if(r.top<top+8 || r.bottom>top+h-8) t.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(_){} }, 350);
 });
 function scrollQuiz(){const y=$('#quiz').getBoundingClientRect().top+scrollY-72;scrollTo({top:y,behavior:'smooth'});}
 
